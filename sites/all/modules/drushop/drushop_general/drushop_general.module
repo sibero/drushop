@@ -30,6 +30,18 @@ $items = array();
 	'file path' => drupal_get_path('module', 'system'),		
     );
 	
+	$items['admin/db'] = array(
+        'title' => 'База данных', 
+        'description' => 'Инструменты для работы с базой данных',
+'page callback' => 'system_admin_menu_block_page',
+    'position' => 'left',
+    'weight' => 20,		
+        'access arguments' => array('administer site configuration'), 
+        'type' => MENU_NORMAL_ITEM,  
+    'file' => 'system.admin.inc',
+	'file path' => drupal_get_path('module', 'system'),		
+    );
+	
     return $items;
 }
 
@@ -92,38 +104,77 @@ function drushop_general_menu_alter(&$items) {
 	$items = array_merge($items, drushop_general_clone_items('admin/settings/comment_notify', 'admin/settings/other/comment_notify', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/settings/module_filter', 'admin/settings/other/module_filter', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/settings/clean-urls', 'admin/settings/other/clean-urls', $items));
-
 	
+	$items = array_merge($items, drushop_general_clone_items('admin/content/nodewords', 'admin/seo/nodewords', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/page-title', 'admin/seo/page-title', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/store/reports/tax', 'admin/reports/tax', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/store/reports/stock', 'admin/reports/stock', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/store/reports/customers', 'admin/reports/customers', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/store/reports/sales', 'admin/reports/sales', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/store/reports/products', 'admin/reports/products', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/content/backup_migrate', 'admin/db/backup_migrate', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/build/path', 'admin/seo/path', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/build/imagecache', 'admin/settings/imagecache', $items));	
 	
-// Move admin theme settings to theme local task.
-  //$items['admin/build/themes/admin'] = $items['admin/settings/admin'];
-  //$items['admin/build/themes/admin']['type'] = MENU_LOCAL_TASK;
+	$items = array_merge($items, drushop_general_clone_items('admin/store/products/files', 'admin/store/files', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/store/products/classes', 'admin/store/settings/classes', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/store/products/power-tools', 'admin/store/settings/power-tools', $items));
+	
+	// type может принимать значения MENU_DEFAULT_LOCAL_TASK , MENU_NORMAL_ITEM , MENU_LOCAL_TASK , MENU_CALLBACK
+    $items['admin/store/help']['type'] = MENU_CALLBACK;
+	$items['admin/store/reports']['type'] = MENU_CALLBACK;
 	$items['admin/build/block']['weight'] = -40;
 	$items['admin/build/menu']['weight'] = -39;
 	$items['admin/build/themes']['weight'] = -38;
 	$items['admin/build/modules']['weight'] = -37;
 	$items['admin/build/features']['weight'] = -36;
 	$items['admin/build/views']['weight'] = -35;
-	$items['admin/build/flags']['weight'] = -34;
-	$items['admin/build/language']['weight'] = -33;
-	$items['admin/build/translate']['weight'] = -32;
+	$items['admin/build/panels']['weight'] = -34;
+	$items['admin/build/flags']['weight'] = -33;
+	$items['admin/build/language']['weight'] = -32;
+	$items['admin/build/translate']['weight'] = -31;
 	
 	$items['admin/content/node']['weight'] = -40;
 	$items['admin/content/comment']['weight'] = -39;
 	$items['admin/content/taxonomy']['weight'] = -38;
 	$items['admin/content/types']['weight'] = -37;
-	$items['admin/settings/filters']['weight'] = -36;
+	$items['admin/content/filters']['weight'] = -36;
 	$items['admin/content/node-settings']['weight'] = -35;
 	$items['admin/content/rss-publishing']['weight'] = -34;
-	$items['admin/build/contact']['weight'] = -33;
+	$items['admin/content/contact']['weight'] = -33;
+	
+	$items['admin/store/orders']['weight'] = -40;
+	$items['admin/store/products']['weight'] = -39;
+	$items['admin/store/customers']['weight'] = -38;
+	$items['admin/store/attributes']['weight'] = -37;
+	$items['admin/store/uc_discounts']['weight'] = -36;
+	$items['admin/store/products/files']['weight'] = -35;
+	
+	$items['admin/store/settings/store']['weight'] = -40;
+	$items['admin/store/settings/payment']['weight'] = -38;
+	$items['admin/store/settings/quotes']['weight'] = -37;
+	$items['admin/store/settings/countries']['weight'] = -39;
+	$items['admin/store/settings/checkout']['weight'] = -36;
+	$items['admin/store/settings/orders']['weight'] = -35;
+	$items['admin/store/settings/products']['weight'] = -34;
 
-	
-	
-	
-	
+	$items['admin/reports/status']['weight'] = -40;
+	$items['admin/reports/sales']['weight'] = -39;
+	$items['admin/reports/products']['weight'] = -38;
+		
 	$items['admin/settings/cron']['weight'] = -40;
-  
-	// type может принимать значения MENU_DEFAULT_LOCAL_TASK , MENU_NORMAL_ITEM , MENU_LOCAL_TASK , MENU_CALLBACK
+	$items['admin/settings/site-information']['weight'] = -39;
+	$items['admin/settings/performance']['weight'] = -38;
+	$items['admin/settings/cacheexclude']['weight'] = -37;
+	$items['admin/settings/site-maintenance']['weight'] = -36;
+	$items['admin/settings/imagecache']['weight'] = -35;
+	$items['admin/settings/file-system']['weight'] = -34;
+	$items['admin/settings/date-time']['weight'] = -33;
+	$items['admin/settings/admin']['weight'] = 39;
+	$items['admin/settings/other']['weight'] = 40;
+	
+	$items['admin/seo/nodewords']['weight'] = -40;
+	$items['admin/user/logintoboggan']['weight'] = 40;
 
 	// удаляем ненужные пункты меню
   unset($items['admin/settings/image-toolkit']);
@@ -157,13 +208,38 @@ function drushop_general_menu_alter(&$items) {
 	unset($items['admin/settings/module_filter']);
 	unset($items['admin/settings/clean-urls']);
 	unset($items['admin/user/user']);
-	unset($items['admin/store/help']);
+	
+	unset($items['admin/content/nodewords']);
+	unset($items['admin/settings/page-title']);
+	unset($items['admin/store/reports/tax']);
+	unset($items['admin/store/reports/stock']);
+	unset($items['admin/store/reports/customers']);
+	unset($items['admin/store/reports/sales']);
+	unset($items['admin/store/reports/products']);
+	unset($items['admin/content/backup_migrate']);
+	unset($items['admin/build/path']);
+	unset($items['admin/build/imagecache']);
+	
+	unset($items['admin/store/products/files']);
+	unset($items['admin/store/products/classes']);
+	unset($items['admin/store/products/power-tools']);
 	
 	
+	global $language;
+	$lang_name = $language->language;
+	if ( $lang_name == "ru" ) { 
 	// переименовываем пункты меню
 	$include = array(
     'admin/content' => 'Content',
-
+	'admin/settings/cron' => 'Cron',
+	'admin/store/settings' => 'Настройки магазина ',
+	'admin/content/comment' => 'Менеджер комментариев',
+	'admin/build/features' => 'Плагины (features)',
+	'admin/content/taxonomy' => 'Категории (таксономия)',
+	'admin/settings/cacheexclude' => 'Исключения из кэша',
+	'admin/settings/imce' => 'Файловый менеджер (imce)',
+	'admin/db/backup_migrate' => 'Резервное копирование базы данных',
+	'admin/build/flags' => 'Флаги (закладки)',
   );
   
     foreach ($include as $path => $title) {
@@ -172,7 +248,7 @@ function drushop_general_menu_alter(&$items) {
       $items[$path]['options']['admin'] = TRUE;
     }
   }
-  
+  }
 }
 
 
