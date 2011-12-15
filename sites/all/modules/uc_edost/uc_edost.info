@@ -1,0 +1,12 @@
+; $Id: uc_edost.info,v 1.0.3.0 2011/11/15 10:00:00 $
+name = Edost
+description = "Калькулятор доставки различными компаниями от eDost.ru<br>Для работы калькулятора необходима регистрация на сервере <a href="http://www.edost.ru/shop.php" target="_blank">eDost.ru</a>"
+dependencies[] = uc_quote
+package = Ubercart - fulfillment
+core = 6.x
+php = 5.0
+
+; Information added by drupal.org packaging script on 2010-08-11
+version = "6.x-1.03"
+core = "6.x"
+

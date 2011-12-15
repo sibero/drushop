@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * Creates anonymous user with id=0
+ */
+function anonymous_user_create($delete = false) {
+	db_query("DELETE FROM {users} WHERE uid = 0");
+	if (!$delete) {
+		db_query("INSERT INTO {users} (name) VALUES ('')");
+		db_query("UPDATE {users} SET uid = 0 WHERE name='' LIMIT 1");
+	}
+}
+
+function anonymous_user_install() {
+	anonymous_user_create();
+}
+
+function anonymous_user_uninstall() {
+	anonymous_user_create(true);
+}

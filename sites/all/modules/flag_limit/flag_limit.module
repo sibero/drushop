@@ -1,0 +1,79 @@
+<?php
+
+/**
+ * @file Flag limit module
+ *
+ * Limits the number of flagged items at any time to X.
+ *
+ * Intended for the following use case: A specified number of flagged 
+ * items needs to appear in a rotator at the top of a page.  When a new
+ * item is marked as flagged, the oldest item marked as flagged needs to
+ * move from the rotator, into a list of unflagged content below.
+ */
+ 
+/**
+ * Implements hook_menu().
+ */
+function flag_limit_menu() {
+  $items = array();
+
+  $items['admin/build/flags/limits'] = array(
+    'title' => 'Limits',
+    'description' => 'Configure limits on the number of flagged items.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('flag_limit_settings_form'),
+    'access arguments' => array('administer flags'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  return $items;
+}
+
+/**
+ * Flag settings form.
+ */
+function flag_limit_settings_form(&$form) {
+  $form = array();
+  
+  $flags = flag_get_flags();
+  foreach($flags as $flag) {
+    $form['flag_limit_' . $flag->name]= array(
+      '#type' => 'checkbox',
+      '#title' => t('Impose a Limit on !flag', array('!flag' => $flag->title)),
+      '#default_value' => variable_get('flag_limit_' . $flag->name, FALSE),
+    );
+    
+    $form['flag_limit_' . $flag->name . '_value']= array(
+      '#type' => 'textfield',
+      '#title' => t('!flag Limit', array('!flag' => $flag->title)),
+      '#description' => t('Maximum number of items that can be flagged at one time with <em>!flag</em>', array('!flag' => $flag->title)),
+      '#default_value' => variable_get('flag_limit_' . $flag->name . '_value', NULL),
+    );
+  }
+  
+  return system_settings_form($form);
+}
+
+/**
+ * Implementation of hook_flag(). Trigger actions if any are available.
+ */
+function flag_Limit_flag($action, $flag, $content_id, $account) {
+  $limited = variable_get('flag_limit_' . $flag->name, FALSE);
+  if ($action == 'flag' && $limited) {
+    
+    // Get the flag limit.
+    $limit = variable_get('flag_limit_' . $flag->name . '_value', NULL);
+    
+    // Get all the current flags.
+    $query = "SELECT * FROM {flag_content} WHERE fid = %d AND (uid = %d OR uid = 0) ORDER BY timestamp DESC";  
+    $result = db_query($query, $flag->fid, $account->uid);
+    $i = 1;
+    while ($row = db_fetch_object($result)) {
+      if ($i++ > $limit) {
+        flag('unflag', $flag->name, $row->content_id, $account);
+      }
+    }
+      
+  }
+}
+

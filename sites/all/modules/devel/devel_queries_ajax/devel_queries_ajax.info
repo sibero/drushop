@@ -1,0 +1,12 @@
+name = Devel Queries Ajax
+description = Returns Devel query information in an AJAX request.
+package = Development
+dependencies[] = devel
+dependencies[] = ctools
+core = 6.x
+; Information added by drupal.org packaging script on 2011-06-25
+version = "6.x-1.0"
+core = "6.x"
+project = "devel_queries_ajax"
+datestamp = "1308977515"
+

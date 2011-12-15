@@ -1,0 +1,3 @@
+<?php
+
+include_once('drushop_views.features.inc');

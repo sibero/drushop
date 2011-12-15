@@ -1,0 +1,243 @@
+<?php
+// $Id: uc_dynamicproductpages.module,v 1.1.2.1 2010/10/22 20:54:22 aidan Exp $
+
+
+/**
+ * @file uc_dynamicproductpages.module
+ * Dynamic product pages allows a store administrator to add additional
+ * information to the options for a product attribute.
+ *
+ * This information is then displayed when the attribute is selected.
+ */
+
+/**
+ * Implementation of hook_theme().
+ */
+function uc_dynamicproductpages_theme() {
+  return array(
+    'uc_dynamicproductpages_options' => array(
+      'arguments' => array('attributes' => array(), 'selected_oid' => NULL),
+    ),
+  );
+}
+
+
+/**
+ * Implementation of hook_init().
+ *
+ * We need to do this here or face the wrath of caching
+ * not including or CSS and JS.
+ */
+function uc_dynamicproductpages_init() {
+  drupal_add_css(drupal_get_path('module', 'uc_dynamicproductpages') . '/uc_dynamicproductpages.css');
+  drupal_add_js(drupal_get_path('module', 'uc_dynamicproductpages') . '/uc_dynamicproductpages.js');
+}
+
+ 
+/**
+ * Implementation of hook_form_alter().
+ */
+function uc_dynamicproductpages_form_alter($form, $form_state, $form_id) {
+
+  // Catch the right form
+  if (substr($form_id, 0, 28) !== 'uc_product_add_to_cart_form_') {
+    return;
+  }
+  
+  // Allow default attributes to be set in the URL
+  if (isset($_GET['attribute'])) {
+    foreach ($_GET['attribute'] as $aid => $default) {
+      if (isset($form['attributes'][$aid])) {
+        $form['attributes'][$aid]['#default_value'] = $default;
+      }
+    }
+  }
+
+  // Add our extra information to the page markup
+  foreach (element_children($form['attributes']) as $aid) {
+    _uc_dynamicproductpages_add_markup_to_attribute($form, $aid);
+  }
+}
+
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ *
+ * Add extra options to the ubercart options page.
+ */
+function uc_dynamicproductpages_form_uc_attribute_option_form_alter(&$form, $form_state) {
+  
+  $form['#submit'][]   = 'uc_dynamicproductpages_form_submit';
+  $form['#validate'][] = 'uc_dynamicproductpages_form_validate';
+  $form['#attributes'] = array('enctype' => "multipart/form-data");
+    
+  $form['dynamicproduct'] = array(
+    '#type'          => 'fieldset',
+    '#title'         => t('Dynamic product pages'),
+    '#description'   => t('When this attribute is selected the following details will be used to rebuild the product page.'),
+    '#weight'        => 8,
+  );
+  
+  $form['dynamicproduct']['summary'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Summary'),
+    '#default_value' => uc_dynamicproductpages_variable_get($form['oid']['#value'], 'summary', ''),
+  );
+  
+  $form['dynamicproduct']['description'] = array(
+    '#type'          => 'textarea',
+    '#title'         => t('Description'),
+    '#default_value' => uc_dynamicproductpages_variable_get($form['oid']['#value'], 'description', ''),
+  );
+
+  $form['dynamicproduct']['image'] = array(
+    '#type'          => 'file',
+    '#description'   => t('Upload a product image for when this attribute is selected.'),
+    '#title'         => t('Product image'),
+  );
+  
+  $form['dynamicproduct']['delete_extra'] = array(
+    '#type'          => 'checkbox',
+    '#title'         => t('Remove'),
+    '#description'   => t('Delete dynamic product information for this option.'),
+  );
+    
+  if (uc_dynamicproductpages_variable_get($form['oid']['#value'], 'fid', NULL)) {
+    $res       = db_query('SELECT * FROM {files} WHERE fid=%d', $defaults['fid']);
+    $file      = db_fetch_object($res);
+    $thumbnail = sprintf('<p><img height="100" src="%s%s" /></p>', base_path(), $file->filepath);
+    $form['dynamicproduct']['image']['#description'] = $thumbnail;
+  }
+}
+
+
+/**
+ * Validator for file upload
+ */
+function uc_dynamicproductpages_form_validate($form, &$form_state) {
+  if (!empty($_FILES['files']['name']['image'])) {
+    $path = _uc_dynamicproductpages_get_and_check_filepath();
+    $file = file_save_upload('image', array(), $path);
+    if ($file) {
+      $form_state['values']['image'] = $file;
+    } else {
+      form_set_error('image', t('Unable to upload file.')); 
+    }
+  }
+}
+
+
+/**
+ * Get and check the path to save images to
+ */
+function _uc_dynamicproductpages_get_and_check_filepath() {
+  $path = file_directory_path() . '/uc_dynamicproductpages';
+  file_check_directory($path, TRUE);  
+  return $path;
+}
+
+
+/**
+ * Submit handler
+ *
+ * All fields are optional, only save the row if one of the fields is set.
+ */
+function uc_dynamicproductpages_form_submit($form, &$form_state) {
+
+  // Delete the extra information if requested
+  if ($form_state['values']['delete_extra']) {
+    db_query("DELETE FROM {uc_attribute_options_dynamic} WHERE oid=%d", $form_state['values']['oid']);
+    return;
+  }
+
+  // Save the image
+  $fid = NULL;
+  if (!empty($form_state['values']['image'])) {
+    file_set_status($form_state['values']['image'], FILE_STATUS_PERMANENT);
+    $fid = $form_state['values']['image']->fid;
+  }
+  
+  // If it's a new row, we don't know the oid yet
+  if (isset($form_state['values']['oid'])) {
+    $oid = $form_state['values']['oid'];
+  } else {
+    $res = db_query("SELECT oid FROM {uc_attribute_options} WHERE aid=%d AND name='%s'",
+      $form_state['values']['aid'],
+      $form_state['values']['name']);
+    $oid = db_result($res);
+  }
+  
+  // Create a row in the database if needed
+  if ($fid || $form_state['values']['summary'] || $form_state['values']['description']) {  
+    db_query("REPLACE INTO {uc_attribute_options_dynamic} (aid, oid, fid, summary, description) VALUES (%d, %d, %d, '%s', '%s')",
+      $form_state['values']['aid'],
+      $oid,
+      $form_state['values']['image']->fid,
+      $form_state['values']['summary'],
+      $form_state['values']['description']
+    );
+  }
+}
+
+
+/**
+ * Load row from database
+ */
+function uc_dynamicproductpages_variable_get($oid, $key, $default) {
+  static $cache = array();
+  
+  // Bail when no Option ID is provided (happens when adding a new option)
+  if (!$oid) {
+    return $default;
+  }
+  
+  // Check the cache
+  if (!isset($cache[$oid])) {
+    $res = db_query('SELECT aid, oid, fid, summary, description FROM {uc_attribute_options_dynamic} WHERE oid=%d', $oid);
+    $row = db_fetch_array($res);
+    $cache[$oid] = $row;
+  }
+  
+  return isset($cache[$oid][$key]) ? $cache[$oid][$key] : $default;
+}
+
+
+/**
+ * Theme: The markup for the attribute list
+ */
+function theme_uc_dynamicproductpages_options($attributes, $selected_oid) {
+  $html = '<div class="dynamic-product-attribute-list">';
+  
+  foreach ($attributes as $attribute) {
+    $selected = ($attribute['oid'] === $selected_oid) ? 'attribute-selected' : 'attribute-hidden';
+    $html .= sprintf('<div class="dynamic-product-attribute attribute-option-%d clearfix %s">', $attribute['oid'], $selected);
+    $html .= $attribute['thumbnail'];
+    $html .= '<div class="attribute-summary">' . $attribute['summary'] . '</div>';
+    $html .= '<div class="attribute-description">' . $attribute['description'] . '</div>';
+    $html .= '</div>'; 
+  }
+  
+  $html .= '</div>';
+
+  return $html;
+}
+
+
+/**
+ * Modify the attribute form to add the extra page markup to an attribute
+ */
+function _uc_dynamicproductpages_add_markup_to_attribute(&$form, $aid) {
+  $res = db_query('SELECT * FROM {uc_attribute_options_dynamic} WHERE aid=%d', $aid);
+  $rows = array();
+  while ($row = db_fetch_array($res)) {
+    $row['thumbnail'] = '';
+    if ($row['fid']) {
+      $file_res = db_query('SELECT * FROM {files} WHERE fid=%d', $row['fid']);
+      $file     = db_fetch_object($file_res);
+      $row['thumbnail'] = sprintf('<div class="thumbnail"><img src="%s%s" /></div>', base_path(), $file->filepath);
+    }
+    $rows[] = $row;
+  }
+  $selected_oid = $form['attributes'][$aid]['#default_value'];
+  $form['attributes'][$aid]['#suffix'] = theme('uc_dynamicproductpages_options', $rows, $selected_oid);
+}

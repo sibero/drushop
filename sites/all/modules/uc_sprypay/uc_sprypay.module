@@ -1,0 +1,255 @@
+<?php
+/**
+ * @file
+ * Integrates sprypay.ru's redirected payment service.
+ */
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function uc_sprypay_menu() {
+  $items = array();
+
+  $items['sprypay/ipn'] = array(
+    'title' => 'SpryPay IPN',
+    'page callback' => 'uc_sprypay_ipn',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_init().
+ */
+function uc_sprypay_init() {
+  global $conf;
+  $conf['i18n_variables'][] = 'uc_sprypay_method_title';
+  $conf['i18n_variables'][] = 'uc_sprypay_checkout_button';
+}
+
+/**
+ * Make sure anyone can complete their 2Checkout orders.
+ */
+function uc_sprypay_completion_access() {
+  return TRUE;
+}
+
+/**
+ * Implementation of hook_ucga_display().
+ */
+function uc_sprypay_ucga_display() {
+  // Tell UC Google Analytics to display the e-commerce JS on the custom
+  // order completion page for this module.
+  if (arg(0) == 'cart' && arg(1) == 'sprypay' && arg(2) == 'finalize') {
+    return TRUE;
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function uc_sprypay_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'uc_cart_checkout_review_form' && ($order_id = intval($_SESSION['cart_order'])) > 0) {
+    $order = uc_order_load($order_id);
+
+    if ($order->payment_method == 'sprypay') {
+      drupal_add_css(drupal_get_path('module', 'uc_sprypay') .'/uc_sprypay.css');
+      unset($form['submit']);
+      $form['#prefix'] = '<table id="two-checkout-review-table"><tr><td>';
+      $form['#suffix'] = '</td><td>'. drupal_get_form('uc_sprypay_form', $order) .'</td></tr></table>';
+    }
+  }
+}
+
+/**
+ * Implementation of hook_payment_method().
+ *
+ * @see uc_payment_method_sprypay()
+ */
+function uc_sprypay_payment_method() {
+  $path = base_path() . drupal_get_path('module', 'uc_sprypay');
+  $title = variable_get('uc_sprypay_method_title', t('SpryPay gateway:'));
+  $title .= '<br /><img src="'. $path .'/sprypay_logo.png" style="position: relative; left: 2.5em;">';
+
+  $methods[] = array(
+    'id' => 'sprypay',
+    'name' => t('SpryPay'),
+    'title' => $title,
+    'review' => t('SpryPay'),
+    'desc' => t('Redirect to SpryPay'),
+    'callback' => 'uc_payment_method_sprypay',
+    'weight' => 3,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  return $methods;
+}
+
+
+/**
+ * Add SpryPay settings to the payment method settings form.
+ *
+ * @see uc_sprypay_payment_method()
+ */
+function uc_payment_method_sprypay($op, &$arg1) {
+  switch ($op) {
+    case 'cart-details':
+      if (variable_get('uc_sprypay_check', FALSE)) {
+        if ($_SESSION['pay_method'] == 'CK') {
+          $sel[2] = ' selected="selected"';
+        }
+        else {
+          $sel[1] = ' selected="selected"';
+        }
+        unset($_SESSION['pay_method']);
+        /*$details = '<div class="form-item"><b>'. t('Select your payment type:')
+                  .'</b> <select name="pay_method" class="form-select" id="edit-pay-method">'
+                  .'<option value="CC"'. $sel[1] .'>'. t('Credit card') .'</option>'
+                  .'<option value="CK"'. $sel[2] .'>'. t('Online check') .'</option></select></div>';*/
+      }
+      return $details;
+
+    case 'cart-process':
+      $_SESSION['pay_method'] = $_POST['pay_method'];
+      return;
+
+    case 'settings':
+      $form['uc_sprypay_shop_id'] = array(
+        '#type' => 'textfield',
+        '#title' => t('SpryPay shop id'),
+        '#description' => t('Your sprypay shop id.'),
+        '#default_value' => variable_get('uc_sprypay_shop_id', ''),
+        '#size' => 16,
+      );
+      $form['uc_sprypay_shop_key'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Sprypay shop key'),
+        '#description' => t('Sprypay shop key'),
+        '#default_value' => variable_get('uc_sprypay_shop_key', ''),
+        '#size' => 16,
+      );
+      $form['uc_sprypay_cur'] = array(
+        '#type' => 'select',
+        '#title' => t('Sprypay currency'),
+        '#description' => t(''),
+        '#options' => array(
+          'rur' => t('RUR'),
+          'uah' => t('UAH'),
+          'usd' => t('USD'),
+          'eur' => t('EUR')
+        ),
+        '#default_value' => variable_get('uc_sprypay_cur', 'rur'),
+      );
+      return $form;
+  }
+}
+
+/**
+ * Form to build the submission to sprypay.ru
+ */
+function uc_sprypay_form($form_state, $order) {
+
+  $context = array(
+    'revision' => 'formatted-original',
+    'type' => 'order_total',
+    'subject' => array(
+      'order' => $order,
+    ),
+  );
+  $options = array(
+    'sign' => FALSE,
+    'dec' => '.',
+    'thou' => FALSE,
+  );
+
+  $data = array(
+    'spShopId' => variable_get('uc_sprypay_shop_id', ''),
+    'spAmount' => uc_price($order->order_total, $context, $options),
+    'spShopPaymentId' => $order->order_id,
+    'spUserEmail' => substr($order->primary_email, 0, 64),
+    'spPurpose' => 'UberCart order',
+    'spCurrency' => variable_get('uc_sprypay_cur', 'rur'),
+    'id_type' => 1,
+  );
+
+  $form['#action'] = 'http://sprypay.ru/sppi/';
+
+  foreach ($data as $name => $value) {
+    $form[$name] = array('#type' => 'hidden', '#value' => $value);
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => variable_get('uc_2checkout_checkout_button', t('Submit Order')),
+  );
+
+  return $form;
+}
+
+function uc_sprypay_ipn() {
+	if  (!empty($_POST['spPaymentId'])) {$spPaymentId=$_POST['spPaymentId'];} else {$spPaymentId=$_GET['spPaymentId'];};
+	if  (!empty($_POST['spShopId'])) {$spShopId=$_POST['spShopId'];} else {$spShopId=$_GET['spShopId'];};
+	if  (!empty($_POST['spShopPaymentId'])) {$spShopPaymentId.=$_POST['spShopPaymentId'];} else {$spShopPaymentId.=$_GET['spShopPaymentId'];};
+	if  (!empty($_POST['spBalanceAmount'])) {$spBalanceAmount=$_POST['spBalanceAmount'];} else {$spBalanceAmount=$_GET['spBalanceAmount'];};
+	if  (!empty($_POST['spAmount'])) {$spAmount=$_POST['spAmount'];} else {$spAmount=$_GET['spAmount'];};
+	if  (!empty($_POST['spCurrency'])) {$spCurrency=$_POST['spCurrency'];} else {$spCurrency=$_GET['spCurrency'];};
+	if  (!empty($_POST['spCustomerEmail'])) {$spCustomerEmail=$_POST['spCustomerEmail'];} else {$spCustomerEmail=$_GET['spCustomerEmail'];};
+	if  (!empty($_POST['spPurpose'])) {$spPurpose=$_POST['spPurpose'];} else {$spPurpose=$_GET['spPurpose'];};
+	if  (!empty($_POST['spPaymentSystemId'])) {$spPaymentSystemId=$_POST['spPaymentSystemId'];} else {$spPaymentSystemId=$_GET['spPaymentSystemId'];};
+	if  (!empty($_POST['spPaymentSystemAmount'])) {$spPaymentSystemAmount=$_POST['spPaymentSystemAmount'];} else {$spPaymentSystemAmount=$_GET['spPaymentSystemAmount'];};
+	if  (!empty($_POST['spPaymentSystemPaymentId'])) {$spPaymentSystemPaymentId=$_POST['spPaymentSystemPaymentId'];} else {$spPaymentSystemPaymentId=$_GET['spPaymentSystemPaymentId'];};
+	if  (!empty($_POST['spEnrollDateTime'])) {$spEnrollDateTime=$_POST['spEnrollDateTime'];} else {$spEnrollDateTime=$_GET['spEnrollDateTime'];};
+	if  (!empty($_POST['spHashString'])) {$spHashString=$_POST['spHashString'];} else {$spHashString=$_GET['spHashString'];};
+
+	$hashstring = $spPaymentId.$spShopId.$spShopPaymentId.$spBalanceAmount.$spAmount.$spCurrency.$spCustomerEmail.$spPurpose.$spPaymentSystemId.$spPaymentSystemAmount.$spPaymentSystemPaymentId.$spEnrollDateTime.variable_get('ec_sprypay_cpihashkey', '');
+	$hashstring = md5($hashstring);
+	
+	if ($hashstring =! $spHashString) {
+		$err=1;
+		$err_text= 'ERR: ÍÅÂÅÐÍÀß ÊÎÍÒÐÎËÜÍÀß ÏÎÄÏÈÑÜ ÄÀÍÍÛÕ: '. $hashstring . ' | ' . $spHashString . ' | ' .$hashstring_;
+	}
+	
+	// Âûáèðàåì òðàíçàêöèþ ñ íîìåðîì $spShopPaymentId
+	$result = db_query("SELECT * FROM  `uc_orders` WHERE  `order_id` =".$spShopPaymentId.";");
+	$order = db_fetch_object($result);
+	
+	// Ïðîâåðÿåì ID ìàãàçèíà
+
+	if($spShopId != variable_get('uc_sprypay_shop_id', '')) {
+		$err=2;
+		$err_text='ERR: ÍÅÂÅÐÅÍ ID ÌÀÃÀÇÈÍÀ : '.$spShopId;
+	}
+	
+	// Åñëè òàêîé òîâàð íå îáíàðóæåí, òî âûâîäèì îøèáêó è ïðåðûâàåì ðàáîòó ñêðèïòà.
+	if ($order->order_id=='') {
+	       $err=3;
+	       $err_text= 'ERR: ÍÅÒ ÒÀÊÎÃÎ ÇÀÊÀÇÀ íà VAM';
+	};
+	
+	// Ïðîâåðÿåì ñóììó
+	if ($order->order_total !=(string)(REAL)$spAmount){
+	      $err=4;
+	      $err_text='ERR: ÍÅÂÅÐÍÀß ÑÓÌÌÀ : '.(string)(REAL)$spAmount . ' | ' . $order->order_total;
+	};
+	
+	// Ïðîâåðÿåì âàëþòó
+	if ($spCurrency != variable_get('uc_sprypay_cur', 'rur')) {
+		$err=4;
+		$err_text='ERR: ÍÅÂÅÐÍÀß ÂÀËÞÒÀ: '. $spCurrency;
+	}
+	
+	 if ($err==0) { // Åñëè îøèáîê íåò       	
+		// Äåëàåì çàïðîñ íà îáíîâëåíèå ñòàòóñà òðàíçàêöèè
+		db_query("UPDATE  `uc_orders` SET  `order_status` =  'payment_received' WHERE  `uc_orders`.`order_id` =".$order->order_id.";");
+		echo 'ok';
+	}
+	else {
+		echo $err_text;
+		echo "<br>".$err;
+		var_dump($order);
+	}
+}

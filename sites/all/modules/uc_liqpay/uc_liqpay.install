@@ -1,0 +1,89 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Install file for module uc_liqpay
+ */
+/**
+ * Implementation of hook_install().
+ */
+function uc_liqpay_install(){
+  drupal_install_schema('uc_liqpay');
+}
+/**
+ * Implementation of hook_shema().
+ */
+function uc_liqpay_schema(){
+  $schema['uc_liqpay_transaction'] = array(
+    'description' => t('Completed Transactions'),
+    'fields' => array(
+      'txnid' => array(
+        'type' => 'int',
+        'size' => 'normal',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('The transactions id.'),
+      ),
+      'amount' => array(
+        'type' => 'numeric',
+        'unsigned' => TRUE,
+        'precision' => 6,
+        'scale' => 2,
+        'default' => 0.00,
+        'description' => t('The transactions amount.'),
+      ),
+      'description' => array(
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => TRUE,
+        'description' => t('Info about transactions.'),
+      ),
+    ),
+    'primary key' => array('txnid'),
+    'indexes' => array('txnid' => array('txnid')),
+  );
+  $schema['uc_liqpay_rates'] = array(
+    'description' => t('Info about'),
+    'fields' => array(
+      'currency' => array(
+        'type' => 'varchar',
+        'length' => 3,
+        'not null' => TRUE,
+        'default' => 'UAH',
+        'description' => t('Type of currency.'),
+      ),
+      'merchant_id' => array(
+        'type' => 'varchar',
+        'length' => 13,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t('The merchant identificator.'),
+      ),
+      'secret_key' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => t('The secret key called signature.'),
+      ),
+      'rate' => array(
+        'type' => 'numeric',
+        'unsigned' => TRUE,
+        'precision' => 6,
+        'scale' => 2,
+        'default' => 0.00,
+        'description' => t('The rate.'),
+      ),
+    ),
+    'primary key' => array('currency'),
+  );
+  return $schema;
+}
+/**
+ * Implementation of hook_uninstall().
+ */
+function uc_liqpay_uninstall(){
+  drupal_uninstall_schema('uc_liqpay');
+}

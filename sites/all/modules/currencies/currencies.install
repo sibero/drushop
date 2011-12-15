@@ -1,0 +1,48 @@
+<?php
+/**
+ * @file
+ * Installation functions for Currencies.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function currencies_install() {
+  drupal_install_schema('currencies');
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function currencies_enable() {
+  currencies_contents(TRUE);
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function currencies_schema() {
+  $schema['currencies_block'] = array(
+    'description' => t('Stores currencies block information.'),
+    'fields' => array(
+      'timestamp' => array(
+        'type' => 'int',
+        'size' => 'normal',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function currencies_uninstall() {
+  drupal_uninstall_schema('currencies');
+}

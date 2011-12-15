@@ -1,0 +1,69 @@
+<?php
+function ulogin_button() {
+	return '<div><a href="#" id="uLogin"><img src="http://ulogin.ru/img/button.png" width=187 height=30 alt="МультиВход"/></a></div><script src="http://ulogin.ru/js/widget.js?display=window&fields=first_name,last_name,email&optional=nickname,photo_big&redirect_uri=' . urlencode(url('ulogin/token', array('absolute' => true))) . '"></script>';
+	
+	/* Доступны следующие поля: first_name - имя пользователя, last_name - фамилия, email - e-mail, nickname - псевдоним, bdate - дата рождения, sex - пол, photo - квадратная аватарка (до 100*100), photo_big - самая большая аватарка, которая выдаётся выбранной соц. сетью, city - город, country - страна.
+	
+	Необязательные поля передаются через запятую в параметре optional. Обязательные поля перечисляются в параметре fields
+	
+	Вывод провайдеров. providers=vkontakte,odnoklassniki,mailru,facebook&hidden=twitter,google,yandex,livejournal,openid
+	
+	Как сделать авторизацию без редиректа?
+	— Добавить в адрес скрипта uLogin параметр callback с названием функции, которая получит токен после авторизации. В качестве redirect_uri передайте адрес файла ulogin_xd.html на Вашем сервере.
+	*/
+	
+	
+}
+function ulogin_form_user_login_block_alter(&$form) {
+	$form['ulogin'] = array('#value' => ulogin_button(), '#markup' => ulogin_button());
+}
+
+function ulogin_form_user_login_alter(&$form) {
+	$form['ulogin'] = array('#value' => ulogin_button(), '#markup' => ulogin_button());
+}
+/*
+function ulogin_form_user_register_alter(&$form) {
+	$form['ulogin'] = array('#value' => ulogin_button(), '#markup' => ulogin_button());
+}
+
+*/
+function ulogin_menu() {
+	return array('ulogin/token' => array('access callback' => true, 'page callback' => 'ulogin_token', 'type' => MENU_CALLBACK));
+}
+function ulogin_token() {
+	error_reporting(0);
+	global $user;
+	$data = drupal_http_request('http://ulogin.ru/token.php?token=' . $_POST['token'] . '&host=' . $_SERVER['HTTP_HOST']);
+	$data = json_decode($data->data, true);
+	/*// сохраняем массив в фаил. Режим отладки
+	$ulogin_result=print_r($data, true);
+    $ulogin_file=fopen("ulogin.txt","w");
+    fwrite($ulogin_file,$ulogin_result);
+    fclose($ulogin_file); */
+	
+	if (isset($data['uid'])) {
+		$account = user_external_load('ulogin_' . $data['network'] . '_' . $data['uid']);
+		if (!$account || $account->uid == 0) {
+			try {
+				$account = user_save(drupal_anonymous_user(), array('authname_ulogin' => 'ulogin_' . $data['network'] . '_' . $data['uid'], 'init' => 'ulogin_' . $data['network'] . '_' . $data['uid'], 'status' => 1, 'mail' => $data['email'], 'name' => $data['first_name'] . ' ' . $data['last_name'], 'pass' => user_password()));
+				if (!$account) throw new Exception('');
+			} catch (Exception $e) {
+				$next = true;
+				$i = 0;
+				while ($next) {
+					$i++;
+					try {
+						$account = user_save(drupal_anonymous_user(), array('authname_ulogin' => 'ulogin_' . $data['network'] . '_' . $data['uid'], 'init' => 'ulogin_' . $data['network'] . '_' . $data['uid'], 'status' => 1, 'mail' => $data['email'], 'name' => $data['first_name'] . ' ' . $data['last_name'] . ' ' . $i, 'pass' => user_password()));
+						if (!$account) throw new Exception('');
+						$next = false;
+					} catch (Exception $e) {}
+				}					
+			}
+			user_set_authmaps($account, array("authname_ulogin" => 'ulogin_' . $data['network'] . '_' . $data['uid']));
+		}
+		$user = $account;
+		$form_state['uid'] = $account->uid;
+		user_login_submit(array(), $form_state);
+	}
+	drupal_goto();
+}

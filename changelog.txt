@@ -1,0 +1,4 @@
+Релиз drushop 2.0
+
+Изменил параметр в admin/settings/ckeditor/edit/Advanced 
+HTML Entities: нет

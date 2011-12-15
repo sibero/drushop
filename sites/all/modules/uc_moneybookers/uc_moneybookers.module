@@ -1,0 +1,1306 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Integrates various Moneybookers payment services with Ubercart!
+ *
+ * If you have not yet signed up for your Moneybookers account, please use 
+ * the following link:
+ *
+ * https://www.moneybookers.com/app/register.pl
+ */
+
+
+/*******************************************************************************
+ * Hook Functions (Drupal)
+ ******************************************************************************/
+
+/**
+ * Implementation of hook_menu().
+ */
+function uc_moneybookers_menu() {
+  // Callback functions for Website Payments.
+  // Return page after payment complete
+  $items['uc_moneybookers/wp/complete'] = array(
+    'title' => 'Moneybookers payment complete',
+    'page callback' => 'uc_moneybookers_payment_made',
+    'access callback' => 'uc_moneybookers_access',
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_moneybookers.inc',
+  );
+  // Return page after payment canceled
+  $items['uc_moneybookers/wp/cancel'] = array(
+    'title' => 'Moneybookers payment cancelled',
+    'page callback' => 'uc_moneybookers_payment_cancelled',
+    'access callback' => 'uc_moneybookers_access',
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_moneybookers.inc',
+  );
+  // Page to accept the notification from Moneybookers
+  $items['uc_moneybookers/wp/notification'] = array(
+    'title' => 'Moneybookers payment notification',
+    'page callback' => 'uc_moneybookers_notification',
+    'access callback' => 'uc_moneybookers_access',
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_moneybookers.inc',
+  );
+
+  return $items;
+}
+
+// Grant access to the open Moneybookers pathes
+function uc_moneybookers_access() {
+	return TRUE;
+}
+
+/**
+ * Implementation of hook_payment_method().
+ */
+function uc_moneybookers_payment_method() {
+  $path = base_path() . drupal_get_path('module', 'uc_moneybookers');
+  $title = variable_get('uc_moneybookers_method_title', t('Payment via Moneybookers eWallet:'));
+  $title .= '<br /><img src="'. $path .'/logos/ewallet.gif" style="position: relative; left: 2.5em;">';
+
+  $methods[] = array(
+    'id' => 'moneybookers',
+    'name' => t('Moneybookers eWallet'),
+    'title' => $title,
+    'review' => t('Moneybookers eWallet'),
+    'desc' => t('Redirect to Moneybookers to pay with all options of a Moneybookers  eWallet.'),
+    'callback' => 'uc_payment_method_moneybookers',
+    'weight' => -10,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title2 = variable_get('uc_moneybookers_cc_title', t('Payment via credit card:'));
+  $title2 .= '<br /><img src="'. $path .'/logos/ACC.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_cc',
+    'name' => t('Moneybookers Credit Card Payment'),
+    'title' => $title2,
+    'review' => t('Credit Card Payment'),
+    'desc' => t('Pay by credit card'),
+    'callback' => 'uc_payment_method_moneybookers_cc',
+    'weight' => -9,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title3 = variable_get('uc_moneybookers_sft_title', t('Payment via Sofortueberweisung:'));
+  $title3 .= '<br /><img src="'. $path .'/logos/sofort.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_sft',
+    'name' => t('Moneybookers Sofortueberweisung'),
+    'title' => $title3,
+    'review' => t('Sofortueberweisung'),
+    'desc' => t('Pay via Sofortueberweisung'),
+    'callback' => 'uc_payment_method_moneybookers_sft',
+    'weight' => -8,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title4 = variable_get('uc_moneybookers_did_title', t('Payment via Direct Debit:'));
+  $title4 .= '<br /><img src="'. $path .'/logos/ec.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_did',
+    'name' => t('Moneybookers Direct Debit'),
+    'title' => $title4,
+    'review' => t('Direct Debit'),
+    'desc' => t('Pay via Direct Debit'),
+    'callback' => 'uc_payment_method_moneybookers_did',
+    'weight' => -8,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title5 = variable_get('uc_moneybookers_gir_title', t('Payment via GiroPay:'));
+  $title5 .= '<br /><img src="'. $path .'/logos/giropay.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_gir',
+    'name' => t('Moneybookers GiroPay'),
+    'title' => $title5,
+    'review' => t('GiroPay'),
+    'desc' => t('Pay via GiroPay'),
+    'callback' => 'uc_payment_method_moneybookers_gir',
+    'weight' => -8,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title6 = variable_get('uc_moneybookers_eps_title', t('Payment via EPS:'));
+  $title6 .= '<br /><img src="'. $path .'/logos/eps.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_eps',
+    'name' => t('Moneybookers EPS'),
+    'title' => $title6,
+    'review' => t('EPS'),
+    'desc' => t('Pay via EPS'),
+    'callback' => 'uc_payment_method_moneybookers_eps',
+    'weight' => -8,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title7 = variable_get('uc_moneybookers_dnk_title', t('Payment via Dankort:'));
+  $title7 .= '<br /><img src="'. $path .'/logos/dankort.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_dnk',
+    'name' => t('Moneybookers Dankort'),
+    'title' => $title7,
+    'review' => t('Dankort'),
+    'desc' => t('Pay via Dankort'),
+    'callback' => 'uc_payment_method_moneybookers_dnk',
+    'weight' => -7,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title8 = variable_get('uc_moneybookers_ent_title', t('Payment via eNETS:'));
+  $title8 .= '<br /><img src="'. $path .'/logos/enets.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_ent',
+    'name' => t('Moneybookers eNETS'),
+    'title' => $title8,
+    'review' => t('eNETS'),
+    'desc' => t('Pay via eNETS'),
+    'callback' => 'uc_payment_method_moneybookers_ent',
+    'weight' => -7,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title9 = variable_get('uc_moneybookers_epy_title', t('Payment via ePay:'));
+  $title9 .= '<br /><img src="'. $path .'/logos/epay.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_epy',
+    'name' => t('Moneybookers ePay'),
+    'title' => $title9,
+    'review' => t('ePay'),
+    'desc' => t('Pay via ePay'),
+    'callback' => 'uc_payment_method_moneybookers_epy',
+    'weight' => -7,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title10 = variable_get('uc_moneybookers_idl_title', t('Payment via iDeal:'));
+  $title10 .= '<br /><img src="'. $path .'/logos/ideal.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_idl',
+    'name' => t('Moneybookers iDeal'),
+    'title' => $title10,
+    'review' => t('iDeal'),
+    'desc' => t('Pay via iDeal'),
+    'callback' => 'uc_payment_method_moneybookers_idl',
+    'weight' => -7,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title11 = variable_get('uc_moneybookers_so2_title', t('Payment via Nordea Solo:'));
+  $title11 .= '<br /><img src="'. $path .'/logos/nordea.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_so2',
+    'name' => t('Moneybookers Nordea Solo'),
+    'title' => $title11,
+    'review' => t('Nordea Solo'),
+    'desc' => t('Pay via Nordea Solo'),
+    'callback' => 'uc_payment_method_moneybookers_so2',
+    'weight' => -7,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title12 = variable_get('uc_moneybookers_ebt_title', t('Payment via Nordea Solo:'));
+  $title12 .= '<br /><img src="'. $path .'/logos/nordea.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_ebt',
+    'name' => t('Moneybookers Nordea Solo'),
+    'title' => $title12,
+    'review' => t('Nordea Solo'),
+    'desc' => t('Pay via Nordea Solo'),
+    'callback' => 'uc_payment_method_moneybookers_ebt',
+    'weight' => -6,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title13 = variable_get('uc_moneybookers_pli_title', t('Payment via Poli:'));
+  $title13 .= '<br /><img src="'. $path .'/logos/poli.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_pli',
+    'name' => t('Moneybookers Poli'),
+    'title' => $title13,
+    'review' => t('Poli'),
+    'desc' => t('Pay via Poli'),
+    'callback' => 'uc_payment_method_moneybookers_pli',
+    'weight' => -6,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title14 = variable_get('uc_moneybookers_psp_title', t('Payment via Poste Pay:'));
+  $title14 .= '<br /><img src="'. $path .'/logos/postepay.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_psp',
+    'name' => t('Moneybookers Poste Pay'),
+    'title' => $title14,
+    'review' => t('Poste Pay'),
+    'desc' => t('Pay via Poste Pay'),
+    'callback' => 'uc_payment_method_moneybookers_psp',
+    'weight' => -6,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title15 = variable_get('uc_moneybookers_pwy_title', t('Payment via Przelewy24:'));
+  $title15 .= '<br /><img src="'. $path .'/logos/p24.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_pwy',
+    'name' => t('Moneybookers Przelewy24'),
+    'title' => $title15,
+    'review' => t('Przelewy24'),
+    'desc' => t('Pay via Przelewy24'),
+    'callback' => 'uc_payment_method_moneybookers_pwy',
+    'weight' => -6,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title16 = variable_get('uc_moneybookers_vsd_title', t('Payment via Visa Delta:'));
+  $title16 .= '<br /><img src="'. $path .'/logos/visa.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_vsd',
+    'name' => t('Moneybookers Visa Delta'),
+    'title' => $title16,
+    'review' => t('Visa Delta'),
+    'desc' => t('Pay via Visa Delta'),
+    'callback' => 'uc_payment_method_moneybookers_vsd',
+    'weight' => -5,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title17 = variable_get('uc_moneybookers_mae_title', t('Payment via Maestro:'));
+  $title17 .= '<br /><img src="'. $path .'/logos/maestro.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_mae',
+    'name' => t('Moneybookers Maestro'),
+    'title' => $title17,
+    'review' => t('Maestro'),
+    'desc' => t('Pay via Maestro'),
+    'callback' => 'uc_payment_method_moneybookers_mae',
+    'weight' => -5,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title18 = variable_get('uc_moneybookers_slo_title', t('Payment via Solo:'));
+  $title18 .= '<br /><img src="'. $path .'/logos/solo.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_slo',
+    'name' => t('Moneybookers Solo'),
+    'title' => $title18,
+    'review' => t('Solo'),
+    'desc' => t('Pay via Solo'),
+    'callback' => 'uc_payment_method_moneybookers_slo',
+    'weight' => -5,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title19 = variable_get('uc_moneybookers_lsr_title', t('Payment via Laser:'));
+  $title19 .= '<br /><img src="'. $path .'/logos/laser.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_lsr',
+    'name' => t('Moneybookers Laser'),
+    'title' => $title19,
+    'review' => t('Laser'),
+    'desc' => t('Pay via Laser'),
+    'callback' => 'uc_payment_method_moneybookers_lsr',
+    'weight' => -5,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title20 = variable_get('uc_moneybookers_gcb_title', t('Payment via Carte Bleue:'));
+  $title20 .= '<br /><img src="'. $path .'/logos/cartebleue.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_gcb',
+    'name' => t('Moneybookers Carte Bleue'),
+    'title' => $title20,
+    'review' => t('Carte Bleue'),
+    'desc' => t('Pay via Carte Bleue'),
+    'callback' => 'uc_payment_method_moneybookers_gcb',
+    'weight' => -5,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title21 = variable_get('uc_moneybookers_csi_title', t('Payment via CartaSi:'));
+  $title21 .= '<br /><img src="'. $path .'/logos/cartasi.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_csi',
+    'name' => t('Moneybookers CartaSi'),
+    'title' => $title21,
+    'review' => t('CartaSi'),
+    'desc' => t('Pay via CartaSi'),
+    'callback' => 'uc_payment_method_moneybookers_csi',
+    'weight' => -5,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title21 = variable_get('uc_moneybookers_vse_title', t('Payment via Visa Electron:'));
+  $title21 .= '<br /><img src="'. $path .'/logos/visaelectron.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_vse',
+    'name' => t('Moneybookers Visa Electron'),
+    'title' => $title21,
+    'review' => t('Visa Electron'),
+    'desc' => t('Pay via Visa Electron'),
+    'callback' => 'uc_payment_method_moneybookers_vse',
+    'weight' => -5,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title22 = variable_get('uc_moneybookers_e6000_title', t('Payment via Euro6000:'));
+  $title22 .= '<br /><img src="'. $path .'/logos/euro6000.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_e6000',
+    'name' => t('Moneybookers Euro6000'),
+    'title' => $title22,
+    'review' => t('Euro6000'),
+    'desc' => t('Pay via Euro6000'),
+    'callback' => 'uc_payment_method_moneybookers_e6000',
+    'weight' => -5,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  $title23 = variable_get('uc_moneybookers_4b_title', t('Payment via 4B:'));
+  $title23 .= '<br /><img src="'. $path .'/logos/4b.gif" style="position: relative; left: 2.5em;">';
+  $methods[] = array(
+    'id' => 'moneybookers_4b',
+    'name' => t('Moneybookers 4B'),
+    'title' => $title23,
+    'review' => t('4B'),
+    'desc' => t('Pay via 4B'),
+    'callback' => 'uc_payment_method_moneybookers_4b',
+    'weight' => -5,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  return $methods;
+}
+/**
+ * Implementation of the payment method.
+ */
+function uc_payment_method_moneybookers($op, &$arg1) {
+  switch ($op) {
+
+/**
+ *	Prepare the setup form for the payment method moneybookers
+ */			
+    case 'settings':
+      $form['uc_moneybookers_linktext'] = array(
+        '#value' => t('To have access to the international payment of Moneybookers please register <a href="https://www.moneybookers.com/app/register.pl">here</a> for a free account, if you don\'t have one yet.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      $form['uc_moneybookers_sea'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Email address of shop account'),
+        '#description' => t('The email address of the shop account.'),
+        '#default_value' => variable_get('uc_moneybookers_sea', ''),
+        '#size' => 24,
+      );
+      $form['uc_moneybookers_vmail'] = array(
+        '#type' => 'submit',
+        '#value' => t('Validate Email'),
+        '#description' => t('Validate the email address of the shop account.'),
+        '#validate' => array('uc_moneybookers_vmail_submit'),
+        );
+      $form['uc_moneybookers_cid'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Moneybookers customer ID'),
+        '#description' => t('Your Moneybookers customer ID number.'),
+        '#default_value' => isset($form_state['values']['uc_moneybookers_cid']) ? $form_state['values']['uc_moneybookers_cid'] : variable_get('uc_moneybookers_cid', ''),
+        '#size' => 16,
+      );
+      $form['uc_moneybookers_hr1'] = array(
+        '#value' => '<hr/>',
+        '#prefix' => '<div class="moneybookers_hr">', 
+        '#suffix' => '</div>', 
+      );
+      $form['uc_moneybookers_shop_language'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Correspondence language with Moneybookers'),
+        '#description' => t('Which language would you prefer corresponding with Moneybookers'),
+        '#default_value' => variable_get('uc_moneybookers_shop_language', ''),
+        '#size' => 24,
+      );
+      $form['uc_moneybookers_activate_qc'] = array(
+        '#type' => 'submit',
+        '#value' => t('Activate Moneybookers Quick Checkout'),
+        '#description' => t('Activate Moneybookers Quick Checkout for the shop account.'),
+        '#validate' => array('uc_moneybookers_activate_qc_submit'),
+        );
+      $form['uc_moneybookers_infotext'] = array(
+        '#value' => '<strong>' . t('Moneybookers Quick Checkout') . '</strong>' . t(' enables you to take direct payments from credit cards, debit cards and over 60 other local payment options in over 200 countries as well as the Moneybookers eWallet.') . '<br/><br/><em>' . t('After aktivation Moneybookers will give you access to a new section in your Moneybookers account called "Merchant tools". Please choose a secret word (do not use your password for this) and enter it into the merchants tool section and below.') . '</em>',
+        '#prefix' => '<div class="moneybookers_infotext">', 
+        '#suffix' => '</div>', 
+      );
+      $form['uc_moneybookers_secret_word'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Secret word for order verification'),
+        '#description' => t('The secret word entered in the Moneybookers merchant tools.'),
+        '#default_value' => variable_get('uc_moneybookers_secret_word', ''),
+        '#size' => 16,
+      );
+      $form['uc_moneybookers_validate_sw'] = array(
+        '#type' => 'submit',
+        '#value' => t('Validate Secret Word'),
+        '#description' => t('Validate the secret word of the shop account.'),
+        '#validate' => array('uc_moneybookers_validate_sw_submit'),
+        );
+      $form['uc_moneybookers_hr2'] = array(
+        '#value' => '<hr/>',
+        '#prefix' => '<div class="moneybookers_hr">', 
+        '#suffix' => '</div>', 
+      );
+      $form['uc_moneybookers_infotext2'] = array(
+        '#value' => '<strong>' . t('Support:') . '</strong><br/>' . t('Do you have questions?') . '<br/>' . 
+          t('Contact Moneybookers on <a href="mailto:ecommerce@moneybookers.com">ecommerce@moneybookers.com</a> or by phone ') . '+44 (0) 870 383 0762',
+        '#prefix' => '<div class="moneybookers_infotext">', 
+        '#suffix' => '</div>', 
+      );
+
+      return $form;
+  }
+}
+
+/**
+ *	Setup the shop email check on Moneybookers
+ *	ensure the correct Customer ID shows up in the form
+ *	(this requires a hook_form_alter, see below)
+ */
+function uc_moneybookers_vmail_submit($form, &$form_state) {
+
+  $form_state['rebuild'] = TRUE;
+  $url = 'https://www.moneybookers.com/app/email_check.pl';
+  $email = $form_state['values']['uc_moneybookers_sea'];
+  $data = 'email=' . $email . '&';
+  $data .= 'cust_id=4444597&password=098f6bcd4621d373cade4e832627b4f6';
+  $response = drupal_http_request($url, array(), 'POST', $data);
+	
+  $check = substr($response->data, 0, 2);
+  if ($check == 'OK') {
+    $cust_id = substr($response->data, 3);
+    $form_state['values']['uc_moneybookers_cid'] = $cust_id;
+    variable_set('uc_moneybookers_cid', $cust_id);
+    variable_set('uc_moneybookers_sea', $email);
+  }
+  else {
+    drupal_set_message(t('Wrong Email address specified'), 'error', FALSE);
+  }
+
+}
+
+/**
+ *	Once shop email and Customer ID are checked prepare the 
+ *	Quick Checkout activation (via automatic email)
+ */
+function uc_moneybookers_activate_qc_submit($form, &$form_state) {
+	global $base_url, $language;
+	
+//	Check prerequisites	
+  $missing = FALSE;
+  $email = variable_get('uc_store_email','');
+  if($email == '') $missing = TRUE;
+  $store = variable_get('uc_store_name','');
+  if($store == '') $missing = TRUE;
+  $owner = variable_get('uc_store_owner','');
+  if($owner == '') $missing = TRUE;
+  if($missing) {
+    drupal_set_message(t('Name, owner or email of shop not yet configured! These values are required for this interface. Please configure in store settings.'), 'error', FALSE);
+    return;
+  }
+
+  $form_state['rebuild'] = TRUE;
+  
+//	Prepare email
+  $mailto = "ecommerce@moneybookers.com";
+  $subject = "Drupal: Please activate Quick Checkout";
+  $header = 'From: ' . $email . "\n" .
+    'Reply-To: ' . $email . "\n" .
+    'X-Mailer: PHP/' . phpversion();
+  $body = $store . "\n";
+  $body .= $owner ."\n";
+  $body .= $form_state['values']['uc_moneybookers_sea'] ."\n";
+  $body .= $form_state['values']['uc_moneybookers_cid'] ."\n";
+  $body .= $base_url . "\n";
+  $body .= $form_state['values']['uc_moneybookers_shop_language'] ."\n";
+  variable_set('uc_moneybookers_shop_language', $form_state['values']['uc_moneybookers_shop_language']);
+
+// Notify user
+  if (mail($mailto, $subject, $body, $header)) {
+    drupal_set_message(t('You have sent a request for activation to Moneybookers.') . ' <strong>' . 
+      t('Please be aware that the verification process to use Moneybookers Quick Checkout could take up to 72 hours.') . '</strong> ' . t('You will be contacted by Moneybookers when the verification process has been completed.'), 'status', FALSE);
+  }
+}
+
+function uc_moneybookers_validate_sw_submit($form, &$form_state) {
+
+  $form_state['rebuild'] = TRUE;
+  $url = 'https://www.moneybookers.com/app/secret_word_check.pl';
+  $email = $form_state['values']['uc_moneybookers_sea'];
+  if (empty($form_state['values']['uc_moneybookers_secret_word'])) {
+    drupal_set_message(t("You must enter the shops secret word"), 'error', FALSE);
+    return;
+  }
+  variable_set('uc_moneybookers_secret_word', $form_state['values']['uc_moneybookers_secret_word']);
+  $sec1 = md5('g2h23m');	// defined Secret word for Drupal at Moneybookers
+  $sec2 = md5($form_state['values']['uc_moneybookers_secret_word']);
+
+  $secret = md5($sec2 . $sec2);
+  $data = 'email=' . $email . '&';
+  $data .= 'secret=' . $secret . '&';
+  $data .= 'cust_id=' . $form_state['values']['uc_moneybookers_cid'];
+
+  $response = drupal_http_request($url, array(), 'POST', $data);
+
+  $check = substr($response->data, 0, 2);
+  if ($check == 'OK') {	
+    drupal_set_message(t('Secret word successfully checked!<br>You can now save the configuration!'), 'status', FALSE);
+  }
+  else {
+    drupal_set_message(t('Secret word not verified! Check failed!'), 'error', FALSE);
+  }
+
+}
+
+function uc_payment_method_moneybookers_cc($op, &$arg1) {
+  switch ($op) {
+/**
+ *	Prepare the setup form for the payment method moneybookers_cc
+ */
+    case 'settings':
+      $form['uc_moneybookers_cc_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_sft($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      $countries = array(276, 56, 250, 528, 756, 826, 40);     // Germany, Belgium, France, Netherlands, Swizerland, UK, Austria
+      if ( in_array(intval( $_POST['panes']['billing']['billing_country'] ), $countries) ) return TRUE;
+      else {
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      }
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_sft
+ */
+    case 'settings':
+      $form['uc_moneybookers_sft_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_did($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 276) {       //Germany
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_did
+ */
+    case 'settings':
+      $form['uc_moneybookers_did_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_gir($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 276) {       //Germany
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_gir
+ */
+    case 'settings':
+      $form['uc_moneybookers_did_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_eps($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 40) {       //  Austria
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_eps
+ */
+    case 'settings':
+      $form['uc_moneybookers_eps_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_dnk($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 208) {       //  Denmark
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_dnk
+ */
+    case 'settings':
+      $form['uc_moneybookers_dnk_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_ent($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 702) {       //  Singapore
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+       } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_ent
+ */
+    case 'settings':
+      $form['uc_moneybookers_ent_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_epy($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 100) {       //  Bulgaria
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_epy
+ */
+    case 'settings':
+      $form['uc_moneybookers_epy_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+    }
+}
+
+function uc_payment_method_moneybookers_idl($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 528) {       //  Netherlands
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+       } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_idl
+ */
+    case 'settings':
+      $form['uc_moneybookers_idl_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+function uc_payment_method_moneybookers_so2($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 246) {       //  Finland
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_so2
+ */
+    case 'settings':
+      $form['uc_moneybookers_so2_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_ebt($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 752) {       //  Sweden
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_ebt
+ */
+    case 'settings':
+      $form['uc_moneybookers_ebt_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_pli($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      $countries = array(36, 554, 810);     // Australia, New Zealand, South Africa
+      if ( in_array(intval( $_POST['panes']['billing']['billing_country'] ), $countries) ) return TRUE;
+      else {
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_pli
+ */
+    case 'settings':
+      $form['uc_moneybookers_pli_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_psp($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 380) {       //  Italy
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_psp
+ */
+    case 'settings':
+      $form['uc_moneybookers_psp_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_pwy($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 616) {       //  Poland
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_pwy
+ */
+    case 'settings':
+      $form['uc_moneybookers_pwy_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_vsd($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 826) {       //  UK
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_vsd
+ */
+    case 'settings':
+      $form['uc_moneybookers_vsd_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_vse($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      $countries = array(380, 724, 826);     // Italy, Spain, UK
+      if ( in_array(intval( $_POST['panes']['billing']['billing_country'] ), $countries) ) return TRUE;
+      else {
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_vse
+ */
+    case 'settings':
+      $form['uc_moneybookers_vse_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_mae($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      $countries = array(826, 724, 40);     // UK, Spain, Austria
+      if ( in_array(intval( $_POST['panes']['billing']['billing_country'] ), $countries) ) return TRUE;
+      else {
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+    } 
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_mae
+ */
+    case 'settings':
+      $form['uc_moneybookers_mae_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_slo($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 826) {       //  UK
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_slo
+ */			
+    case 'settings':
+      $form['uc_moneybookers_slo_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_lsr($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 372) {       //  Ireland
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_lsr
+ */			
+    case 'settings':
+      $form['uc_moneybookers_lsr_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_gcb($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 250) {       //  France
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_gcb
+ */			
+    case 'settings':
+      $form['uc_moneybookers_gcb_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_csi($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 380) {       //  Italy
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_csi
+ */			
+    case 'settings':
+      $form['uc_moneybookers_csi_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_e6000($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 724) {       //  Spain
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_e6000
+ */			
+    case 'settings':
+      $form['uc_moneybookers_e6000_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+function uc_payment_method_moneybookers_4b($op, &$arg1) {
+  switch ($op) {
+
+    case 'cart-process':
+      if (intval( $_POST['panes']['billing']['billing_country'] ) != 724) {       //  Spain
+        drupal_set_message(t('Payment method not valid for your country. Please choose another one!'), 'error', FALSE);
+        return FALSE;
+      } 
+      else return TRUE;
+
+/**
+ *	Prepare the setup form for the payment method moneybookers_4b
+ */			
+    case 'settings':
+      $form['uc_moneybookers_4b_infotext'] = array(
+        '#value' => t('The Moneybookers eWallet payment method must be activated and configured as a prerequisit.'),
+        '#prefix' => '<div class="moneybookers_link">', 
+        '#suffix' => '</div>', 
+      );
+      return $form;
+  }
+}
+
+/*
+ *	Hook form alter for 2 forms:
+ *	- uc_cart_checkout_review_form			Review of order before transfer to moneybookers
+ *	- uc_payment_methods_form						Admin interface to setup moneybooker data
+ */
+function uc_moneybookers_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'uc_cart_checkout_review_form' && ($order_id = intval($_SESSION['cart_order'])) > 0) {
+  $order = uc_order_load($order_id);
+
+    if (substr($order->payment_method, 0, 12) == 'moneybookers') {
+      unset($form['submit']);
+      $form['#prefix'] = '<table style="display: inline; padding-top: 1em;"><tr><td>';
+      $form['#suffix'] = '</td><td>'. drupal_get_form('uc_moneybookers_prepare', $order) .'</td></tr></table>';
+    }
+  }
+  
+  if ($form_id == 'uc_cart_checkout_form') {
+	  drupal_add_js (drupal_get_path('module', 'uc_moneybookers') . '/CheckPaymentOptions.js', 'module');
+//    $form['#action'] = url('cart/checkout/wp/review');  
+  }
+
+//	Modification on the payment method form:
+//	- build a multipage form appearance
+//	- don't collapse the moneybookers section while doing the checks
+  if ($form_id == 'uc_payment_methods_form') {	
+    if (isset($form_state['values']['uc_moneybookers_cid'])) {
+      $form['method_moneybookers']['uc_moneybookers_cid']['#default_value'] = $form_state['values']['uc_moneybookers_cid'];
+      $form['method_moneybookers']['#collapsed'] = 0;
+    }
+  }
+}
+
+function uc_moneybookers_prepare($form_state, $order) {
+	global $user;
+	
+
+/*
+ *	first prepare the data we need for moneybookers
+ */
+	$country = uc_get_country_data(array('country_id' => $order->billing_country));
+  if ($country === FALSE) {
+    $country = array(0 => array('country_iso_code_3' => 'GER'));
+  }
+
+  $context = array(
+    'revision' => 'formatted-original',
+    'location' => 'moneybookers-form',
+  );
+  $options = array(
+    'sign' => FALSE,
+    'dec' => ',',
+    'thou' => FALSE,
+  );
+
+  $data = array(
+//	---------------------------------		
+//	------ Merchant Details ---------		
+    'pay_to_email' => variable_get('uc_moneybookers_sea', ''),
+    'recipient_description' => variable_get('uc_store_name',''),
+    'transaction_id' => $order -> order_id,
+    'return_url' => url('uc_moneybookers/wp/complete', array('absolute' => TRUE)),
+    'return_url_text' => 'Return to ' . variable_get('uc_store_name',''),
+    'cancel_url' => url('uc_moneybookers/wp/cancel', array('absolute' => TRUE)),
+    'status_url' => url('uc_moneybookers/wp/notification', array('absolute' => TRUE)),
+//    'status_url2' => url('mailto://'.variable_get('uc_moneybookers_sea', '')),
+    'language' => ($user->country_iso_code_2 != '') ? $user->country_iso_code_2 : 'DE',
+    'hide_login' => '0',
+    'merchant_fields' => 'referring_platform',
+    'referring_platform' => 'Dr4p1l',
+//	---------------------------------		
+//	------ Customer Details ---------		
+    'pay_from_email' => $order -> primary_email,
+//    'title' => '',
+    'firstname' => $order->billing_first_name,
+    'lastname' => $order->billing_last_name,
+//    date_of_birth' => 'ddmmyyyy',  // must be setup 
+    'address' => $order->billing_street1,	// street
+    'address2' => $order->billing_street2,	// town
+    'phone_number' => $order->billing_phone,		//phone
+    'postal_code' => $order->billing_postal_code, //	zip
+    'city' => $order->billing_city,	//	city
+//    'state' => $order->billing_last_name,	//	state
+    'country' => ($country[0]['country_iso_code_3'] != '') ? $country[0]['country_iso_code_3'] : 'DEU',	//	country
+//	---------------------------------		
+//	------ Payment Details ----------		
+    'amount' => $order->order_total,
+    'currency' => ($order->currency['sale_currency'] != '') ? $order->currency['sale_currency'] : 'EUR',
+  );
+	
+/*
+ *	Setup special handling for further amount details if it is found in the order
+ */
+  if (isset($order -> amount_block)) {
+    if(isset($order -> amount_block[0]) && $order -> amount_block[0] != '') {
+      $data['amount2_description'] = $order -> amount_block[0];
+      $data['amount2'] = $order -> amount_block[1];
+    }
+    if(isset($order -> amount_block[2]) && $order -> amount_block[2] != '') {
+      $data['amount3_description'] = $order -> amount_block[2];
+      $data['amount3'] = $order -> amount_block[3];
+    }
+    if(isset($order -> amount_block[4]) && $order -> amount_block[4] != '') {
+      $data['amount4_description'] = $order -> amount_block[4];
+      $data['amount4'] = $order -> amount_block[5];
+    }
+  }
+/*
+ *	Setup special handling for further detail descriptions if it is found in the order
+ *	otherwise use default setting for detail1_description and detail1_text
+ */
+  if (isset($order -> detail_block)) {
+    if(isset($order -> detail_block[0]) && $order -> detail_block[0] != '') {
+      $data['detail1_description'] = $order -> detail_block[0];
+      $data['detail1_text'] = $order -> detail_block[1];
+    }
+    if(isset($order -> detail_block[2]) && $order -> detail_block[2] != '') {
+      $data['detail2_description'] = $order -> detail_block[2];
+      $data['detail2_text'] = $order -> detail_block[3];
+    }
+    if(isset($order -> detail_block[4]) && $order -> detail_block[4] != '') {
+      $data['detail3_description'] = $order -> detail_block[4];
+      $data['detail3_text'] = $order -> detail_block[5];
+    }
+    if(isset($order -> detail_block[6]) && $order -> detail_block[6] != '') {
+      $data['detail4_description'] = $order -> detail_block[6];
+      $data['detail4_text'] = $order -> detail_block[7];
+    }
+    if(isset($order -> detail_block[8]) && $order -> detail_block[8] != '') {
+      $data['detail5_description'] = $order -> detail_block[8];
+      $data['detail5_text'] = $order -> detail_block[9];
+    }
+  } else {
+    $data['detail1_description'] = $order->products[0]->title;
+    $data['detail1_text'] = $order->products[0]->model;
+  }
+
+/*
+ *	Set the parameter fo the various payment methods
+ *	if possible omit login
+ */
+  if ($order -> payment_method != 'moneybookers')      $data['hide_login'] = '1';
+
+  if ($order -> payment_method == 'moneybookers_cc')   $data['payment_methods'] = 'ACC';
+  if ($order -> payment_method == 'moneybookers_sft')  $data['payment_methods'] = 'SFT';
+  if ($order -> payment_method == 'moneybookers_did')  $data['payment_methods'] = 'DID';
+  if ($order -> payment_method == 'moneybookers_gir')  $data['payment_methods'] = 'GIR';
+  if ($order -> payment_method == 'moneybookers_eps')  $data['payment_methods'] = 'EPS';
+  if ($order -> payment_method == 'moneybookers_dnk')  $data['payment_methods'] = 'DNK';
+  if ($order -> payment_method == 'moneybookers_ent')  $data['payment_methods'] = 'ENT';
+  if ($order -> payment_method == 'moneybookers_epy')  $data['payment_methods'] = 'EPY';
+  if ($order -> payment_method == 'moneybookers_idl')  $data['payment_methods'] = 'IDL';
+  if ($order -> payment_method == 'moneybookers_so2')  $data['payment_methods'] = 'SO2';
+  if ($order -> payment_method == 'moneybookers_ebt')  $data['payment_methods'] = 'EBT';
+  if ($order -> payment_method == 'moneybookers_pli')  $data['payment_methods'] = 'PLI';
+  if ($order -> payment_method == 'moneybookers_psp')  $data['payment_methods'] = 'PSP';
+  if ($order -> payment_method == 'moneybookers_pwy')  $data['payment_methods'] = 'PWY';
+  if ($order -> payment_method == 'moneybookers_vsd')  $data['payment_methods'] = 'VSD';
+  if ($order -> payment_method == 'moneybookers_vse')  $data['payment_methods'] = 'VSE';
+  if ($order -> payment_method == 'moneybookers_mae')  $data['payment_methods'] = 'MAE';
+  if ($order -> payment_method == 'moneybookers_slo')  $data['payment_methods'] = 'SLO';
+  if ($order -> payment_method == 'moneybookers_lsr')  $data['payment_methods'] = 'LSR';
+  if ($order -> payment_method == 'moneybookers_gcb')  $data['payment_methods'] = 'GCB';
+  if ($order -> payment_method == 'moneybookers_csi')  $data['payment_methods'] = 'CSI';
+  if ($order -> payment_method == 'moneybookers_e6000')  $data['payment_methods'] = 'VSA,MSC';
+  if ($order -> payment_method == 'moneybookers_4b')  $data['payment_methods'] = 'VSA,MSC';
+
+  foreach ($data as $name => $value) {
+    $form[$name] = array('#type' => 'hidden', '#value' => $value);
+  }
+
+/*
+ *	Set the action of the submit button to the Moneybookers Payment
+ */
+  $form['#action'] = 'https://www.moneybookers.com/app/payment.pl';
+
+  $form['submit'] = array(
+   	'#type' => 'submit',
+   	'#value' => t('Submit order'),
+  );
+
+  return $form;
+
+}
+
+/*
+ *	My tool to debug and develop the module software  :-)
+ *	This will work on Mac OSX and other Unixes
+ */
+function wla_logging($text) {
+	$fp = fopen("/tmp/wla_log", "a+");
+//	chmod ("/tmp/wla_log", 0777);				//	importand to read and clean with an editor
+	fputs($fp, $text, strlen($text));
+	fclose($fp);
+}

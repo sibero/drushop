@@ -1,0 +1,12 @@
+; $Id: uc_interkassa.info,v 1.1 2009/10/19 12:43:40 duke Exp $
+name = "Interkassa Payment Gateway"
+description = "Process payments using Interkassa service."
+dependencies[] = uc_payment
+package = Ubercart - payment
+core = 6.x
+; Information added by drupal.org packaging script on 2009-10-19
+version = "6.x-1.0"
+core = "6.x"
+project = "uc_interkassa"
+datestamp = "1255956709"
+

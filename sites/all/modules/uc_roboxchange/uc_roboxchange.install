@@ -1,0 +1,55 @@
+<?php
+// $Id: uc_roboxchange.install,v 1.2.2.1 2009/05/03 13:47:11 gor Exp $
+
+/**
+ * @file
+ * RoboXchange payment gateway install file.
+ *
+ * This module installs a uc_roboxchange module
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function uc_roboxchange_schema() {
+  $schema['uc_roboxchange_transaction'] = array(
+    'description' => t('TODO'),
+    'fields' => array(
+      'txnid' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'unsigned' => 1,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'amount' => array(
+        'description' => t('TODO'),
+        'type' => 'numeric',
+        'precision' => 6,
+        'scale' => 2,
+        'not null' => TRUE,
+        'default' => 0.00,
+      ),
+      'description' => array(
+        'description' => t('TODO'),
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('txnid'),
+  );
+
+  return $schema;
+}
+
+function uc_roboxchange_install() {
+  // Create tables.
+  drupal_install_schema('uc_roboxchange');
+  drupal_set_message(t('Ubercart: RoboXchange tables have been created.'));
+}
+
+function uc_roboxchange_uninstall() {
+  // Remove tables.
+  drupal_uninstall_schema('uc_roboxchange');
+}
+

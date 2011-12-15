@@ -1,0 +1,13 @@
+name = Flag Limit
+description = Limits the number of flagged items at any time.
+core = 6.x
+version = 6.x-1.0
+dependencies[] = flag
+package = Flags
+
+; Information added by drupal.org packaging script on 2011-07-02
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "flag_limit"
+datestamp = "1309565686"
+

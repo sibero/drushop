@@ -1,0 +1,330 @@
+<?php
+// $Id: uc_webmoneygate.module,v 1.2 2010/09/21 10:15:15 glu2006 Exp $
+
+/**
+ * @file
+ * Process payments using Webmoney Merchant Interface. */
+function uc_webmoneygate_menu() {
+  $items['cart/webmoney/result'] = array(
+    'title' => 'Result',
+    'page callback' => 'uc_webmoneygate_result',
+    'access arguments' => array('access content'),  
+    'type' => MENU_CALLBACK,
+  );
+  $items['cart/webmoney/success'] = array(
+    'title' => 'Congratulations',
+    'page callback' => 'uc_webmoneygate_success',
+    'access arguments' => array('access content'),  
+    'type' => MENU_CALLBACK,
+  );
+  $items['cart/webmoney/fail'] = array(
+    'title' => 'Sorry',
+    'page callback' => 'uc_webmoneygate_fail',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );    
+  return $items;
+}
+
+function uc_webmoneygate_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'uc_cart_checkout_form') {
+    $form['#submit'][] = 'uc_webmoneygate_checkout_submit'; 
+  }
+  if ($form_id == 'uc_cart_checkout_review_form' && ($order_id = intval($_SESSION['cart_order'])) > 0) {
+    $order = uc_order_load($order_id);
+    if ($order->payment_method == 'webmoney') {
+      unset($form['submit']);
+      $form['#prefix'] = '<table id="uc-webmoney-checkout-review-table"><tr><td>';
+      $form['#suffix'] = '</td><td>'. str_replace('accept-charset="UTF-8"', 'accept-charset="cp1251"', drupal_get_form('uc_webmoneygate_form', $order)) .'</td></tr></table>';
+    }
+  }
+}
+
+function uc_webmoneygate_payment_method() {
+  $path = base_path() . drupal_get_path('module', 'uc_webmoneygate');
+  $methods[] = array(
+    'id' => 'webmoney',
+    'name' => t('WebMoney Merchant Interface'),
+    'title' => t('WebMoney Merchant Interface') .'<br /><img src="'. $path .'/webmoney.gif" style="position: relative; left: 2.5em;">',
+    'desc' => t('Pay with Web Merchant Interface.'),
+    'callback' => 'uc_webmoneygate_method_card',
+    'weight' => 6,
+    'checkout' => TRUE,
+    'backend' => TRUE,
+  );
+  return $methods;
+}
+
+function uc_webmoneygate_method_card($op, &$arg1) {
+  switch ($op) {
+    case 'cart-details':
+      $details = drupal_render(uc_webmoneygate_currency());
+      return $details;
+    case 'cart-review':
+      $data = uc_webmoneygate_get_new_total($arg1->order_total, $_SESSION['wmcurrency']);
+      if ($arg1->order_total != $data['LMI_PAYMENT_AMOUNT']) {
+        $currency = uc_webmoneygate_get_currency_array();
+        $review[] = array(
+          'title' => t('You are paying to'),
+          'data' => $_SESSION['wmcurrency'],
+        );
+        $review[] = array(
+          'title' => t('New order total'),
+          'data' => $data['LMI_PAYMENT_AMOUNT'] .' '. $currency[$_SESSION['wmcurrency']], 
+        );
+      }
+      unset($_SESSION['wmcurrency']);
+      return $review;
+    case 'settings':
+      //SHOPNAME
+      $form['wmshopname'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Shop name'),
+        '#default_value' => variable_get('wmshopname', ''),
+        '#description' => t('The name of your shop.')
+      );
+      //MERCHANTNUMBER
+      $form['wmoney_id'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Merchant ID'),
+        '#default_value' => variable_get('wmoney_id', ''),
+        '#description' => t('Enter WMID which you got after registration.')
+      );
+      //MERCHANTPASSWD
+      $form['wmoney_pass'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Merchant secret key'),
+        '#default_value' => variable_get('wmoney_pass', ''),
+        '#description' => t('Enter the merchant secret key. It is only needed when working through HTTPS.')
+      );      
+      //$ORDERDESCRIPTION
+      $form['wmoney_desc'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Payment details'),
+        '#default_value' => variable_get('wmoney_desc', ''),
+        '#description' => t('Enter general details to describe all payments done on your site.')
+      );
+      //$LMI_PAYEE_PURSE
+      $form['zmoney'] = array(
+        '#type' => 'textfield',
+        '#title' => t('WMZ'),
+        '#description' => t('Enter your WMZ wallet number.'),
+        '#default_value' => variable_get('zmoney', ''),
+      );
+      $form['emoney'] = array(
+        '#type' => 'textfield',
+        '#title' => t('WME'),
+        '#description' => t('Enter your WME wallet number.'),
+        '#default_value' => variable_get('emoney', ''),
+      );
+      $form['rmoney'] = array(
+        '#type' => 'textfield',
+        '#title' => t('WMR'),
+        '#description' => t('Enter your WMR wallet number.'),
+        '#default_value' => variable_get('rmoney', ''),
+      );      
+      $form['umoney'] = array(
+        '#type' => 'textfield',
+        '#title' => t('WMU'),
+        '#description' => t('Enter your WMU wallet number.'),
+        '#default_value' => variable_get('umoney', ''),
+      );
+      // end $LMI_PAYEE_PURSE
+      $form['currency'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Currency rates'),
+        '#description' => t('Enter rates to convert order totals from the store basic currency to particular WebMoney currency.'),
+      );
+      $form['currency']['currency_USD'] = array(
+        '#type' => 'textfield',
+        '#title' => t('WMZ'),
+        '#default_value' => variable_get('currency_USD', 0),
+      );
+      $form['currency']['currency_EUR'] = array(
+        '#type' => 'textfield',
+        '#title' => t('WME'),
+        '#default_value' => variable_get('currency_EUR', 0),
+      );
+      $form['currency']['currency_RUR'] = array(
+        '#type' => 'textfield',
+        '#title' => t('WMR'),
+        '#default_value' => variable_get('currency_RUR', 0),
+      );
+      $form['currency']['currency_UAH'] = array(
+        '#type' => 'textfield',
+        '#title' => t('WMU'),
+        '#default_value' => variable_get('currency_UAH', 0),
+      );
+      $form['wmmoney_order_status'] = array(
+        '#type' => 'select',
+        '#title' => t('Order status after payment'),
+        '#description' => t('This status will be assigned to an order upon successfull completion.'),
+        '#options' => uc_webmoneygate_status_list(),
+        '#default_value' => variable_get('wmmoney_order_status', 'pending'),
+      );
+      $form['wmoney_mode'] = array(
+        '#type' => 'select',
+        '#title' => t('Transaction mode'),
+        '#description' => t('Transaction mode used for processing orders.'),
+        '#options' => array(
+          NULL => t('Live'),
+          '0'  => t('Test success'),
+          '1'  => t('Test failure'),
+          '2'  => t('Test 80% success, 20% failure'),
+        ),
+        '#default_value' => variable_get('wmoney_mode', '0')
+      );
+      $form['wmoney_checkout_button'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Order review submit button text'),
+        '#description' => t('Provide WM specific text for the submit button on the order review page.'),
+        '#default_value' => variable_get('wmoney_checkout_button', t('Submit Order')),
+      );
+      $form['uc_webmoneygate_fail_message'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Description'),
+        '#description' => t('Enter your description for fail page'),
+        '#default_value' => variable_get('uc_webmoneygate_fail_message', ''),
+        '#rows' => 5,
+      );
+      $form['uc_webmoneygate_fail_message_format'] = filter_form(variable_get('uc_webmoneygate_fail_message_format', 3), NULL, array('uc_webmoneygate_fail_message_format'));      
+  }
+  return $form;
+}
+
+function uc_webmoneygate_status_list() {
+  $datas = uc_order_status_list();
+  foreach ($datas as $data) {
+    $status[$data['id']] = $data['title'];
+  }
+  return $status;
+}
+function uc_webmoneygate_checkout_submit($form, &$form_state) {
+  $_SESSION['wmcurrency'] = $_POST['wmcurrency']; 
+}
+
+function uc_webmoneygate_form($form_state, $order = NULL) {
+  $wmoney_mode = variable_get('wmoney_mode', '0');
+  $data = uc_webmoneygate_get_data($order, $wmoney_mode, $_SESSION['wmcurrency']);
+  $form = array(
+    '#id' => 'checkout',
+    '#name' => 'checkout',
+    '#method' => 'post',
+    '#action' => 'https://merchant.webmoney.ru/lmi/payment.asp',
+  );
+  if (!empty($data) && !$data['message']) {
+    foreach ($data as $name => $value) {
+         $form[$name] = array('#type' => 'hidden', '#value' => $value);
+    }
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => variable_get('wmoney_checkout_button', t('Submit Order')),
+    );
+  }
+  else {
+    drupal_set_message(t('Technical problem on this service please change other payment method or pay later'), 'error');
+  }
+  return $form;
+}
+
+function uc_webmoneygate_currency() {
+  $currency = uc_webmoneygate_get_currency_array();
+  $form['currency'] = array(
+    '#type' => 'select',
+    '#title' => t('Select WM currency'),
+    '#options' => $currency,
+    '#required' => TRUE,
+    '#default_value' => 0,
+    '#name' => 'wmcurrency',
+  );
+  return $form;
+}
+
+function uc_webmoneygate_get_currency_array() {
+  if (variable_get('zmoney', '')) $currency[variable_get('zmoney', '')] = 'WMZ'; 
+  if (variable_get('emoney', '')) $currency[variable_get('emoney', '')] = 'WME';
+  if (variable_get('umoney', '')) $currency[variable_get('umoney', '')] = 'WMU';
+  if (variable_get('rmoney', '')) $currency[variable_get('rmoney', '')] = 'WMR';
+  return $currency;
+}
+
+function uc_webmoneygate_get_data($order, $mode = NULL, $currency = '') {
+  $data = uc_webmoneygate_get_new_total($order->order_total, $currency);
+  if (!$data['LMI_PAYEE_PURSE'] || !$data['LMI_PAYMENT_AMOUNT']) $data['message'] = drupal_set_message(t('This currency is not supported, please select other payment method'), 'error');
+  $data['LMI_SIM_MODE'] = $mode;
+  $data['LMI_PAYMENT_NO'] = $order->order_id;
+  $data['LMI_PAYMENT_DESC'] = variable_get('wmoney_desc', '');
+  variable_set($order->order_id .'_control_summ',  $data['LMI_PAYMENT_AMOUNT']);
+  return $data;
+}
+
+function uc_webmoneygate_get_new_total($total = 0, $currency = '') {
+  $curr_codes = array(
+    'UAH' => variable_get('umoney', ''),
+    'USD' => variable_get('zmoney', ''),
+    'EUR' => variable_get('emoney', ''),
+    'RUR' => variable_get('rmoney', ''),
+  );
+  $curr_code = variable_get('uc_currency_code', '');
+  foreach ($curr_codes as $key => $code) {
+    if ($curr_codes[$curr_code] == $currency) {
+      $data['LMI_PAYEE_PURSE'] = $currency;
+      $data['LMI_PAYMENT_AMOUNT'] = $total;
+    }
+    elseif ($code == $currency && variable_get('currency_'. $key, 0) != '0') {
+      $data['LMI_PAYEE_PURSE'] = $currency;
+      $data['LMI_PAYMENT_AMOUNT'] = round($total * variable_get('currency_'. $key, 0), 2);
+    }
+  }
+  return $data;
+}
+
+function uc_webmoneygate_success() {
+  $output = '';
+  if ($_REQUEST['LMI_PAYMENT_NO'] && $_REQUEST['LMI_SYS_INVS_NO'] && $_REQUEST['LMI_SYS_TRANS_NO'] && $_REQUEST['LMI_SYS_TRANS_DATE'] && variable_get('wmunic_payment_'. $_POST['LMI_PAYMENT_NO'], '') == 'success') {
+    $order = uc_order_load($_REQUEST['LMI_PAYMENT_NO']);
+    if ($order === FALSE || uc_order_status_data($order->order_status, 'state') != 'in_checkout') {
+      return t('An error occurred during payment. Please contact us to ensure your order has been submitted.');
+    }
+    drupal_set_message(t('Congratulations! You payment is finished.'));
+    drupal_set_message(t('Order was payed through Webmoney Merchant Interface @trans, @date', array('@trans' => $_REQUEST['LMI_SYS_TRANS_NO'], '@date' => $_REQUEST['LMI_SYS_TRANS_DATE'])));
+    $output .= uc_cart_complete_sale($order);
+    uc_order_update_status($_REQUEST['LMI_PAYMENT_NO'], variable_get('wmmoney_order_status', 'pending'));
+    uc_order_comment_save($order->order_id, 0, t('Order was payed through Webmoney Merchant Interface @trans, @date', array('@trans' => $_REQUEST['LMI_SYS_TRANS_NO'], '@date' => $_REQUEST['LMI_SYS_TRANS_DATE'])) , 'admin');
+  }
+  else {
+    drupal_set_title(t('Payment failed!'));
+    drupal_set_message(t('An error occurred during payment. Please contact us to ensure your order has been submitted.'), 'error');
+  }
+  variable_del('wmunic_payment_'. $_POST['LMI_PAYMENT_NO']);
+  variable_del($_POST['LMI_PAYMENT_NO'] .'_control_summ');
+  return $output;
+}
+
+function uc_webmoneygate_fail() {
+  $output = '';
+  drupal_set_message(t('Payment failed!'), 'error');
+  $output .= variable_get('uc_webmoneygate_fail_message', '');
+  variable_del('wmunic_payment_'. $_POST['LMI_PAYMENT_NO']);
+  return $output;
+}
+
+function uc_webmoneygate_result() {
+  if (isset($_POST['LMI_PREREQUEST']) && $_POST['LMI_PREREQUEST'] == 1) {
+    print 'YES';
+    exit;
+  }
+  else {
+    if (uc_webmoneygate_md5($_POST) == $_POST['LMI_HASH'] && $_POST['LMI_PAYMENT_AMOUNT'] == variable_get($_POST['LMI_PAYMENT_NO'] .'_control_summ', 0)) {
+      variable_set('wmunic_payment_'. $_POST['LMI_PAYMENT_NO'], 'success');    
+    }
+    else {
+      variable_set('wmunic_payment_'. $_POST['LMI_PAYMENT_NO'], 'error');    
+    }
+  }
+}
+
+function uc_webmoneygate_md5($rform = NULL) {
+  $str = strtoupper(md5($rform['LMI_PAYEE_PURSE'] . $rform['LMI_PAYMENT_AMOUNT'] . $rform['LMI_PAYMENT_NO'] . $rform['LMI_MODE'] . $rform['LMI_SYS_INVS_NO'] . $rform['LMI_SYS_TRANS_NO'] . $rform['LMI_SYS_TRANS_DATE'] . variable_get('wmoney_pass', '') . $rform['LMI_PAYER_PURSE'] . $rform['LMI_PAYER_WM']));
+  return $str;  
+}

@@ -1,0 +1,298 @@
+<?php
+define("CURRENCIES_GRAFIC_ELEMENTS_COUNT", 6);
+
+/**
+ * Implementation of hook_perm().
+ */
+function currencies_perm() {
+  return array('access cur block settings');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function currencies_menu() {
+  $items = array();
+  $items['admin/settings/cur-block'] = array(
+    'title' => t('Currency block settings'),
+    'description' => 'Currency block settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('currencies_settings'),
+    'access arguments' => array('access cur block settings'),
+  );
+  
+  $items['exchange-rate'] = array(
+    'title' => t('Exchange rate'),
+    'description' => 'Currency block settings.',
+    'page callback' => 'currencies_grafic',
+    'access arguments' => array('access content'),
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_block().
+ */
+ function currencies_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      $blocks[0] = array(
+        'info'       => t('Currencies block'),
+        'region' => 'left',
+        'status' => 1,
+        'weight' => 10,
+      );
+      return $blocks;
+    case 'view':
+      switch ($delta) {
+        case 0:
+          $block['subject'] = t('Currencies block');
+          $block['content'] = currencies_contents();
+          break;
+      }
+      return $block;
+  }
+}
+
+/**
+ * Implementation of hook_cron().
+ */
+function currencies_cron() {
+  // Удаление закешированной картинки с графиками, если она есть
+  file_delete(file_directory_path() . "/currenies.png");
+  
+  // Удаление старых записей
+  $today = mktime(0, 0, 0, date("m", $time), date("d", $time), date("Y", $time)) - 31 * 24 * 60 * 60;
+  db_query("DELETE FROM {currencies_block} WHERE timestamp > %d", $today);
+  currencies_contents();
+}
+
+
+function getDataFromCbrf($d, $m, $y) {
+  $filename = variable_get('currencies_list_url', "http://www.cbr.ru/scripts/XML_daily.asp?date_req=%d/%m/%y");
+    $filename = str_replace("%d", $d, $filename);
+    $filename = str_replace("%m", $m, $filename);
+    $filename = str_replace("%y", $y, $filename);
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $filename);
+    curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    $xml = curl_exec($ch);
+    curl_close($ch);
+    
+    $data = new SimpleXMLElement($xml);    
+    
+    $currencies = explode(",", variable_get('currencies_list', "USD,EUR,CNY,BYR,KZT,TRY,UAH,JPY"));
+    
+    $inter = array();
+    
+    foreach($data as $k => $v) {
+      if(in_array($v->CharCode, $currencies)) {
+        $inter[] = array("nominal" => $v->Nominal, "name" => $v->Name, "value" => $v->Value, "charcode" => $v->CharCode);
+      }
+    }
+    
+    return $inter;
+}
+
+/**
+ * A block content function.
+ */
+function currencies_contents() {  
+  if(!$c = cache_get('currencies')) {
+    $time = time();
+    
+    // Удаляю все записи за сегодня (не за последние 24 часа, а за сегодня). 
+    // Так как курсы обновляются раз в сутки две записи за один и тот же день не нужны
+    $today = mktime(0, 0, 0, date("m", $time), date("d", $time), date("Y", $time));
+    db_query("DELETE FROM {currencies_block} WHERE timestamp > %d", $today);
+        
+    $d = date("d");
+    $m = date("m");
+    $y = date("Y");
+    
+    $inter = getDataFromCbrf($d, $m, $y);
+    
+    $currencies = explode(",", variable_get('currencies_list', "USD,EUR,CNY,BYR,KZT,TRY,UAH,JPY")); 
+    
+    $yesterday = array();
+    $p = db_fetch_object(db_query("SELECT * FROM {currencies_block} ORDER BY timestamp DESC LIMIT 0,1"));
+    if($p->data == "") {
+      // первый запуск, забираю курсы валют за последний 31 день
+      $yesterday = array();
+      for($i = 31; $i >= 1; $i--) {
+        $cdate = $time - $i * 86400;
+        $tmp = getDataFromCbrf(date("d", $cdate), date("m", $cdate), date("Y", $cdate));
+        db_query("INSERT INTO {currencies_block} (`data`, `timestamp`) VALUES ('%s', %d)", serialize($yesterday), $cdate);
+        foreach($tmp as $key => $data) {
+          $yesterday[strval($tmp[$key]["charcode"])] = strval($tmp[$key]["value"]);
+        }
+      }
+      foreach($inter as $key => $data) {
+        $inter[$key]["old"] = strval($tmp[$key]["value"]);
+        $inter[$key]["diff"] = round(str_replace(",", ".", $inter[$key]["value"]) - str_replace(",", ".", $inter[$key]["old"]), 2);
+      }
+    } else {
+      // Данные за предыдущие дни в базе есть
+      $yesterday = unserialize($p->data);
+      foreach($inter as $k => $v) {
+        foreach($yesterday as $key => $data) {
+          if($inter[$k]["charcode"] == $key) {
+            $inter[$k]["old"] = $data;
+            $inter[$k]["diff"] = round(str_replace(",", ".", $inter[$k]["value"]) - str_replace(",", ".", $inter[$k]["old"]), 2);
+          }
+        }
+      }
+    }
+    
+    // Эти данные уйдут в функцию темизации
+    $result = array();    
+    foreach($currencies as $k => $v) {      
+      foreach($inter as $key => $data) {
+        if($v == $data["charcode"]) {
+          $result[] = $data;
+        }
+      }
+    }
+    
+    // Преобразую массив для записи в БД из формата $inter[$num][$key] = $value в формат $inter[$key] = $value, 
+    // оставляю только значения курсов без номиналов и названий валют
+    $save = array();
+    foreach($inter as $key => $data) {
+      $save[strval($data["charcode"])] = strval($data["value"]);
+    }
+    
+    db_query("INSERT INTO {currencies_block} (`data`, `timestamp`) VALUES ('%s', %d)", serialize($save), $time);
+    $output = theme('currencies_block', $result);
+    
+    $t = variable_get('currencies_list_freq', 3600);
+    if(!$t || !is_numeric($t)) $t = 3600;
+  
+    cache_set("currencies", $output, 'cache', time() + $t);
+  } else {
+    $output = $c->data;
+  }
+  return $output;
+}
+
+/**
+ * Implementation of hook_theme()
+ */
+
+function currencies_theme() {
+  return array(
+    'currencies_block' => array(
+      'arguments' => array('result' => NULL),
+      'template' => 'cur-block',
+    ),
+  );
+}
+
+function currencies_settings() {
+  $form['currencies_list'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Валюты'),
+    '#default_value' => variable_get('currencies_list', "USD,EUR,CNY,BYR,KZT,TRY,UAH,JPY"),
+    '#maxlength' => 255,
+    '#description' => t('В этом поле через запятую необходимо перечислить сокращенные названия валют, которые будут выводиться в блоке, например "USD,EUR,CNY,BYR,KZT,TRY,UAH,JPY". В блоке курсы будут выводиться в указанном в этом поле порядке. Можно использовать следующие сокращения:<br>AUD — Австралийский доллар<br>GBP — Фунт стерлингов Соединенного королевства<br>BYR — Белорусский рубль<br>DKK — Датская крона<br>USD — Доллар США<br>EUR — Евро<br>ISK — Исландская крона<br>KZT — Казахское тенге<br>CAD — Канадский доллар<br>CNY — Китайский юань Жэньминьби<br>NOK — Норвежская крона<br>XDR — СДР (специальные права заимствования)<br>SGD — Сингапурский доллар<br>TRY — Новая турецкая лира<br>UAH — Украинская гривна<br>SEK — Шведская крона<br>CHF — Швейцарский франк<br>JPY — Японская иена '),
+  );
+  
+  $form['currencies_list_freq'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Частота обновления данных (в секундах)'),
+    '#default_value' => variable_get('currencies_list_freq', 3600),
+    '#maxlength' => 255,
+    '#description' => t('Рекомендуется использовать значение не меньше чем 3600.'),
+  );
+  
+  $form['currencies_list_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Адрес xml-файла'),
+    '#default_value' => variable_get('currencies_list_url', "http://www.cbr.ru/scripts/XML_daily.asp?date_req=%d/%m/%y"),
+    '#maxlength' => 255,
+    '#description' => t('Адрес xml-файла из которого будут загужаться курсы валют. В адресе можно использовать маски %d, %m, %y для обозначения текущего дня, месяца и года соответственно. Значение по умолчанию: "http://www.cbr.ru/scripts/XML_daily.asp?date_req=%d/%m/%y".'),
+  );
+
+  return system_settings_form($form);
+}
+
+function currencies_grafic() {
+  if(file_exists(file_directory_path() . "/currenies.png")) {
+    $output = file_directory_path() . "/currenies.png";
+  } else {
+    $output = "";
+    
+    $colors = array("ff0000", "009933", "0000cc", "666666", "33cccc", "ffff00", "000000", "ff9900", "00ff33", "990099", "00ff66", "ff00ff", "000066");
+    $chco = "";
+    $chd = "";
+    $chdl = "";
+    
+    $cur = explode(",", variable_get('currencies_list', "USD,EUR,CNY,BYR,KZT,TRY,UAH,JPY"));
+    $cur = array_slice($cur, 0, CURRENCIES_GRAFIC_ELEMENTS_COUNT);
+    $rates = array();
+    $date = array();
+    $legenda = implode($cur, "|");
+    
+    $count = 0;
+    $q = db_query("SELECT * FROM {currencies_block} ORDER BY timestamp DESC LIMIT 0,30");
+    while($r = db_fetch_object($q)) {
+      $d = date("d", $r->timestamp);
+      if($count == 0) {
+        $date[] = date("d.m", $r->timestamp);
+      }
+      $data = unserialize($r->data);
+      foreach($data as $curcode => $value) {
+        $rates[$curcode][] = str_replace(",", ".", $value);
+      }
+      $count++;
+      if($count == 3) $count = 0;
+    }
+    
+    $date = array_reverse($date);
+    $date_s = implode($date, "|") . "|";
+    
+    // Цвета, курсы и названия валют для легенды
+    $tmp = array();
+    for($i = 0; $i <= count($cur) - 1; $i++) {
+      $rates[$cur[$i]] = array_reverse($rates[$cur[$i]]);
+    
+      $tmp[] = $colors[$i]; 
+      $chdl .= $cur[$i] . "|";
+        
+      $tmp2 = implode(",", $rates[$cur[$i]]);
+      $chd .= $tmp2 . "|";
+    }
+    $chco = implode(",", $tmp);
+    
+    $output = "http://chart.apis.google.com/chart?cht=lc&chd=t:" . $chd . "&chs=750x400&chds=0,50&chco=" . $chco . "&chxl=0:|" . $date_s . "1:|10|20|30|40|50&chxt=x,y&chdl=" . $legenda;
+    
+    $output = str_replace(",|", "|", $output);
+    $output = str_replace("|&", "&", $output);
+    
+    // Кеширование картинки при помощи CURL  
+    if(function_exists('curl_init')) {
+      $ch = curl_init();
+      
+      curl_setopt($ch, CURLOPT_URL, $output);
+      
+      curl_setopt($ch, CURLOPT_HEADER, 0);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+      
+      $data = curl_exec($ch);
+  
+      if(curl_errno($ch) != 0 || curl_getinfo($ch, CURLINFO_HTTP_CODE) == 404) {
+        $link = "http://" . $_POST['link'];
+        curl_setopt($ch, CURLOPT_URL, $link);
+        $data = curl_exec($ch);
+      }      
+      curl_close($ch);
+      if($handle = fopen(file_directory_path() . "/currenies.png", 'w+')) {
+        fwrite($handle, $data);
+        fclose($handle);
+      }
+    }
+  }
+
+  return "<img src=\"" . $output . "\">";
+}

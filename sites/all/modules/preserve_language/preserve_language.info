@@ -1,0 +1,13 @@
+; $Id;$
+name = "Preserve language"
+description = "Various utilities to help sites that can have an interface language different from the content language."
+dependencies[] = locale
+package = Multilanguage
+core = 6.x
+
+; Information added by drupal.org packaging script on 2011-02-25
+version = "6.x-0.x-dev"
+core = "6.x"
+project = "preserve_language"
+datestamp = "1298619976"
+

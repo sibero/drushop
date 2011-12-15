@@ -1,0 +1,12 @@
+; $Id: uc_roboxchange.info,v 1.1.2.1 2009/05/03 13:47:11 gor Exp $
+name = "RoboXchange"
+description = "RoboXchange payment gateway."
+dependencies[] = uc_payment
+package = "Ubercart - payment"
+core = 6.x
+; Information added by drupal.org packaging script on 2009-05-03
+version = "6.x-1.2"
+core = "6.x"
+project = "uc_roboxchange"
+datestamp = "1241359942"
+

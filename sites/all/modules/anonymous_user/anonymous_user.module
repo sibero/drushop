@@ -1,0 +1,6 @@
+<?php
+
+function anonymous_user_cron() {
+	module_load_install('anonymous_user');
+	anonymous_user_create();
+}

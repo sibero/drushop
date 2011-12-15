@@ -1,0 +1,16 @@
+<?php
+// $Id: views_hierarchy.module,v 1.1 2010/06/04 11:13:26 joachim Exp $
+/**
+ * @file views_hierarchy.module
+ * The main module file for the views hierarchy module.
+ */
+
+/**
+ * Implementation of hook_views_api().
+ */
+function views_hierarchy_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'views_hierarchy'),
+  );
+}

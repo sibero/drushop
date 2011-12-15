@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * @file devel_queries_ajax.install
+ * Contains install and update functions for Devel Queries Ajax module.
+ */
+
+/**
+ * Implementation of hook_enable().
+ */
+function devel_queries_ajax_enable() {
+  drupal_flush_all_caches();
+}
+
+/**
+ * Implementation of hook_disable().
+ */
+function devel_queries_ajax_disable() {
+  drupal_flush_all_caches();
+}

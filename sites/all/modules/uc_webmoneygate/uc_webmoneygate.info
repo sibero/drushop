@@ -1,0 +1,12 @@
+; $Id: uc_webmoneygate.info,v 1.1 2009/10/15 11:42:46 duke Exp $
+name = "WebMoney"
+description = "Process payments using WebMoney Transfer."
+dependencies[] = uc_payment
+package = Ubercart - payment
+core = 6.x
+; Information added by drupal.org packaging script on 2010-09-21
+version = "6.x-1.1"
+core = "6.x"
+project = "uc_webmoneygate"
+datestamp = "1285064464"
+

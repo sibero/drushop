@@ -1,0 +1,13 @@
+; $Id$
+name = Liqpay
+description = Liqpay payment gateway.
+dependencies[] = uc_payment
+package = "Ubercart - payment"
+core = 6.x
+project = "uc_liqpay"
+; Information added by drupal.org packaging script on 2011-09-13
+version = "6.x-2.x-dev"
+core = "6.x"
+project = "uc_liqpay"
+datestamp = "1315916487"
+

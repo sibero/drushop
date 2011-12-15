@@ -1,0 +1,5 @@
+name = Currencies block
+description = "Show currencies."
+version = "6.x-1.0"
+core = 6.x
+project = "currencies"

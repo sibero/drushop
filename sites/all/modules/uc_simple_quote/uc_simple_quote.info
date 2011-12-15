@@ -1,0 +1,13 @@
+; $Id: uc_simple_quote.info,v 1.1 2010/03/04 12:24:39 longwave Exp $
+name = Simple Shipping Quotes
+description = Simplified version of the shipping quote checkout pane.
+dependencies[] = uc_quote
+package = "Ubercart - extra"
+core = 6.x
+
+; Information added by drupal.org packaging script on January 1, 1970 - 00:00
+version = "6.x-1.0"
+core = "6.x"
+project = "uc_simple_quote"
+datestamp = "1296481912"
+

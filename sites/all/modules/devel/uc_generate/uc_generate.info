@@ -1,0 +1,14 @@
+; $Id: uc_generate.info,v 1.1 2009/07/07 04:06:07 cha0s Exp $
+name = Ubercart Generate
+description = Bulk assign random pricing and other fields to product nodes and other Ubercart data
+package = Development
+core = 6.x
+dependencies[] = devel_generate
+dependencies[] = uc_product
+
+; Information added by drupal.org packaging script on 2009-07-07
+version = "6.x-1.0"
+core = "6.x"
+project = "uc_generate"
+datestamp = "1246940183"
+

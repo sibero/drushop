@@ -1,0 +1,79 @@
+<?php
+// $Id: uc_simple_quote.module,v 1.4 2010/03/29 23:20:02 longwave Exp $
+
+/**
+ * Implementation of hook_checkout_pane().
+ */
+function uc_simple_quote_checkout_pane() {
+  $panes[] = array(
+    'id' => 'simple_quote',
+    'callback' => 'uc_checkout_pane_simple_quote',
+    'title' => arg(0) == 'cart' ? t('Delivery option') : t('Simplified shipping cost selection'),
+    'desc' => t('Extra information necessary to ship.'),
+    'weight' => 5,
+    'shippable' => TRUE,
+    'enabled' => FALSE,
+  );
+  return $panes;
+}
+
+/**
+ * Shipping quote checkout pane callback.
+ */
+function uc_checkout_pane_simple_quote($op, &$arg1, $arg2) {
+  global $user;
+
+  switch ($op) {
+    case 'view':
+      //$description = check_markup(variable_get('uc_quote_pane_description', t('Shipping quotes are generated automatically when you enter your address and may be updated manually with the button below.')), variable_get('uc_quote_desc_format', FILTER_FORMAT_DEFAULT), FALSE);
+
+      $fake_order = new stdClass();
+      $fake_order->uid = $user->uid;
+      $fake_order->products = array();
+      foreach (uc_cart_get_contents() as $product) {
+        $node = (array)node_load($product->nid);
+        foreach ($node as $key => $value) {
+          if (!isset($product->$key)) {
+            $product->$key = $value;
+          }
+        }
+        $fake_order->products[] = $product;
+      }
+      $fake_order->order_total = uc_order_get_total($fake_order, TRUE);
+
+      module_load_include('inc', 'uc_quote', 'uc_quote.pages');
+      $quotes = _uc_quote_assemble_quotes($fake_order);
+
+      foreach ($quotes as $method_id => $method) {
+        foreach ($method as $accsrl => $data) {
+          $rates[$method_id .'---'. $accsrl] = $data['rate'];
+          $options[$method_id .'---'. $accsrl] = $data['option_label'] .': '. $data['format'];
+        }
+      }
+
+      $contents['quote-option'] = array(
+        '#type' => 'radios',
+        '#options' => $options,
+        '#parents' => array('quote-option'),
+      );
+
+      if (count($options) == 1) {
+        $contents['quote-option']['#default_value'] = array_pop(array_keys($options));
+      }
+
+      // Without at least one field actually in the pane, the 'process' op is sometimes never called.
+      $contents['uc_simple_quote'] = array('#type' => 'value', '#value' => TRUE);
+      
+      drupal_add_js(drupal_get_path('module', 'uc_simple_quote') .'/uc_simple_quote.js');
+      drupal_add_js(array('uc_simple_quote' => array('rates' => $rates)), 'setting');
+
+      return array('description' => '', 'contents' => $contents);
+
+    case 'process':
+      return uc_checkout_pane_quotes('process', $arg1, $arg2);
+
+    case 'review':
+      // Duplicated in the payment method field anyway
+      //return uc_checkout_pane_quotes('review', $arg1, $arg2);
+  }
+}

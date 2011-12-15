@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * Make sure we run after the i18n module
+ */
+function preserve_language_install() {
+  $weight = db_result(db_query("
+    SELECT MAX(weight) 
+      FROM {system} 
+     WHERE name = 'i18n'
+        OR name = 'locale'"));
+  if ($weight === false) {
+    $weight = 11;
+  } else {
+    $weight++;
+  }
+  
+  db_query("UPDATE {system} SET weight = $weight WHERE name = 'preserve_language'");
+}
+
+/**
+ * hook_uninstall()
+ */
+function preserve_language_uninstall() {
+  // Cleaning variables
+  variable_del('preserve_language_on');
+  variable_del('preserve_language_selection');
+  variable_del('preserve_language_content_neutral');
+  variable_del('preserve_language_block'); 
+}
+?>

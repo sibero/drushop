@@ -1,0 +1,63 @@
+<?php
+// $Id: uc_dynamicproductpages.install,v 1.1 2010/09/25 19:58:47 aidan Exp $
+
+/**
+ * Implementation of hook_install().
+ */
+function uc_dynamicproductpages_install() {
+  drupal_install_schema('uc_dynamicproductpages');
+}
+
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function uc_dynamicproductpages_uninstall() {
+  drupal_uninstall_schema('uc_dynamicproductpages');
+}
+
+
+/**
+ * Implementation of hook_schema().
+ */
+function uc_dynamicproductpages_schema() {
+  $schema['uc_attribute_options_dynamic'] = array(
+    'description' => t('Hold extra information about attribute options.'),
+    'fields' => array(
+      'aid' => array(
+        'description' => t('The Attribute ID'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'oid' => array(
+        'description' => t('The Option ID'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'fid' => array(
+        'description' => t('The File ID'),
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'summary' => array(
+        'description' => t('Brief summary of this option'),
+        'type' => 'varchar',
+        'length' => '250',
+        'not null' => FALSE,
+      ),
+      'description' => array(
+        'description' => t('Long description of this option'),
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+    ),
+    'unique keys' => array(
+      'oid' => array('oid')
+    ),
+    'indexes' => array(
+      'aid' => array('aid'),
+    ),
+  );
+  
+  return $schema;
+}

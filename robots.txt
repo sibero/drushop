@@ -1,0 +1,58 @@
+# robots.txt
+#
+# Фаил robots.txt должен лежать в корневой директории вашего хостинга.
+# Правильное расположение:    http://example.com/robots.txt
+# Неправильное расположение: http://example.com/site/robots.txt
+#
+User-agent: *
+Crawl-delay: 10
+Disallow: /includes/
+Disallow: /misc/
+Disallow: /flag/
+Disallow: /cart/
+Disallow: /cart/checkout/
+Disallow: /modules/
+Disallow: /profiles/
+Disallow: /scripts/
+Disallow: /themes/
+Disallow: /CHANGELOG.txt
+Disallow: /cron.php
+Disallow: /install.php
+Disallow: /INSTALL.txt
+Disallow: /LICENSE.txt
+Disallow: /update.php
+Disallow: /UPGRADE.txt
+Disallow: /xmlrpc.php
+Disallow: /admin/
+Disallow: /comment/reply/
+Disallow: /contact/
+Disallow: /logout/
+Disallow: /node/add/
+Disallow: /search/
+Disallow: /user/register/
+Disallow: /user/password/
+Disallow: /user/login/
+Disallow: /comment/reply
+Disallow: /user/register
+Disallow: /user/password
+Disallow: /user/login
+Disallow: /user/register?
+Disallow: /user/login?
+Disallow: /user/
+Disallow: /?q=admin/
+Disallow: /?q=comment/reply/
+Disallow: /?q=contact/
+Disallow: /?q=logout/
+Disallow: /?q=node/add/
+Disallow: /?q=search/
+Disallow: /?q=user/password/
+Disallow: /?q=user/register/
+Disallow: /?q=user/login/
+Disallow: /tracker
+Disallow: /*/feed
+Disallow: /*sort=
+Disallow: /*size=
+Disallow: /tagadelic/
+# Sitemap: http://YOUR-DOMAIN.ru/sitemap.xml
+# Host: YOUR-DOMAIN.ru
+

@@ -1,0 +1,497 @@
+<?php
+// $Id$
+// Справочная информация
+/*Аргументы - это части урла, разделённые символом '/'. Небольшой пример: имеется ссылка мой_сайт.ru/node/186/edit. Здесь в роли аргументов выступают: node - 0й аргумент, 186 - 1й аргумент, edit - 2й аргумент.
+Программно можно вызывать эти аргументы функцией arg(). То есть написав с echo arg(0); находять на странице материала  - у тебя будет выведено слово 'node'.Написав  echo arg(1); ты получишь число, равное nid ноды на которой ты находишься.*/
+
+// добавляем пункты меню
+function drushop_general_menu()
+{
+$items = array();
+    $items['admin/settings/other'] = array(
+        'title' => 'Other settings', 
+        'description' => 'Дополнительные настройки',
+'page callback' => 'system_admin_menu_block_page',		
+        'access arguments' => array('administer site configuration'), 
+        'type' => MENU_NORMAL_ITEM,  
+    'file' => 'system.admin.inc',
+	'file path' => drupal_get_path('module', 'system'),		
+    );
+	
+	    $items['admin/seo'] = array(
+        'title' => 'SEO', 
+        'description' => 'Продвижение сайта в поисковиках',
+'page callback' => 'system_admin_menu_block_page',
+    'position' => 'right',
+    'weight' => 20,		
+        'access arguments' => array('administer site configuration'), 
+        'type' => MENU_NORMAL_ITEM,  
+    'file' => 'system.admin.inc',
+	'file path' => drupal_get_path('module', 'system'),		
+    );
+	
+    return $items;
+}
+
+function drushop_general_clone_items($search, $replace, $items) {
+  $offset = count(explode('/', $replace)) - count(explode('/', $search));
+
+  $clone = array();
+  foreach ($items as $path => $item) {
+    if (strpos($path, $search) === 0) {
+      $clone_path = str_replace($search, $replace, $path);
+
+      // Adjust argument offsets if the search and replace paths have a
+      // different arg counts.
+      if ($offset != 0) {
+        foreach (array('page arguments', 'access arguments', 'load arguments', 'title arguments') as $arg_key) {
+          if (!empty($item[$arg_key])) {
+            foreach ($item[$arg_key] as $k => $v) {
+              if (is_numeric($v)) {
+                $item[$arg_key][$k] = $v + $offset;
+              }
+            }
+          }
+        }
+      }
+
+      $clone[$clone_path] = $item;
+    }
+  }
+  return $clone;
+}
+
+function drushop_general_menu_alter(&$items) {
+
+	// клонируем пункты меню
+	$items = array_merge($items, drushop_general_clone_items('admin/build/cron', 'admin/settings/cron', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/language', 'admin/build/language', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/build/contact', 'admin/content/contact', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/build/formdefaults', 'admin/settings/other/formdefaults', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/build/taxonomy_redirect', 'admin/settings/other/taxonomy_redirect', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/build/custom_breadcrumbs', 'admin/settings/other/custom_breadcrumbs', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/filters', 'admin/content/filters', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/ajax_comments', 'admin/settings/other/ajax_comments', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/votingapi', 'admin/settings/other/votingapi', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/custom-breadcrumbs', 'admin/settings/other/custom-breadcrumbs', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/imageapi', 'admin/settings/other/imageapi', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/jquery_update', 'admin/settings/other/jquery_update', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/preserve_language', 'admin/settings/other/preserve_language', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/session-api', 'admin/settings/other/session-api', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/strongarm', 'admin/settings/other/strongarm', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/tabtamer', 'admin/settings/other/tabtamer', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/taxonomy-menu-trails', 'admin/settings/other/taxonomy-menu-trails', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/admin-links', 'admin/settings/other/admin-links', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/vertical-tabs', 'admin/settings/other/vertical-tabs', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/actions', 'admin/settings/other/actions', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/logging', 'admin/settings/other/logging', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/uploads', 'admin/settings/other/uploads', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/menu_block', 'admin/settings/other/menu_block', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/date_popup', 'admin/settings/other/date_popup', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/error-reporting', 'admin/settings/other/error-reporting', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/comment_notify', 'admin/settings/other/comment_notify', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/module_filter', 'admin/settings/other/module_filter', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/clean-urls', 'admin/settings/other/clean-urls', $items));
+
+	
+	
+// Move admin theme settings to theme local task.
+  //$items['admin/build/themes/admin'] = $items['admin/settings/admin'];
+  //$items['admin/build/themes/admin']['type'] = MENU_LOCAL_TASK;
+	$items['admin/build/block']['weight'] = -40;
+	$items['admin/build/menu']['weight'] = -39;
+	$items['admin/build/themes']['weight'] = -38;
+	$items['admin/build/modules']['weight'] = -37;
+	$items['admin/build/features']['weight'] = -36;
+	$items['admin/build/views']['weight'] = -35;
+	$items['admin/build/flags']['weight'] = -34;
+	$items['admin/build/language']['weight'] = -33;
+	$items['admin/build/translate']['weight'] = -32;
+	
+	$items['admin/content/node']['weight'] = -40;
+	$items['admin/content/comment']['weight'] = -39;
+	$items['admin/content/taxonomy']['weight'] = -38;
+	$items['admin/content/types']['weight'] = -37;
+	$items['admin/settings/filters']['weight'] = -36;
+	$items['admin/content/node-settings']['weight'] = -35;
+	$items['admin/content/rss-publishing']['weight'] = -34;
+	$items['admin/build/contact']['weight'] = -33;
+
+	
+	
+	
+	
+	$items['admin/settings/cron']['weight'] = -40;
+  
+	// type может принимать значения MENU_DEFAULT_LOCAL_TASK , MENU_NORMAL_ITEM , MENU_LOCAL_TASK , MENU_CALLBACK
+
+	// удаляем ненужные пункты меню
+  unset($items['admin/settings/image-toolkit']);
+  unset($items['admin/build/cron']);
+  unset($items['admin/settings/language']);
+  unset($items['admin/build/contact']);
+  
+	unset($items['admin/build/formdefaults']);
+	unset($items['admin/build/taxonomy_redirect']);
+	unset($items['admin/build/custom_breadcrumbs']);
+	unset($items['admin/settings/filters']);
+	unset($items['admin/settings/ajax_comments']);
+	unset($items['admin/settings/votingapi']);
+	unset($items['admin/settings/custom-breadcrumbs']);
+	unset($items['admin/settings/imageapi']);
+	unset($items['admin/settings/jquery_update']);
+	unset($items['admin/settings/preserve_language']);
+	unset($items['admin/settings/session-api']);
+	unset($items['admin/settings/strongarm']);
+	unset($items['admin/settings/tabtamer']);
+	unset($items['admin/settings/taxonomy-menu-trails']);
+	unset($items['admin/settings/admin-links']);
+	unset($items['admin/settings/vertical-tabs']);
+	unset($items['admin/settings/actions']);
+	unset($items['admin/settings/logging']);
+	unset($items['admin/settings/uploads']);
+	unset($items['admin/settings/menu_block']);
+	unset($items['admin/settings/date_popup']);
+	unset($items['admin/settings/error-reporting']);
+	unset($items['admin/settings/comment_notify']);
+	unset($items['admin/settings/module_filter']);
+	unset($items['admin/settings/clean-urls']);
+	unset($items['admin/user/user']);
+	unset($items['admin/store/help']);
+	
+	
+	// переименовываем пункты меню
+	$include = array(
+    'admin/content' => 'Content',
+
+  );
+  
+    foreach ($include as $path => $title) {
+    if (!empty($items[$path])) {
+      $items[$path]['title'] = !empty($title) ? $title : $items[$path]['title'];
+      $items[$path]['options']['admin'] = TRUE;
+    }
+  }
+  
+}
+
+
+// Убираем лишние блоки со страницы управления блоками
+function drushop_general_preprocess_block_admin_display_form(&$vars) {
+
+  if ($vars['form']['system_0']['theme']['#value'] != 'administrator') {
+    unset($vars['block_listing']['-1']['system_0']);
+    unset($vars['block_listing']['-1']['profile_0']);
+    unset($vars['block_listing']['-1']['fivestar_0']);
+    unset($vars['block_listing']['-1']['userpoints_0']);
+    unset($vars['block_listing']['-1']['views_advanced_catalog-block_1']);
+    unset($vars['block_listing']['-1']['views_advanced_catalog-block_2']);
+    unset($vars['block_listing']['-1']['views_advanced_catalog-block_3']);
+    unset($vars['block_listing']['-1']['views_advanced_catalog-block_4']);
+    unset($vars['block_listing']['-1']['views_admin_users-block_1']);
+    unset($vars['block_listing']['-1']['views_news-block_1']);
+    unset($vars['block_listing']['-1']['views_price-block_1']);
+    unset($vars['block_listing']['-1']['views_search_product-block_1']);
+    unset($vars['block_listing']['-1']['comment_0']);
+	unset($vars['block_listing']['-1']['menu_admin']);
+	unset($vars['block_listing']['-1']['uc_wishlist_1']);
+	unset($vars['block_listing']['-1']['views_news_products-block_1']);
+	unset($vars['block_listing']['-1']['shortcut_0']);
+	unset($vars['block_listing']['-1']['logintoboggan_0']);
+	unset($vars['block_listing']['-1']['service_links_service_links_not_node']);
+	unset($vars['block_listing']['-1']['node_0']);
+	unset($vars['block_listing']['-1']['menu_devel']);
+	unset($vars['block_listing']['-1']['menu_features']);
+	unset($vars['block_listing']['-1']['admin_menu']);
+	unset($vars['block_listing']['-1']['admin_account']);
+	unset($vars['block_listing']['-1']['admin_theme']);
+	unset($vars['block_listing']['-1']['admin_create']);
+	unset($vars['block_listing']['-1']['menu_block_1']);
+  }
+  }
+  
+  // удалить поле "Домашняя страница" из формы добавления комментария
+  function drushop_general_form_alter(&$form, &$form_state, $form_id) {
+    if ($form_id == 'comment_form'){
+        unset($form['homepage']);
+    }
+	// изменяем заголовок на странице создания статьи
+	    if ($form_id == 'page_node_form'){
+		if (arg(1) == "add"){
+        drupal_set_title(t('Create article'));
+		 }
+		}
+	// изменяем заголовок на странице создания товара
+		if ($form_id == 'product_node_form'){
+		if (arg(1) == "add"){
+        drupal_set_title(t('Create product'));
+		 }
+		}
+	// изменяем заголовок на странице информационной страницы	
+		if ($form_id == 'info_node_form'){
+		if (arg(1) == "add"){
+        drupal_set_title(t('Create inform page'));
+		 }
+		}
+	// изменяем заголовок на странице опроса	
+		if ($form_id == 'poll_node_form'){
+		if (arg(1) == "add"){
+        drupal_set_title(t('Create poll'));
+		 }
+		}
+	// изменяем заголовок на странице панели	
+		if ($form_id == 'panel_node_form'){
+		if (arg(1) == "add"){
+        drupal_set_title(t('Create panel'));
+		 }
+		}
+	// изменяем заголовок на странице новости	
+		if ($form_id == 'news_node_form'){
+		if (arg(1) == "add"){
+        drupal_set_title(t('Create news'));
+		 }
+		}
+		// изменяем заголовок на странице восстановления пароля
+		
+		if (arg(1) == "password"){
+        drupal_set_title(t('Password recovery'));
+		 }
+		 
+		// изменяем заголовок на странице создания пользователя	
+		
+		if (arg(1) == "register"){
+        drupal_set_title(t('Register user'));
+		 } 
+		 
+		
+    
+	// удалем показ системных тем
+	if ($form_id == 'system_themes_form'){ 
+	 unset($form['status']['#options']['garland']);
+     unset($form['status']['#options']['minnelli']);
+	 unset($form['status']['#options']['fusion_core']);
+	 unset($form['status']['#options']['fusion_starter']);
+     unset($form['theme_default']['#options']['garland']);
+     unset($form['theme_default']['#options']['minnelli']); 
+	 unset($form['theme_default']['#options']['fusion_core']); 
+	 unset($form['theme_default']['#options']['fusion_starter']);
+     unset($form['garland']);
+     unset($form['minnelli']); 	 
+	 unset($form['fusion_starter']); 	 
+	 unset($form['fusion_core']);
+	}
+	 
+	 // автоматическое нажатие на кнопку расчет доставки при смене региона и страны.
+	if ($form_id == 'uc_cart_checkout_form'){
+    drupal_add_js('$(document).ready(function(){
+    	var shipping_button = $("input[id*=quote-button]");
+   	  	shipping_button.click();
+    	// click button when country is changed
+    	var selected_country = $("select[id*=edit-panes-delivery-delivery-country]");
+    	selected_country.change(function(){
+    		shipping_button.click();
+  		});   	 		    	
+    	var delivery_zone = $("select[id*=edit-panes-delivery-delivery-zone]");
+    	delivery_zone.change(function(){
+    		shipping_button.click();
+  		});  				
+    });', 'inline');
+  }
+	
+	
+	if ($form_id == 'system_modules'){
+      $hidden_modules = module_invoke_all('drushop_hide');
+      foreach($hidden_modules as $module){
+        _drushop_hide_module($form, $module);
+      }
+      
+  }
+  
+}
+
+function drushop_general_preprocess_page(&$vars) {
+	//выводит url текущей страницы, то что после сайт.ru/
+    $path = drupal_get_path_alias($_GET['q']);
+	$vars['path_now'] = $path;
+	// Аргументы из алиасов страниц, аналог arg() для алиасов
+	// $alias_arg[0]; //первая часть url. пример "node"
+	// $alias_arg[1]; //вторая часть url пример "26"
+	// $alias_arg[2]; //третья часть url и так далее... пример "edit"
+	$alias_arg = explode('/', $path);
+	$vars['alias_arg'] = $alias_arg;
+	// Переменная с путем до изображений в текущей теме.
+	$vars['imgPath'] = base_path().path_to_theme().'/images/';
+	// переменные иноформации о магазине
+    $vars['store_name'] = variable_get('uc_store_name', FALSE);
+    $vars['store_owner'] = variable_get('uc_store_owner', FALSE);
+    $$vars['store_email'] = variable_get('uc_store_email', FALSE);
+    $vars['store_phone'] = variable_get('uc_store_phone', FALSE);
+    $vars['store_fax'] = variable_get('uc_store_fax', FALSE);
+    $vars['store_city'] = variable_get('uc_store_city', FALSE);
+    $vars['store_street'] = variable_get('uc_store_street1', FALSE);
+    $vars['postal_code'] = variable_get('uc_store_postal_code', FALSE);
+	if(function_exists('uc_country_get_by_id')) {
+    $vars['store_country'] = uc_country_get_by_id(variable_get('uc_store_country', FALSE));
+	}	
+	$vars['version_store'] = "Drushop версия 2.0";
+	
+}
+drupal_set_html_head('<meta name="generator" content="drushop" />');
+
+function _drushop_hide_module(&$form, $module){
+  unset(
+    $form['validation_modules']['#value'][$module],
+    $form['name'][$module],
+    $form['version'][$module],
+    $form['description'][$module],
+    $form['throttle'][$module],
+    $form['throttle']['#options'][$module],
+    $form['status']['#options'][$module]
+  );
+}
+
+	function drushop_general_drushop_hide() {
+  return array('drushop_general');
+}
+
+	//Убираем "Войдите или зарегистрируйтесь, чтобы получить возможность отправлять комментарии"
+	function drushop_general_link_alter(&$links, $node) {
+  unset($links['comment_forbidden']);
+}
+
+	function drushop_general_preprocess_node(&$vars) {
+	$vars['imgPath'] = base_path().path_to_theme().'/images/';
+	$service_links = service_links_render($node, TRUE);
+    $vars['service_links'] = '<div class="service_links">' . theme('links', $service_links) . '</div>';
+	// Render Ubercart fields into separate variables for node-product.tpl.php
+	// uc_product_is_product($node) проверяет является ли нода товаром
+  if (uc_product_is_product($vars)) {
+    $node = node_build_content(node_load($vars['nid']));
+    $vars['product_image'] = drupal_render($node->content['image']);
+    $vars['product_body'] = drupal_render($node->content['body']);
+    $vars['product_display_price'] = drupal_render($node->content['display_price']);
+	$vars['product_sku'] = drupal_render($node->content['model']);	
+	$vars['product_discounted_price'] = drupal_render($node->content['field_discounted_price']);
+	$vars['field_stock'] = drupal_render($node->content['field_stock']);	
+	$vars['product_fivestar_widget'] = drupal_render($node->content['fivestar_widget']); 
+    $vars['product_sell_price'] = drupal_render($node->content['sell_price']);
+    $vars['product_cost'] = drupal_render($node->content['cost']);
+    $vars['product_weight'] = (!empty($node->weight)) ? drupal_render($node->content['weight']) : '';   // Hide weight if empty
+    if ($vars['product_weight'] == '') {
+      unset($node->content['weight']);
+    }
+    $dimensions = !empty($node->height) && !empty($node->width) && !empty($node->length);                 // Hide dimensions if empty
+    $vars['product_dimensions'] = ($dimensions) ? drupal_render($node->content['dimensions']) : '';
+    if ($vars['product_dimensions'] == '') {
+      unset($node->content['dimensions']);
+    }
+
+    $list_price = !empty($node->list_price) && $node->list_price > 0;                                     // Hide list price if empty or zero
+    $vars['product_list_price'] = ($list_price) ? drupal_render($node->content['list_price']) : '';
+    if ($vars['product_list_price'] == '') {
+      unset($node->content['list_price']);
+    }
+	// проверяем, если установлено отслеживание количества на складе, то выводим его в переменную $stock. Если нет, то делаем в переменной положительное значение 100 
+	if (uc_stock_is_active($node->model) == 1) {
+	$stock = uc_stock_level($node->model);
+	}
+	else $stock = 100;
+	// проверяем если выбрано "Нет в наличии" или складской запас равен нулю, то вместо кнопки "купить" выводим "нет в наличии"
+	if ($node->field_stock[0]['value'] == "Нет в наличии" or $stock <= 0) { 
+	$vars['product_add_to_cart_off'] = drupal_render($node->content['add_to_cart']);
+	$vars['product_add_to_cart'] = "<div class='stock_out'>".t("Not available now")."</div>";
+	}
+	else {
+	$vars['product_add_to_cart'] = drupal_render($node->content['add_to_cart']);
+	}	
+	// используем функцию uc_stock_level, которая используя значения артикуля (sku) выводит количество на складе		
+	$vars['product_stock'] = uc_stock_level($node->model);
+    $vars['product_additional'] = drupal_render($node->content);
+	$vars['product_bookmarks'] = flag_create_link('bookmarks', $node->nid);	
+		// получаем термины из словаря каталог
+                      $terms = taxonomy_node_get_terms_by_vocabulary($node, 1);
+					  if (!empty($terms)) {
+					  $items = array(); 
+                      if ($terms) {
+                       foreach ($terms as $key => $term) {
+                       $items[] = l($term->name, taxonomy_term_path($term), array('attributes' => array('rel' => 'tag', 'title' => $term->description)));
+                       }
+					   }
+					    $vars['catalog_tags'] = implode(', ', $items); 
+					   }
+                      
+	//получаем термины из словаря производители
+					  $terms = taxonomy_node_get_terms_by_vocabulary($node, 3);
+					  if (!empty($terms)) {
+					  $items = array(); 
+                      if ($terms) {
+                       foreach ($terms as $key => $term) {
+                       $items[] = l($term->name, taxonomy_term_path($term), array('attributes' => array('rel' => 'tag', 'title' => $term->description)));
+                       }
+					   }
+					   $vars['manufacurer_tags'] = implode(', ', $items); 
+					   }
+                       
+  //получаем термины из словаря теги
+					  $terms = taxonomy_node_get_terms_by_vocabulary($node, 8);
+					  if (!empty($terms)) {
+					  $items = array(); 
+                      if ($terms) {
+                       foreach ($terms as $key => $term) {
+                       $items[] = l($term->name, taxonomy_term_path($term), array('attributes' => array('rel' => 'tag', 'title' => $term->description)));
+                       }
+					   }
+					   $vars['other_tags'] = implode(', ', $items); 
+					   }
+  }
+
+					     
+}
+
+// инициализация для хуков views
+function drushop_general_views_api() {
+  return array(
+    'api' => '2.0',
+    'path' => drupal_get_path('module', 'drushop_general') .'/views',
+  );
+}
+
+// Добавляем поле 'Цена' на страницу корзины 
+function drushop_general_tapir_table_alter(&$table, $table_id) {
+  if ($table_id != 'uc_cart_view_table') return;
+ 
+  // "Регистрируем" новую колонку
+  $table['#columns']['price_item'] = array(
+    'cell' => t('Price'),
+    'weight' => 2.5,
+  );
+ 
+  foreach (element_children($table) as $key) {
+    if (empty($table[$key]['nid']['#value'])) continue;
+     
+      // Вообще, тут можно легко избежать "дорогого" в плане нагрузки вызова node_load, и обойтись sql селектом. Но, если у вас у пользователя обычно бывает 1-5 товаров в корзине, этим можно пренебречь.
+      $n = node_load($table[$key]['nid']['#value']);
+      $p = uc_price($n -> sell_price, array());
+
+     
+// И добавляем в новую колонку данные.
+      $table[$key]['price_item'] = array('#value' => $p, '#cell_attributes' => array('class' => 'price-item'));
+
+   }
+}
+
+// этот код нужен для корректной работы модуля uc_simple_quote
+function drushop_general_form_uc_cart_checkout_form_alter(&$form, &$form_state) {
+  $string = $form['cart_contents']['#value'];
+  $string = str_replace("\r", " ", $string);
+  $string = str_replace("\n", " ", $string);
+  $form['cart_contents']['#value'] = $string;
+}
+ 
+	
+ 
+
+
+  
+
+

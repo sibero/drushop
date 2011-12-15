@@ -1,0 +1,96 @@
+<?php
+// $Id: uc_edost.install,v 1.0.0.0 2010/11/29 10:00:00 $
+
+/**
+ * @file
+ * Install hooks for uc_edost.module.
+ */
+
+/**
+ * Implementation of hook_requirements().
+ */
+function uc_edost_requirements($phase) {
+  $t = get_t();
+
+  $has_simplexml = class_exists('SimpleXMLElement');
+  $requirements['uc_edost_simplexml'] = array(
+    'title' => $t('SimpleXML'),
+    'value' => $has_simplexml ? $t('Enabled') : $t('Not found'),
+  );
+  if (!$has_simplexml) {
+    $requirements['uc_edost_simplexml']['severity'] = REQUIREMENT_ERROR;
+    $requirements['uc_edost_simplexml']['description'] = $t('edost requires the PHP <a href="!simplexml_url">SimpleXML</a> library.', array('!simplexml_url' => 'http://php.net/manual/en/simplexml.setup.php'));
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function uc_edost_schema() {
+  $schema = array();
+
+	//Создаем таблицу 'uc_edost_products' с полями 'vid', 'nid', 'container'
+  $schema['uc_edost_products'] = array(
+    'description' => 'Stores product information for edost shipping quotes.',
+    'fields' => array(
+      'vid' => array(
+        'description' => 'The {uc_products}.vid.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'nid' => array(
+        'description' => 'The {uc_products}.nid.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'container' => array(
+        'description' => 'The package type in which the product will be shipped.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('vid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function uc_edost_install() {
+	//создаем БД
+  drupal_install_schema('uc_edost');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function uc_edost_uninstall() {
+	//удаляем БД
+  drupal_uninstall_schema('uc_edost');
+  variable_del('uc_edost_id');
+  variable_del('uc_edost_ps');
+  variable_del('uc_edost_host');
+  variable_del('uc_edost_services');
+}
+
+
+function uc_edost_update_6000() {
+  $ret = array();
+
+/*  db_drop_primary_key($ret, 'uc_edost_products');
+  db_change_field($ret, 'uc_edost_products', 'vid', 'vid', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0), array('primary key' => array('vid')));
+  db_change_field($ret, 'uc_edost_products', 'nid', 'nid', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0));
+*/
+  return $ret;
+}
+

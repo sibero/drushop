@@ -1,0 +1,221 @@
+# $Id: uc_webmoneygate.ru.po,v 1.1 2009/10/15 11:42:46 duke Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  uc_webmoneygate.module: n/a
+#  uc_webmoneygate.info: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: uc_webmoneygate\n"
+"POT-Creation-Date: 2009-10-12 11:48+0300\n"
+"PO-Revision-Date: 2009-10-12 11:53+0200\n"
+"Last-Translator: Yuri <yury.glushkov@ardas.dp.ua>\n"
+"Language-Team: ardas group <yury.glushkov@ardas.dp.ua>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=((((n%10)==1)&&((n%100)!=11))?(0):(((((n%10)>=2)&&((n%10)<=4))&&(((n%100)<10)||((n%100)>=20)))?(1):2));\n"
+"X-Poedit-Language: Russian\n"
+"X-Poedit-Country: RUSSIAN FEDERATION\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: uc_webmoneygate.module:47;48
+msgid "WebMoney Merchant Interface"
+msgstr "Платеж Webmoney"
+
+#: uc_webmoneygate.module:49
+msgid "Pay with Web Merchant Interface."
+msgstr "Оплатить с помощью Вебмани"
+
+#: uc_webmoneygate.module:68
+msgid "You are paying to"
+msgstr "Вы платите на кошелек"
+
+#: uc_webmoneygate.module:72
+msgid "New order total"
+msgstr "Сумма к оплате в другой валюте"
+
+#: uc_webmoneygate.module:82
+msgid "Shop name"
+msgstr "Название магазина"
+
+#: uc_webmoneygate.module:84
+msgid "The name of your shop."
+msgstr "Название вашего магазина."
+
+#: uc_webmoneygate.module:89
+msgid "Merchant ID"
+msgstr "Мерчант ID"
+
+#: uc_webmoneygate.module:91
+msgid "Enter WMID which you got after registration."
+msgstr "Укажите Ваш WMID."
+
+#: uc_webmoneygate.module:96
+msgid "Merchant secret key"
+msgstr "Пароль мерчанта"
+
+#: uc_webmoneygate.module:98
+msgid "Enter the merchant secret key. It is only needed when working through HTTPS."
+msgstr "Введите пароль мерчанта. Этот пароль обязательно использовать только в режиме HTTPS."
+
+#: uc_webmoneygate.module:103
+msgid "Payment details"
+msgstr "Делати платежа"
+
+#: uc_webmoneygate.module:105
+msgid "Enter general details to describe all payments done on your site."
+msgstr "Укажите общее описание назначения платежа для этого метода."
+
+#: uc_webmoneygate.module:110;140
+msgid "WMZ"
+msgstr "WMZ"
+
+#: uc_webmoneygate.module:111
+msgid "Enter your WMZ wallet number."
+msgstr "Укажите кошелек WMZ"
+
+#: uc_webmoneygate.module:116;145
+msgid "WME"
+msgstr "WME"
+
+#: uc_webmoneygate.module:117
+msgid "Enter your WME wallet number."
+msgstr "Укажите кошелек WME"
+
+#: uc_webmoneygate.module:122;150
+msgid "WMR"
+msgstr "WMR"
+
+#: uc_webmoneygate.module:123
+msgid "Enter your WMR wallet number."
+msgstr "Укажите кошелек WMR"
+
+#: uc_webmoneygate.module:128;155
+msgid "WMU"
+msgstr "WMU"
+
+#: uc_webmoneygate.module:129
+msgid "Enter your WMU wallet number."
+msgstr "Укажите кошелек WMU"
+
+#: uc_webmoneygate.module:135
+msgid "Currency rates"
+msgstr "Курсы валют"
+
+#: uc_webmoneygate.module:136
+msgid "Enter rates to convert order totals from the store basic currency to particular WebMoney currency."
+msgstr "Установите курсы валют по отношению к основной валюте сайта"
+
+#: uc_webmoneygate.module:160
+msgid "Order status after payment"
+msgstr "Установите статус ордера после оплаты."
+
+#: uc_webmoneygate.module:161
+msgid "This status will be assigned to an order upon successfull completion."
+msgstr "Данный статус будет выставлен ордеру в случае успешной оплаты."
+
+#: uc_webmoneygate.module:167
+msgid "Transaction mode"
+msgstr "Режим работы"
+
+#: uc_webmoneygate.module:168
+msgid "Transaction mode used for processing orders."
+msgstr "Режим работы при обработке платежа"
+
+#: uc_webmoneygate.module:170
+msgid "Live"
+msgstr "Рабочий"
+
+#: uc_webmoneygate.module:171
+msgid "Test success"
+msgstr "Тестовый, все платежи проходят"
+
+#: uc_webmoneygate.module:172
+msgid "Test failure"
+msgstr "Тестовый, все платежи не проходят"
+
+#: uc_webmoneygate.module:173
+msgid "Test 80% success, 20% failure"
+msgstr "Тестовый 80% проходит, 20% не проходит"
+
+#: uc_webmoneygate.module:179
+msgid "Order review submit button text"
+msgstr "Текст для кнопки \"Оплатить\""
+
+#: uc_webmoneygate.module:180
+msgid "Provide WM specific text for the submit button on the order review page."
+msgstr "Укажите свой текст для кнопки при использовании метода платежа Webmoney"
+
+#: uc_webmoneygate.module:181;223
+msgid "Submit Order"
+msgstr "Оплатить"
+
+#: uc_webmoneygate.module:185
+msgid "Description"
+msgstr "Описание"
+
+#: uc_webmoneygate.module:186
+msgid "Enter your description for fail page."
+msgstr "Вы можете указать свое описание для страницы ошибочного платежа."
+
+#: uc_webmoneygate.module:227
+msgid "Technical problem on this service please change other payment method or pay later"
+msgstr "Технические неполадки сервиса, пожалуйста выберите другой метод оплаты или оплатите покупку позже."
+
+#: uc_webmoneygate.module:236
+msgid "Select WM currency"
+msgstr "Выберите валюту платежа"
+
+#: uc_webmoneygate.module:255
+msgid "This currency is not supported, please select other payment method"
+msgstr "Данная валюта не поддерживается, пожалуйста выберите друю валюту или другой метод платежа."
+
+#: uc_webmoneygate.module:288;298
+msgid "An error occurred during payment. Please contact us to ensure your order has been submitted."
+msgstr "Ошибка при обработке ордера. Пожалуйста свяжитесь с администрацией магазина."
+
+#: uc_webmoneygate.module:290
+msgid "Congratulations! You payment is finished."
+msgstr "Поздравляем! Платеж успешно завершен."
+
+#: uc_webmoneygate.module:291;294
+msgid "Order was payed through Webmoney Merchant Interface @trans, @date"
+msgstr "Ордер был оплачен с помощью Webmoney  @trans, @date."
+
+
+#: uc_webmoneygate.module:297;308
+msgid "Payment failed!"
+msgstr "Оплата не завершена."
+
+#: uc_webmoneygate.module:9
+msgid "Result"
+msgstr ""
+
+#: uc_webmoneygate.module:15
+msgid "Congratulations"
+msgstr "Поздравляем"
+
+#: uc_webmoneygate.module:21
+msgid "Sorry"
+msgstr "Извините"
+
+#: uc_webmoneygate.module:0
+msgid "uc_webmoneygate"
+msgstr "uc_webmoneygate"
+
+#: uc_webmoneygate.info:0
+msgid "WebMoney"
+msgstr "Webmoney"
+
+#: uc_webmoneygate.info:0
+msgid "Process payments using WebMoney Transfer."
+msgstr "Оплата товаров с помощью денежных переводов Webmoney."
+
+#: uc_webmoneygate.info:0
+msgid "Ubercart - payment"
+msgstr "Ubercart - payment"
+

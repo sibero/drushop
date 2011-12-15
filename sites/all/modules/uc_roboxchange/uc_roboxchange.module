@@ -1,0 +1,273 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * RoboXchange payment gateway file.
+ *
+ * This module provides RoboXchange payment gateway through
+ * roboxchange.com website, when using Drupal Ubercart.
+ * It was developed and tested for Ubercart 6.x-2.0-beta5.
+ */
+
+define("cRoboXchangeActionUrl", "https://merchant.roboxchange.com/Index.aspx");
+
+/********************************************************************
+ * Drupal Hooks
+ ********************************************************************/
+
+/**
+ * Implementation of hook_menu()
+ */
+
+function uc_roboxchange_menu() {
+    $items['uc_roboxchange/done'] = array(
+      'title'    => 'Internal Data',
+      'page callback' => 'uc_roboxchange_done_payment',
+      'access arguments'   => array('access content'),
+      'type'     => MENU_CALLBACK
+    );
+    $items['uc_roboxchange/success'] = array(
+      'title'    => 'RoboXchange processing',
+      'page callback' => 'uc_roboxchange_payment_end',
+      'page arguments' => array('success'),
+      'access arguments'   => array('access content'),
+      'type'     => MENU_CALLBACK
+    );
+    $items['uc_roboxchange/fail'] = array(
+      'title'    => 'RoboXchange processing',
+      'page callback' => 'uc_roboxchange_payment_end',
+      'page arguments' => array('fail'),
+      'access arguments'   => array('access content'),
+      'type'     => MENU_CALLBACK
+    );
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function uc_roboxchange_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'uc_cart_checkout_review_form' && ($order_id = intval($_SESSION['cart_order'])) > 0) {
+    $order = uc_order_load($order_id);
+
+    if ($order->payment_method == 'uc_roboxchange') {
+      unset($form['submit']);
+      $form['#prefix'] = '<table ><tr><td>';
+      $form['#suffix'] = '</td><td>'. drupal_get_form('uc_roboxchange_submit_form', $order) .'</td></tr></table>';
+    }
+  }
+}
+
+/********************************************************************
+ * Functions callback
+ ********************************************************************/
+/**
+ * Callback for RoboXchange payment method settings.
+ */
+
+
+  function uc_roboxchange_done_payment() {
+  $order_id           = $GLOBALS['_POST']['InvId'];
+  $amount             = $GLOBALS['_POST']['OutSum'];
+  $hash               = drupal_strtoupper($GLOBALS['_POST']['SignatureValue']);
+  
+    $mps2 = variable_get('uc_roboxchange_mps2', '');
+    $crc=strtoupper(md5($amount .':'. $order_id .':'. $mps2));
+
+  $data = db_fetch_object(db_query("SELECT * FROM {uc_roboxchange_transaction} WHERE txnid = '%d' ", $order_id));
+  $un=unserialize($data->description);
+  $order = uc_order_load($order_id);
+watchdog('roboxchange', print_r($_POST, TRUE));
+  $res="";
+  if ($order === FALSE || (uc_order_status_data($order->order_status, 'state') != 'in_checkout' && uc_order_status_data($order->order_status, 'state') != 'payment_received') ) {
+    $res=t('An error has occurred during payment.  Please contact us to ensure your order has submitted.');
+    print $res;
+    uc_order_comment_save($order_id, 0, $res, 'admin');
+    uc_order_update_status($order_id, 'canceled');
+    exit();
+  }
+  if ($un['amount']!=$amount) {
+    $res = t('This number @out_summa does not match the original price @in_summa.', array('@out_summa' => $amount, '@in_summa' => $un['amount']));
+  }
+
+  if ($crc!=$hash ) {
+      $res = t('Security check failed');
+  }
+  if ($res==="") {
+      $description = t('A payment was accepted.');
+      db_query("UPDATE {uc_roboxchange_transaction} SET description = '%s' WHERE txnid = %d", $description, $order_id);
+        uc_payment_enter($order_id, 'roboxchange', $amount, $order->uid, NULL, $description);
+        uc_cart_complete_sale($order);
+        uc_order_comment_save($order_id, 0, t('A payment has been accepted.'), 'admin');
+        print "OK". $order_id; exit;
+    }
+    else {
+        uc_order_comment_save($order_id, 0, $res, 'admin');
+        uc_order_update_status($order_id, 'canceled');
+        print $res; exit;
+    }
+  }
+
+/********************************************************************
+ * other Functions
+ ********************************************************************/
+function uc_payment_method_roboxchange($op, &$arg1) {
+  switch ($op) {
+    case 'cart-details':
+      return $details;
+    case 'settings':
+  $form['uc_roboxchange_action_url'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Action url'),
+    '#default_value' => variable_get('uc_roboxchange_action_url', cRoboXchangeActionUrl),
+    '#description'   => t("Please enter action url.\nDefault: !url", array('!url' => cRoboXchangeActionUrl)),
+  );
+  $form['uc_roboxchange_mrh'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Merchant Login'),
+    '#default_value' => variable_get('uc_roboxchange_mrh', ''),
+    '#description'   => t("Please enter Merchant Login."),
+  );
+  $form['uc_roboxchange_mps1'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Merchant Pass 1'),
+    '#default_value' => variable_get('uc_roboxchange_mps1', ''),
+    '#description'   => t("Please enter Merchant Login."),
+  );
+  $form['uc_roboxchange_mps2'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Merchant Pass 2'),
+    '#default_value' => variable_get('uc_roboxchange_mps2', ''),
+    '#description'   => t("Please enter Merchant Login."),
+  );
+
+  $form['uc_roboxchange_rate'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Rate to site currency'),
+    '#default_value' => variable_get('uc_roboxchange_rate', '1.00'),
+    '#description'   => t("Please enter RoboXchange rate according to site currency."),
+  );
+
+
+  $form['url'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#title' => t('Urls (result, success, fail) for merchant interfase')
+  );
+
+  $form['url']['result'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Result url'),
+    '#value' => url('uc_roboxchange/done', array('absolute' => TRUE)),
+    '#description'   => t("Just for copy."),
+  );
+
+  $form['url']['success'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Success url'),
+    '#value' => url('uc_roboxchange/success', array('absolute' => TRUE)),
+    '#description'   => t("Just for copy."),
+  );
+  $form['url']['fail'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Fail url'),
+    '#value' => url('uc_roboxchange/fail', array('absolute' => TRUE)),
+    '#description'   => t("Just for copy."),
+  );
+
+      return $form;
+    case 'cart-process':
+      return;
+  }
+}
+
+function uc_roboxchange_submit_form(&$form_state, $order) {
+  $amount = $order->order_total * variable_get('uc_roboxchange_rate', '1.00');
+  $ser['amount']=$amount;
+  $description=serialize($ser);
+  if (db_result(db_query("SELECT COUNT(txnid) FROM {uc_roboxchange_transaction} WHERE txnid = '%s'", $order->order_id))) {
+    db_query("UPDATE {uc_roboxchange_transaction} SET description = '%s' WHERE txnid = %d", $description, $order->order_id);
+  }
+  else {
+    db_query("INSERT INTO {uc_roboxchange_transaction} (txnid, description) VALUES (%d, '%s')", $order->order_id, $description);
+    }
+    $mrh=variable_get('uc_roboxchange_mrh', '');
+    $form['MrchLogin'] = array(
+      '#type' => 'hidden',
+      '#value' => $mrh,
+    );
+    $form['InvId'] = array(
+      '#type' => 'hidden',
+      '#value' => $order->order_id,
+    );
+
+  $sitename=variable_get('site_name', 'Drupal');
+    $desc = t('Purchase from site !sitename. Transaction !ID.', array('!sitename' => $sitename, '!ID' => $order->order_id));
+  
+    $form['Desc'] = array(
+      '#type' => 'hidden',
+      '#default_value' => $desc,
+    );
+  
+    $form['OutSum'] = array(
+      '#type' => 'hidden',
+      '#value' => $amount,
+    );
+    $crc=md5($mrh .':'. $amount .':'. $order->order_id .':'. variable_get('uc_roboxchange_mps1', ''));
+    $form['SignatureValue'] = array(
+      '#type' => 'hidden',
+      '#value' => $crc,
+    );
+
+  $form['#action'] = variable_get('uc_roboxchange_action_url', cRoboXchangeActionUrl);
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Place your order'),
+  );
+  return $form;
+}
+
+
+function uc_roboxchange_payment_end($type) {
+  if ($type=='success') {
+    if (isset($_SESSION['cart_order'])) {
+      $order_id=$_SESSION['cart_order'];
+      $_SESSION['do_complete'] = TRUE;
+      drupal_goto('cart/checkout/complete');
+    }
+  }
+  else {
+    unset($_SESSION['cart_order']);
+    drupal_set_message( t("Your payment has been declined."));
+    drupal_goto('cart');
+  }
+  return $output;
+}
+
+/********************************************************************
+ * Hook Functions (Ubercart)
+ ********************************************************************/
+
+/**
+ * Implementation of hook_payment_method().
+ */
+function uc_roboxchange_payment_method() {
+  $path = base_path() . drupal_get_path('module', 'uc_roboxchange');
+  $title =  t('RoboXchange') .'<br /><img src="'. $path .'/images/roboxchange.gif" style="position: relative; left: 2.5em;">';
+
+  $methods[] = array(
+    'id' => 'uc_roboxchange',
+    'name' => t('RoboXchange'),
+    'title' => $title,
+    'desc' => t('Redirect to roboxchange.com.'),
+    'callback' => 'uc_payment_method_roboxchange',
+    'weight' => 3,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  return $methods;
+}
+

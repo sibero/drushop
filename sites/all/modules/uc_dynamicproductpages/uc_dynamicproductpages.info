@@ -1,0 +1,14 @@
+; $Id: uc_dynamicproductpages.info,v 1.1 2010/09/25 19:58:47 aidan Exp $
+name = Dynamic product pages
+description = Provides dynamic product pages, where the product page is updated when an attribute is selected.
+core = 6.x
+version = "6.x-1.1"
+package = Ubercart - extra
+dependencies[] = uc_attribute
+
+; Information added by drupal.org packaging script on 2010-10-22
+version = "6.x-1.1"
+core = "6.x"
+project = "uc_dynamicproductpages"
+datestamp = "1287782735"
+

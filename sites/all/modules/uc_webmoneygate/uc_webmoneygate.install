@@ -1,0 +1,25 @@
+<?php
+// $Id: uc_webmoneygate.install,v 1.1 2009/10/15 11:42:46 duke Exp $
+
+/**
+ * @file
+ */
+
+function uc_webmoneygate_uninstall() {
+  variable_del('wmshopname');
+  variable_del('wmoney_id');
+  variable_del('wmoney_pass');
+  variable_del('wmoney_desc');
+  variable_del('zmoney');
+  variable_del('emoney');
+  variable_del('rmoney');
+  variable_del('umoney');
+  variable_del('currency_USD');
+  variable_del('currency_EUR');
+  variable_del('currency_RUR');
+  variable_del('currency_UAH');
+  variable_del('wmmoney_order_status');
+  variable_del('wmoney_mode');
+  variable_del('wmoney_checkout_button');
+  variable_del('uc_webmoneygate_fail_message');
+}
