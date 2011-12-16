@@ -1,14 +1,19 @@
 <?php
 
 /**
- * Implementation of hook_perm().
+ * @file
+ * Integrates RBK Money's payment service.
+ */
+
+/**
+ * Implements hook_perm().
  */
 function uc_rbkmoney_perm() {
   return array('administer uc_rbkmoney');
 }
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function uc_rbkmoney_menu() {
   $items['admin/store/settings/uc_rbkmoney'] = array(
@@ -42,29 +47,29 @@ function uc_rbkmoney_menu() {
 }
 
 /**
- * Callback for settings page
+ * Callback for settings page.
  */
 function uc_rbkmoney_setup() {
   global $base_url;
   $form['responseURL'] = array(
     '#value' => t('Response URL: ') . $base_url . '/uc_rbkmoney/response',
-    '#suffix' => '<div class="description">' . t('For insertion into "Payment notification URL" field on <a target="_blank" href="!site">RBK Money</a> settings page', array('!site' => url('http://www.rbkmoney.ru'))) . '</div>',
+    '#suffix' => '<div class="description">' . t('For insertion into "Payment notification URL" field on !site settings page', array('!site' => l('RBK Money', 'http://www.rbkmoney.ru', array('attributes' => array('target'=>'_blank'))))) . '</div>',
   );
-  $form['actionURL'] = array(
+  $form['uc_rbkmoney_actionURL'] = array(
     '#type' => 'textfield',
     '#title' => t('Payment form action URL'),
     '#default_value' => variable_get('uc_rbkmoney_actionURL', 'https://rbkmoney.ru/acceptpurchase.aspx'),
     '#description' => t('Default: "!action"', array('!action' => url('https://rbkmoney.ru/acceptpurchase.aspx'))),
     '#required' => TRUE,
   );
-  $form['eshopId'] = array(
+  $form['uc_rbkmoney_eshopId'] = array(
     '#type' => 'textfield',
     '#title' => t('Site ID'),
     '#default_value' => variable_get('uc_rbkmoney_eshopId', ''),
     '#description' => t("Merchant ID of your site"),
     '#required' => TRUE,
   );
-  $form['recipientCurrency'] = array(
+  $form['uc_rbkmoney_recipientCurrency'] = array(
     '#type' => 'select',
     '#title' => t('Payments currency'),
     '#options' => array('RUR' => 'RUR', 'USD' => 'USD', 'EUR' => 'EUR', 'UAH' => 'UAH'),
@@ -72,32 +77,26 @@ function uc_rbkmoney_setup() {
     '#description' => t("Please, select payments currency"),
     '#required' => TRUE,
   );
-  $form['secretKey'] = array(
+  $form['uc_rbkmoney_secretKey'] = array(
     '#type' => 'textfield',
     '#title' => t('Secret key'),
     '#default_value' => variable_get('uc_rbkmoney_secretKey', ''),
-    '#description' => t('Secret key, entered on <a target="_blank" href="!site">RBK Money</a> settings page', array('!site' => url('http://www.rbkmoney.ru'))),
+    '#description' => t('Secret key, entered on !site settings page', array('!site' => l('RBK Money', 'http://www.rbkmoney.ru', array('attributes' => array('target'=>'_blank'))))),
     '#required' => TRUE,
   );
-  $form['log'] = array(
+  $form['uc_rbkmoney_log'] = array(
     '#type' => 'radios',
-    '#title' => t('Save RBK Money\'s server responses in <a href="!dblog">system log</a>', array('!dblog' => url('admin/reports/dblog'))),
+    '#title' => t('Save RBK Money\'s server responses in !dblog', array('!dblog' => l('system log', 'admin/reports/dblog'))),
     '#options' => array('on' => t('Yes'), 'off' => t('No')),
     '#default_value' => variable_get('uc_rbkmoney_log', 'on'),
   );
-  $form['ip'] = array(
+  $form['uc_rbkmoney_ip'] = array(
     '#type' => 'radios',
     '#title' => t('Process notifications only from allowed IP addresses'),
     '#options' => array('on' => t('Yes'), 'off' => t('No')),
     '#default_value' => variable_get('uc_rbkmoney_ip', 'off'),
   );
-  $form['preference'] = array(
-    '#type' => 'fieldset',
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-    '#title' => t('Advanced options of protocol')
-  );
-  $form['preference']['method'] = array(
+  $form['uc_rbkmoney_preference'] = array(
     '#type' => 'select',
     '#title' => t('Prefered payment method'),
     '#options' => array(
@@ -122,33 +121,17 @@ function uc_rbkmoney_setup() {
     '#default_value' => variable_get('uc_rbkmoney_preference', 'all'),
     '#description' => t("Default payment method. Allow to skip payment selection page"),
   );
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save changes'),
-  );
-  return $form;
+
+  return system_settings_form($form);
 }
 
 /**
- * Submit setup form
- */
-function uc_rbkmoney_setup_submit($form, &$form_state) {
-  variable_set('uc_rbkmoney_actionURL', trim($form_state['values']['actionURL']));
-  variable_set('uc_rbkmoney_eshopId', trim($form_state['values']['eshopId']));
-  variable_set('uc_rbkmoney_recipientCurrency', $form_state['values']['recipientCurrency']);
-  variable_set('uc_rbkmoney_secretKey', $form_state['values']['secretKey']);
-  variable_set('uc_rbkmoney_log', $form_state['values']['log']);
-  variable_set('uc_rbkmoney_ip', $form_state['values']['ip']);
-  variable_set('uc_rbkmoney_preference', $form_state['values']['method']);
-  drupal_set_message(t('Settings have been saved'), 'status');
-}
-
-/**
- * Implementation of hook_payment_method().
+ * Implements hook_payment_method().
  */
 function uc_rbkmoney_payment_method() {
-  $path = base_path() . drupal_get_path('module', 'uc_rbkmoney');
-  $title = t('RBK Money') . '<br /><img src="' . $path . '/images/logo.gif" style="position: relative; left: 2.5em;">';
+  $path = drupal_get_path('module', 'uc_rbkmoney') . '/images/logo.gif';
+  $img = theme('image', $path, 'RBK Money', 'RBK Money', array('class' => 'system_logo'));
+  $title = t('RBK Money') . '<br />' . $img;
   $methods[] = array(
     'id' => 'rbkmoney',
     'name' => t('RBK Money'),
@@ -175,7 +158,7 @@ function uc_payment_method_rbkmoney($op, &$arg1) {
 }
 
 /**
- * Implementation of hook_form_alter().
+ * Implements hook_form_alter().
  */
 function uc_rbkmoney_form_alter(&$form, $form_state, $form_id) {
   if ($form_id == 'uc_cart_checkout_review_form' && ($order_id = intval($_SESSION['cart_order'])) > 0) {
@@ -189,7 +172,7 @@ function uc_rbkmoney_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
- * Payment request form
+ * Payment request form.
  */
 function uc_rbkmoney_submit_form($form_state, $order) {
   $desc = '';
@@ -199,9 +182,8 @@ function uc_rbkmoney_submit_form($form_state, $order) {
     }
     $desc .= $value->qty . '&times; ' . check_plain($value->title);
   }
-  // Prevent more than 255 symbols of order description
-  if (strlen($desc) > 255) {
-    $desc = t('Order number') . ' ' . $order->order_id;
+  if (drupal_strlen($desc) > 255) { // Prevent more than 255 symbols of order description.
+    $desc = t('Order number !num', array('!num' => $order->order_id));
   }
 
   $form['eshopId'] = array(
@@ -253,12 +235,12 @@ function uc_rbkmoney_submit_form($form_state, $order) {
 }
 
 /**
- * Callback for RBK Money system response
+ * Callback for RBK Money system response.
  */
 function uc_rbkmoney_done_payment() {
 
   if (variable_get('uc_rbkmoney_ip', '') == 'on') {
-    $allowed_ip = array('89.111.188.128', '46.38.182.208', '46.38.182.209', '46.38.182.210'); // Валидные IP адреса системы
+    $allowed_ip = array('89.111.188.128', '46.38.182.208', '46.38.182.209', '46.38.182.210'); // Allowed IP addresses
     $valid_ip = in_array($_SERVER['REMOTE_ADDR'], $allowed_ip);
     if (!$valid_ip) {
       watchdog("uc_rbkmoney", "Possible fraud. Error with REMOTE IP ADDRESS = " . $_SERVER['REMOTE_ADDR'] . ". The remote address of the script posting to this notify script does not match a valid RBK Money ip address");
@@ -286,7 +268,7 @@ function uc_rbkmoney_done_payment() {
 
     $order = uc_order_load($response['orderId']);
 
-    // Hash checking. Values of eshopId, recipientCurrency taken from the settings; recipientAmount - from order, to prevent form substitution in browser
+    // Hash checking. Values of eshopId, recipientCurrency taken from the settings; recipientAmount - from order, to prevent form substitution in browser.
     $string = variable_get('uc_rbkmoney_eshopId', '') . '::' . $response['orderId'] . '::' . $response['serviceName'] . '::' . $response['eshopAccount'] . '::' . number_format($order->order_total, 2, '.', '') . '::' . variable_get('uc_rbkmoney_recipientCurrency', '') . '::' . $response['paymentStatus'] . '::' . $response['userName'] . '::' . $response['userEmail'] . '::' . $response['paymentData'] . '::' . variable_get('uc_rbkmoney_secretKey', '');
     $crc = md5($string);
 
@@ -302,16 +284,17 @@ function uc_rbkmoney_done_payment() {
           uc_order_comment_save($response['orderId'], $order->uid, t('RBK Money: payment successful'), $type = 'admin', $status = 1, $notify = FALSE);
           break;
       }
-    } elseif ($response['hash'] !== $crc) {
+    }
+    elseif ($response['hash'] !== $crc) {
       uc_order_update_status($response['orderId'], 'canceled');
       uc_order_comment_save($response['orderId'], $order->uid, t('MD5 checksum fail, possible fraud. Order canceled'), $type = 'admin', $status = 1, $notify = FALSE);
-      watchdog('uc_rbkmoney', t('MD5 checksum fail, possible fraud. Order canceled'));
+      watchdog('uc_rbkmoney', 'MD5 checksum fail, possible fraud. Order canceled');
     }
   }
 }
 
 /**
- * Callback redirect from RBK Money site
+ * Callback redirect from RBK Money site.
  */
 function uc_rbkmoney_payment_end($arg) {
   switch ($arg) {

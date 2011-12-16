@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Uninstall function for the uc_rbkmoney module.
+ */
+
+/**
  * Implementation of hook_uninstall().
  */
 function uc_rbkmoney_uninstall() {
