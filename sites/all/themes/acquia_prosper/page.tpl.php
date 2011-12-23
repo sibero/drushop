@@ -161,8 +161,8 @@ include ('simple.tpl.php'); return;
           </div><!-- /footer-message-inner -->
         </div><!-- /footer-message -->
       </div><!-- /footer-message-wrapper -->
-
     </div><!-- /page-inner -->
   </div><!-- /page -->
 </body>
 </html>
+

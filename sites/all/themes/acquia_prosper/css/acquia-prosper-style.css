@@ -1689,7 +1689,7 @@ table.order-review-table #edit-submit.form-submit {
   border-left: 1px solid #ededed;
   border-right: 1px solid #ededed;
   color: black;
-  padding: 10px;
+
 }
 
 #header-group-wrapper .block-uc_ajax_cart{
@@ -1743,11 +1743,30 @@ border-bottom: 1px solid white;
 }
 
 .grid-tovar td {
-padding-top: 20px;
-padding-left: 20px;
-border: 2px solid #BFBFBF;
 background: #FFFFFF none repeat scroll 0 0;
 text-align:center;
+width: 33%;
+height: auto;
+
+}
+.grid-tovar .corner {
+border: 1px solid #AEAEAE; 
+padding: 5px;
+-webkit-border-radius: 15px;
+-moz-border-radius: 15px;
+border-radius: 15px;
+background: #F3F3F3;
+height: 300px;
+
+}
+
+.grid-tovar .corner:hover{
+border: 1px solid #AEAEAE; 
+padding: 5px;
+-webkit-border-radius: 15px;
+-moz-border-radius: 15px;
+border-radius: 15px;
+background: #EDEDED;
 }
 
 .grid-tovar div.views-field-list-price {color: #AEAEAE;}
@@ -1895,3 +1914,26 @@ font-size: 20px; font-weight: bold;
 float: right;
 width: 70%;
 }
+
+.view-news td {
+width: 50%;
+border: 1px solid #AEAEAE;
+}
+
+.view-news {
+  background: #fff;
+  border-left: none;
+  border-right: none;
+  color: black;
+  padding: o;
+  margin: 10px;
+
+}
+
+.ajax-cart-submit-form-button:hover  {
+font-size: 12px;
+}
+.list-add-to-cart:hover {
+font-size: 12px;
+}
+

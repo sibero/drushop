@@ -68,6 +68,16 @@ function date_popup_css_options() {
       $paths[drupal_get_path('module', 'date_popup') .'/themes/datepicker.1.7.css'] = t('Date Popup default');
       $paths[$jquery_ui_path .'/jquery.ui/themes/base/ui.datepicker.css'] = t('jQuery UI default');
       break;
+		case '1.7.3':
+      $path = drupal_get_path('module', 'jquery_ui') .'/jquery.ui/themes';
+      $files = is_dir($path) ? scandir($path) : array();
+      $nomask = array('.', '..', 'CVS');
+      foreach ($files as $dir) {
+        if (is_dir($path .'/'. $dir) && !in_array($dir, $nomask)) {
+          $paths[$path .'/'. $dir .'/ui.datepicker.css'] = 'jQuery UI '.$dir;
+        }
+      }
+      break;
   }
   return $paths;
 }
@@ -82,7 +92,15 @@ function date_popup_init() {
     return;
   }
   
-  drupal_add_css(variable_get('date_popup_css_file', date_popup_css_default()));
+  $pathinfo = pathinfo(variable_get('date_popup_css_file', date_popup_css_default()));
+  if ($pathinfo['filename'] == 'ui.datepicker') {
+    drupal_add_css($pathinfo['dirname'] . '/ui.core.css');
+    drupal_add_css($pathinfo['dirname'] . '/ui.datepicker.css');
+    drupal_add_css($pathinfo['dirname'] . '/ui.theme.css');
+  }
+  else {
+    drupal_add_css($pathinfo['dirname'] . $pathinfo['basename']);
+  }
   
   if (variable_get('date_popup_timepicker', 'default') == 'default') {
     drupal_add_css(drupal_get_path('module', 'date_popup')  .'/themes/jquery.timeentry.css');
