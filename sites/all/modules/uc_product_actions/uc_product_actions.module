@@ -1,5 +1,4 @@
 <?php
-// $Id: uc_product_actions.module,v 1.1 2010/10/09 08:44:17 asak Exp $
 
 /**
  * Implements hook_help().
@@ -7,8 +6,18 @@
 function uc_product_actions_help($section) {
   switch ($section) {
     case 'admin/help#uc_product_actions':
-      // Return a line-break version of the module README
-      return filter_filter('process', 2, NULL, file_get_contents( dirname(__FILE__) . "/README.txt") );
+      $output = '<p>'. t('The Product Actions module provides actions that can be used in custom code or in conjunction with Views Bulk Operations to modify Ubercart product prices and weights.') .'</p>';
+      $output .= '<p>'. t('New actions provided include:') .'</p>';
+      $output .= '<ul><li>'. t('Modify product weight') .'</li>';
+      $output .= '<li>'. t('Modify product list price') .'</li>';
+      $output .= '<li>'. t('Modify product cost') .'</li>';
+      $output .= '<li>'. t('Modify product sell price') .'</li></ul>';
+      $output .= '<p>'. t('These actions can be used to manipulate the prices of multiple products, using three methods:') .'</p>';
+      $output .= '<ol><li>'. t('Percentage - alter values up or down by a percentage.') .'</li>';
+      $output .= '<li>'. t('Difference - alter values up or down by a fixed amount.') .'</li>';
+      $output .= '<li>'. t('Absolute - set values to a specified number.') .'</li></ol>';
+      $output .= '<p>'. t('For more information, see README.txt and the <a href="http://drupal.org/node/335694">VBO quickstart guide</a>.') .'</p>';
+      return $output;
   }
 }
 
@@ -21,7 +30,7 @@ function uc_product_actions_action_info() {
   return array(
     'uc_product_actions_update_weight_action' => array(
       'type' => 'node',
-      'description' => t('Modify product Weight'),
+      'description' => t('Modify product weight'),
       'configurable' => TRUE,
       'hooks' => array(
         'nodeapi' => array('update'),
@@ -29,7 +38,7 @@ function uc_product_actions_action_info() {
     ),
     'uc_product_actions_update_cost_action' => array(
       'type' => 'node',
-      'description' => t('Modify product Cost'),
+      'description' => t('Modify product cost'),
       'configurable' => TRUE,
       'hooks' => array(
         'nodeapi' => array('update'),
@@ -37,7 +46,7 @@ function uc_product_actions_action_info() {
     ),
     'uc_product_actions_update_list_price_action' => array(
       'type' => 'node',
-      'description' => t('Modify product List Price'),
+      'description' => t('Modify product list price'),
       'configurable' => TRUE,
       'hooks' => array(
         'nodeapi' => array('update'),
@@ -45,7 +54,7 @@ function uc_product_actions_action_info() {
     ),
     'uc_product_actions_update_sell_price_action' => array(
       'type' => 'node',
-      'description' => t('Modify product Sell Price'),
+      'description' => t('Modify product sell price'),
       'configurable' => TRUE,
       'hooks' => array(
         'nodeapi' => array('update'),
@@ -55,369 +64,182 @@ function uc_product_actions_action_info() {
 }
 
 /**
- * Form builder for the weight changing action form.
+ * Modify product weight action
  *
- * @param $context
- *   An array of additional information. will include
- *   the requested change after submission, and pass
- *   it to the action function.
- *
- * @see uc_product_actions_update_weight_action()
- * @see uc_product_actions_update_weight_action_validate()
- * @see uc_product_actions_update_weight_action_submit()
- * @ingroup forms
+ * @see uc_product_actions_form_builder()
+ * @see uc_product_actions_form_validator()
+ * @see uc_product_actions_form_submitter()
+ * @see uc_product_actions_action_executor()
  */
 function uc_product_actions_update_weight_action_form($context) {
-  $form['weight_change'] = array(
-    '#title' => filter_xss(t('The change in weight, in percentage.')),
-    '#type' => 'textfield',
-    '#description' => filter_xss(t('Enter a numeric percentage for changing the weight of product. For instance, enter "-20" to decrease the weight by 20% of all selected products, or "30" to increase the weight by 30%. Note: weight will be rounded up to the nearest whole number.')),
-    '#default_value' => isset($context['weight_change']) ? check_plain($context['weight_change']) : '',
-  );
+  $form = uc_product_actions_form_builder('weight');
   return $form;
+}
+function uc_product_actions_update_weight_action_validate($form, &$form_state) {
+  uc_product_actions_form_validator('weight', $form_state);
+}
+function uc_product_actions_update_weight_action_submit($form, $form_state) {
+  $values = uc_product_actions_form_submitter('weight', $form_state);
+  return $values;
+}
+function uc_product_actions_update_weight_action($node, $context) {
+  uc_product_actions_action_executor('weight', $node, $context);
 }
 
 /**
- * Form builder for the cost changing action form.
+ * Modify product cost action
  *
- * @param $context
- *   An array of additional information. will include
- *   the requested change after submission, and pass
- *   it to the action function.
- *
- * @see uc_product_actions_update_cost_action()
- * @see uc_product_actions_update_cost_action_validate()
- * @see uc_product_actions_update_cost_action_submit()
- * @ingroup forms
+ * @see uc_product_actions_form_builder()
+ * @see uc_product_actions_form_validator()
+ * @see uc_product_actions_form_submitter()
+ * @see uc_product_actions_action_executor()
  */
 function uc_product_actions_update_cost_action_form($context) {
-  $form['cost_method'] = array(
-    '#title' => filter_xss(t('What method should be used to modify the cost?')),
-    '#type' => 'select',
-    '#options' => array('percentage' => filter_xss(t('Percentage')), 'absolute' => filter_xss(t('Absolute'))),
-    '#multiple' => FALSE,
-    '#description' => filter_xss(t("Modify the cost using a percentage value or an absolute value?")),
-    '#default_value' => isset($context['cost_method']) ? check_plain($context['cost_method']) : '',
-  );
-  $form['cost_change'] = array(
-    '#title' => filter_xss(t('The change in cost')),
-    '#type' => 'textfield',
-    '#description' => filter_xss(t("Enter a numeric value for changing the cost of product. For instance, enter '-20' to decrease the cost of all selected products by 20% if you've selected to use percentage or $20 if selected to use an absolute value (currency is insegnificant), or '30' to increase the cost by 30% (or $30 correspondingly). Note: the cost will be rounded according to your store settings.")),
-    '#default_value' => isset($context['cost_change']) ? check_plain($context['cost_change']) : '',
-  );
+  $form = uc_product_actions_form_builder('cost');
   return $form;
+}
+function uc_product_actions_update_cost_action_validate($form, &$form_state) {
+  uc_product_actions_form_validator('cost', $form_state);
+}
+function uc_product_actions_update_cost_action_submit($form, $form_state) {
+  $values = uc_product_actions_form_submitter('cost', $form_state);
+  return $values;
+}
+function uc_product_actions_update_cost_action($node, $context) {
+  uc_product_actions_action_executor('cost', $node, $context);
 }
 
 /**
- * Form builder for the List Price changing action form.
+ * Modify product list price action
  *
- * @param $context
- *   An array of additional information. will include
- *   the requested change after submission, and pass
- *   it to the action function.
- *
- * @see uc_product_actions_update_list_price_action()
- * @see uc_product_actions_update_list_price_action_validate()
- * @see uc_product_actions_update_list_price_action_submit()
- * @ingroup forms
+ * @see uc_product_actions_form_builder()
+ * @see uc_product_actions_form_validator()
+ * @see uc_product_actions_form_submitter()
+ * @see uc_product_actions_action_executor()
  */
 function uc_product_actions_update_list_price_action_form($context) {
-  $form['list_price_method'] = array(
-    '#title' => filter_xss(t('What method should be used to modify the list price?')),
-    '#type' => 'select',
-    '#options' => array('percentage' => filter_xss(t('Percentage')), 'absolute' => filter_xss(t('Absolute'))),
-    '#multiple' => FALSE,
-    '#description' => filter_xss(t("Modify the List Price using a percentage value or an absolute value?")),
-    '#default_value' => isset($context['list_price_method']) ? check_plain($context['list_price_method']) : '',
-  );
-  $form['list_price_change'] = array(
-    '#title' => filter_xss(t('The change in List Price')),
-    '#type' => 'textfield',
-    '#description' => filter_xss(t("Enter a numeric value for changing the List Price of the product. For instance, enter '-20' to decrease the price of all selected products by 20% if you've selected to use percentage or $20 if selected to use an absolute value (currency is insegnificant), or '30' to increase the price by 30% (or $30 correspondingly). Note: the price will be rounded according to your store settings.")),
-    '#default_value' => isset($context['list_price_change']) ? check_plain($context['list_price_change']) : '',
-  );
+  $form = uc_product_actions_form_builder('list_price');
   return $form;
+}
+function uc_product_actions_update_list_price_action_validate($form, &$form_state) {
+  uc_product_actions_form_validator('list_price', $form_state);
+}
+function uc_product_actions_update_list_price_action_submit($form, $form_state) {
+  $values = uc_product_actions_form_submitter('list_price', $form_state);
+  return $values;
+}
+function uc_product_actions_update_list_price_action($node, $context) {
+  uc_product_actions_action_executor('list_price', $node, $context);
 }
 
 /**
- * Form builder for the Sell Price changing action form.
+ * Modify product sell price action
  *
- * @param $context
- *   An array of additional information. will include
- *   the requested change after submission, and pass
- *   it to the action function.
- *
- * @see uc_product_actions_update_sell_price_action()
- * @see uc_product_actions_update_sell_price_action_validate()
- * @see uc_product_actions_update_sell_price_action_submit()
- * @ingroup forms
+ * @see uc_product_actions_form_builder()
+ * @see uc_product_actions_form_validator()
+ * @see uc_product_actions_form_submitter()
+ * @see uc_product_actions_action_executor()
  */
 function uc_product_actions_update_sell_price_action_form($context) {
-  $form['sell_price_method'] = array(
-    '#title' => filter_xss(t('What method should be used to modify the Sell Price?')),
+  $form = uc_product_actions_form_builder('sell_price');
+  return $form;
+}
+function uc_product_actions_update_sell_price_action_validate($form, &$form_state) {
+  uc_product_actions_form_validator('sell_price', $form_state);
+}
+function uc_product_actions_update_sell_price_action_submit($form, $form_state) {
+  $values = uc_product_actions_form_submitter('sell_price', $form_state);
+  return $values;
+}
+function uc_product_actions_update_sell_price_action($node, $context) {
+  uc_product_actions_action_executor('sell_price', $node, $context);
+}
+
+/**
+ * Build the action form.
+ */
+function uc_product_actions_form_builder($action) {
+  $action_str = str_replace('_', ' ', $action);
+  $form[$action . '_method'] = array(
+    '#title' => t('Method to modify the '. $action_str),
     '#type' => 'select',
-    '#options' => array('percentage' => filter_xss(t('Percentage')), 'absolute' => filter_xss(t('Absolute'))),
+    '#options' => array('percentage' => t('Percentage'), 'difference' => t('Difference'), 'absolute' => t('Absolute')),
     '#multiple' => FALSE,
-    '#description' => filter_xss(t("Modify the Sell Price using a percentage value or an absolute value?")),
-    '#default_value' => isset($context['sell_price_method']) ? check_plain($context['sell_price_method']) : '',
+    '#description' => t('Modify the ' . $action_str . ' using a percentage, a difference, or set to an absolute value.'),
   );
-  $form['sell_price_change'] = array(
-    '#title' => filter_xss(t('The change in Sell Price')),
+  $form[$action . '_change'] = array(
+    '#title' => t('Value'),
     '#type' => 'textfield',
-    '#description' => filter_xss(t("Enter a numeric value for changing the Sell Price of the product. For instance, enter '-20' to decrease the price of all selected products by 20% if you've selected to use percentage or $20 if selected to use an absolute value (currency is insegnificant), or '30' to increase the price by 30% (or $30 correspondingly). Note: the price will be rounded according to your store settings.")),
-    '#default_value' => isset($context['sell_price_change']) ? check_plain($context['sell_price_change']) : '',
+    '#size' => 15,
+    '#description' => t('Enter a numeric value for changing the ' . $action_str . ' by the selected method. Note: the result will be rounded according to your store settings.'),
+    '#default_value' => '',
   );
   return $form;
 }
 
 /**
- * Form submission handler for uc_product_actions_update_weight_action_form().
- *
- * @see uc_product_actions_update_weight_action()
- * @see uc_product_actions_update_weight_action_form()
- * @see uc_product_actions_update_weight_action_validate()
+ * Validate the action form submission.
  */
-function uc_product_actions_update_weight_action_submit($form, $form_state) {
-  return array('weight_change' => check_plain($form_state['values']['weight_change']));
-}
-
-/**
- * Form submission handler for uc_product_actions_update_cost_action_form().
- *
- * @see uc_product_actions_update_cost_action()
- * @see uc_product_actions_update_cost_action_form()
- * @see uc_product_actions_update_cost_action_validate()
- */
-function uc_product_actions_update_cost_action_submit($form, $form_state) {
-  return array('cost_change' => check_plain($form_state['values']['cost_change']), 'cost_method' => check_plain($form_state['values']['cost_method']));
-}
-
-/**
- * Form submission handler for uc_product_actions_update_list_price_action_form().
- *
- * @see uc_product_actions_update_list_price_action()
- * @see uc_product_actions_update_list_price_action_form()
- * @see uc_product_actions_update_list_price_action_validate()
- */
-function uc_product_actions_update_list_price_action_submit($form, $form_state) {
-  return array('list_price_change' => check_plain($form_state['values']['list_price_change']), 'list_price_method' => check_plain($form_state['values']['list_price_method']));
-}
-
-/**
- * Form submission handler for uc_product_actions_update_sell_price_action_form().
- *
- * @see uc_product_actions_update_sell_price_action()
- * @see uc_product_actions_update_sell_price_action_form()
- * @see uc_product_actions_update_sell_price_action_validate()
- */
-function uc_product_actions_update_sell_price_action_submit($form, $form_state) {
-  return array('sell_price_change' => check_plain($form_state['values']['sell_price_change']), 'sell_price_method' => check_plain($form_state['values']['sell_price_method']));
-}
-
-/**
- * Form validation handler for uc_product_actions_update_weight_action_form().
- *
- * @see uc_product_actions_update_weight_action()
- * @see uc_product_actions_update_weight_action_form()
- * @see uc_product_actions_update_weight_action_submit()
- */
-function uc_product_actions_update_weight_action_validate($form, $form_state) {
-  if (!isset($form_state['values']['weight_change']) || is_null($form_state['values']['weight_change']) || check_plain($form_state['values']['weight_change']) == '') {
-    form_set_error('', t('You must enter a value. See README.txt for more info on how to use this action.'));
+function uc_product_actions_form_validator($action, &$form_state) {
+  $form_state['values'][$action . '_change'] = check_plain($form_state['values'][$action . '_change']);
+  $method = $form_state['values'][$action . '_method'];
+  if ($form_state['values'][$action . '_change'] == '') {
+    form_set_error($action . '_change', t('Please enter a value.'));
   }
-  elseif (!is_numeric(check_plain($form_state['values']['weight_change']))) {
-    form_set_error('', t('You must enter a numerical value.'));
+  elseif (!is_numeric($form_state['values'][$action . '_change'])) {
+    form_set_error($action . '_change', t('Please enter a numerical value.'));
   }
-  elseif (check_plain($form_state['values']['weight_change']) == 0) {
-    form_set_error('', t('You must enter a value which is greater or smaller then 0, but it cannot equal 0.'));
+  elseif (($method == 'percentage' || $method == 'difference') && $form_state['values'][$action . '_change'] == 0) {
+    form_set_error($action . '_change', t('Please enter a non-zero value.'));
   }
 }
 
 /**
- * Form validation handler for uc_product_actions_update_cost_action_form().
- *
- * @see uc_product_actions_update_cost_action()
- * @see uc_product_actions_update_cost_action_form()
- * @see uc_product_actions_update_cost_action_submit()
+ * Submit the action form values.
  */
-function uc_product_actions_update_cost_action_validate($form, $form_state) {
-  if (!isset($form_state['values']['cost_change']) || is_null($form_state['values']['cost_change']) || check_plain($form_state['values']['cost_change']) == '') {
-    form_set_error('', t('You must enter a value. See README.txt for more info on how to use this action.'));
-  }
-  elseif (!is_numeric(check_plain($form_state['values']['cost_change']))) {
-    form_set_error('', t('You must enter a numerical value.'));
-  }
-  elseif (check_plain($form_state['values']['cost_change']) == 0) {
-    form_set_error('', t('You must enter a value which is greater or smaller then 0, but it cannot equal 0.'));
-  }
+function uc_product_actions_form_submitter($action, $form_state) {
+  $values = array();
+  $values[$action . '_change'] = $form_state['values'][$action . '_change'];
+  $values[$action . '_method'] = $form_state['values'][$action . '_method'];
+  return $values;
 }
 
 /**
- * Form validation handler for uc_product_actions_update_list_price_action_form().
- *
- * @see uc_product_actions_update_list_price_action()
- * @see uc_product_actions_update_list_price_action_form()
- * @see uc_product_actions_update_list_price_action_submit()
+ * Execute the action.
  */
-function uc_product_actions_update_list_price_action_validate($form, $form_state) {
-  if (!isset($form_state['values']['list_price_change']) || is_null($form_state['values']['list_price_change']) || check_plain($form_state['values']['list_price_change']) == '') {
-    form_set_error('', t('You must enter a value. See README.txt for more info on how to use this action.'));
-  }
-  elseif (!is_numeric(check_plain($form_state['values']['list_price_change']))) {
-    form_set_error('', t('You must enter a numerical value.'));
-  }
-  elseif (check_plain($form_state['values']['list_price_change']) == 0) {
-    form_set_error('', t('You must enter a value which is greater or smaller then 0, but it cannot equal 0.'));
-  }
-}
-
-/**
- * Form validation handler for uc_product_actions_update_sell_price_action_form().
- *
- * @see uc_product_actions_update_sell_price_action()
- * @see uc_product_actions_update_sell_price_action_form()
- * @see uc_product_actions_update_sell_price_action_submit()
- */
-function uc_product_actions_update_sell_price_action_validate($form, $form_state) {
-  if (!isset($form_state['values']['sell_price_change']) || is_null($form_state['values']['sell_price_change']) || check_plain($form_state['values']['sell_price_change']) == '') {
-    form_set_error('', t('You must enter a value. See README.txt for more info on how to use this action.'));
-  }
-  elseif (!is_numeric(check_plain($form_state['values']['sell_price_change']))) {
-    form_set_error('', t('You must enter a numerical value.'));
-  }
-  elseif (check_plain($form_state['values']['sell_price_change']) == 0) {
-    form_set_error('', t('You must enter a value which is greater or smaller then 0, but it cannot equal 0.'));
-  }
-}
-
-/**
- * This function is used to change the weight of a product.
- *
- * @param object $node
- *   The node object on which this action is performed.
- * @param array $context
- *   An array which includes the requested change value
- *   in $context['weight_change']
- *
- * @see uc_product_actions_update_weight_action_form()
- * @see uc_product_actions_update_weight_action_submit()
- * @see uc_product_actions_update_weight_action_validate()
- */
-function uc_product_actions_update_weight_action($node, $context) {
-  // Get the current weight of the product
-  $weight = db_result(db_query('SELECT weight FROM {uc_products} WHERE nid=%d', $node->nid));
-  // Make sure we have a valid weight, which doesn't equal 0
-  if (!is_null($weight) && $weight != 0) {
-    // Set $change for easy calculation based on if the value is positive or negative
-    $context['weight_change'] > 0 ? $change = 1+($context['weight_change']/100) : $change = 1-($context['weight_change']/100*-1);
-    // Set the new weight, and round it up to the nearst whole number
-    $new_weight = ceil($weight*$change);
-    // Update the product's weight
-    db_query('UPDATE {uc_products} SET weight=%d WHERE nid=%d', $new_weight, $node->nid);
-  }
-}
-
-/**
- * This function is used to change the cost of a product.
- *
- * @param object $node
- *   The node object on which this action is performed.
- * @param array $context
- *   An array which includes the requested change value
- *   in $context['cost_change'] and the chnage method is
- *   in $context['cost_method']
- *
- * @see uc_product_actions_update_cost_action_form()
- * @see uc_product_actions_update_cost_action_submit()
- * @see uc_product_actions_update_cost_action_validate()
- */
-function uc_product_actions_update_cost_action($node, $context) {
-  // Get the current cost of the product
-  $cost = db_result(db_query('SELECT cost FROM {uc_products} WHERE nid=%d', $node->nid));
-  // Make sure we have a valid cost, which doesn't equal 0
-  if (!is_null($cost) && $cost != 0) {
-    // Is this a percentage change?
-    if ($context['cost_method'] == 'percentage') {
-      // Set $change for easy calculation based on if the value is positive or negative
-      $context['cost_change'] > 0 ? $change = 1+($context['cost_change']/100) : $change = 1-($context['cost_change']/100*-1);
-      // Set the new cost
-      $new_cost = $cost*$change;
+function uc_product_actions_action_executor($action, $node, $context) {
+  $current_value = $node->$action;
+  if (!is_null($current_value)) {
+    if ($context[$action . '_method'] == 'percentage' && $current_value != 0) {
+      $change = $current_value * $context[$action . '_change'] / 100;
+      ($current_value > 0) ? $new_value = $current_value + $change : $new_value = $current_value - $change;
     }
-    // This is an absolute value change
-    else {
-      $context['cost_change'] > 0 ? $new_cost = $cost+$context['cost_change'] : $new_cost = $cost-($context['cost_change']*-1);
+    elseif ($context[$action . '_method'] == 'difference') {
+      $new_value = $current_value + $context[$action . '_change'];
     }
-    // Update the product's cost
-    db_query('UPDATE {uc_products} SET cost=%f WHERE nid=%d', $new_cost, $node->nid);
+    elseif ($context[$action . '_method'] == 'absolute') {
+      $new_value = $context[$action . '_change'];
+    }
   }
-}
 
-/**
- * This function is used to change the List Price of a product.
- *
- * @param object $node
- *   The node object on which this action is performed.
- * @param array $context
- *   An array which includes the requested change value
- *   in $context['list_price_change'] and the chnage method is
- *   in $context['list_price_method']
- *
- * @see uc_product_actions_update_list_price_action_form()
- * @see uc_product_actions_update_list_price_action_submit()
- * @see uc_product_actions_update_list_price_action_validate()
- */
-function uc_product_actions_update_list_price_action($node, $context) {
-  // Get the current list_price of the product
-  $list_price = db_result(db_query('SELECT list_price FROM {uc_products} WHERE nid=%d', $node->nid));
-  // Make sure we have a valid list_price, which doesn't equal 0
-  if (!is_null($list_price) && $list_price != 0) {
-    // Is this a percentage change?
-    if ($context['list_price_method'] == 'percentage') {
-      // Set $change for easy calculation based on if the value is positive or negative
-      $context['list_price_change'] > 0 ? $change = 1+($context['list_price_change']/100) : $change = 1-($context['list_price_change']/100*-1);
-      // Set the new list_price
-      $new_price = $list_price*$change;
-    }
-    // This is an absolute value change
-    else {
-      $context['list_price_change'] > 0 ? $new_price = $list_price+$context['list_price_change'] : $new_price = $list_price-($context['list_price_change']*-1);
-    }
-    // Update the product's list_price
-    db_query('UPDATE {uc_products} SET list_price=%f WHERE nid=%d', $new_price, $node->nid);
+  if ($action == 'weight') {
+    $new_value = ceil($new_value);
+    if ($new_value < 0) $new_value = 0;  // Product weight cannot be negative.
   }
-}
+  else {
+    $prec = variable_get('uc_currency_prec', 2);
+    $new_value = round($new_value, $prec);
+  }
 
-/**
- * This function is used to change the Sell Price of a product.
- *
- * @param object $node
- *   The node object on which this action is performed.
- * @param array $context
- *   An array which includes the requested change value
- *   in $context['sell_price_change'] and the chnage method is
- *   in $context['sell_price_method']
- *
- * @see uc_product_actions_update_sell_price_action_form()
- * @see uc_product_actions_update_sell_price_action_submit()
- * @see uc_product_actions_update_sell_price_action_validate()
- */
-function uc_product_actions_update_sell_price_action($node, $context) {
-  // Get the current sell_price of the product
-  $sell_price = db_result(db_query('SELECT sell_price FROM {uc_products} WHERE nid=%d', $node->nid));
-  // Make sure we have a valid sell_price, which doesn't equal 0
-  if (!is_null($sell_price) && $sell_price != 0) {
-    // Is this a percentage change?
-    if ($context['sell_price_method'] == 'percentage') {
-      // Set $change for easy calculation based on if the value is positive or negative
-      $context['sell_price_change'] > 0 ? $change = 1+($context['sell_price_change']/100) : $change = 1-($context['sell_price_change']/100*-1);
-      // Set the new sell_price
-      $new_price = $sell_price*$change;
-    }
-    // This is an absolute value change
-    else {
-      $context['sell_price_change'] > 0 ? $new_price = $sell_price+$context['sell_price_change'] : $new_price = $sell_price-($context['sell_price_change']*-1);
-    }
-    // Update the product's sell_price
-    db_query('UPDATE {uc_products} SET sell_price=%f WHERE nid=%d', $new_price, $node->nid);
+  if (isset($new_value)) {
+    // Save modified product.
+    $node->$action = $new_value;
+    node_save($node);
+    // Load modified node to check if operation was processed correctly.
+    $new_node = node_load($node->nid, NULL, TRUE);
+  }
+  if (!isset($new_value) || $new_node->$action != $new_value) {
+    drupal_set_message(ucfirst($action) . t(' (@new_value): %node may not have updated properly, please check and update manually if needed.', array('%node' => $node->title, '@new_value' => $new_value)), 'warning');
+    watchdog('Ubercart product actions', ucfirst($action) . ' (@new_value): %node may not have updated properly, please check and update manually if needed.', array('%node' => $node->title, '@new_value' => $new_value), WATCHDOG_WARNING, l(t('edit'), 'node/' . $node->nid . '/edit'));
   }
 }

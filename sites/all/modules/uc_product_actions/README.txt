@@ -1,29 +1,29 @@
-$Id: README.txt,v 1.1.2.1 2010/10/09 10:36:24 asak Exp $
-
 Description
 ===========
-Ubercart Product Actions provides a set of Drupal Action for usage by Ubercart
+Ubercart Product Actions provides a set of Drupal Actions for usage by Ubercart
 shop administrators for conducting site-wide changes to product data, using
 custom codes or the excellent Views Bulk Operations (VBO) module.
 
-It does so by provding a few new actions:
+It does so by providing a few new actions:
 
 - Modify product Weight
 - Modify product Sell Price
 - Modify product List Price
 - Modify product Cost Price
 
-These actions can be used to manipulate the prices of multiple products, using
-two methods:
+These actions can be used to manipulate these values on multiple products, using
+three methods:
 
-1. Absolute - alter the price using an absolute value. 
-   (for example: decrease the price of all products by $5.)
-2. Percentage - alter the price using a percentage.
+1. Percentage - alter values up or down by a percentage.
    (for example: increase the cost of selected products by 10%.)
-	 
+2. Difference - alter values up or down by a fixed amount.
+   (for example: decrease the price of all products by $5.)
+3. Absolute - set values to a specified number.
+   (for example: set the price on selected items to $15.)
+
 Usage
 =====
-The module does nothing on it's own. Here's how to quickly get it up and running:
+The module does nothing on its own. Here's how to quickly get it up and running:
  1) Download and install the Views and VBO modules:
     http://drupal.org/project/views
 	http://drupal.org/project/vbo
@@ -37,13 +37,13 @@ The module does nothing on it's own. Here's how to quickly get it up and running
     action from the Bulk Operations select box, and click Execute.
  7) On this screen enter your desired change, and click "Next".
  8) Make sure you got the right products, and click "Confirm".
- 
+
  You're done! ;)
 
- 
-If you've got any problems/questions/ideas - please visit the Issue Queue and let us know:
-http://drupal.org/project/issues/search/uc_product_actions
- 
+
+If you have any problems/questions/ideas - please visit the Issue Queue and let us know:
+http://drupal.org/project/issues/uc_product_actions
+
 Author
 ======
 Asaph (asak) - asaph at cpo.co.il

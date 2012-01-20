@@ -1,16 +1,21 @@
 <?php
 // $Id$
-// Справочная информация
-/*Аргументы - это части урла, разделённые символом '/'. Небольшой пример: имеется ссылка мой_сайт.ru/node/186/edit. Здесь в роли аргументов выступают: node - 0й аргумент, 186 - 1й аргумент, edit - 2й аргумент.
-Программно можно вызывать эти аргументы функцией arg(). То есть написав с echo arg(0); находять на странице материала  - у тебя будет выведено слово 'node'.Написав  echo arg(1); ты получишь число, равное nid ноды на которой ты находишься.*/
 
-// добавляем пункты меню
+
 function drushop_version()
 {
   return "2.0"; 
 }
-function drushop_general_menu()
-{
+
+function drushop_general_init() {
+$path = drupal_get_path('module', 'drushop_general');
+	drupal_add_css($path .'/css/drushop.css');
+	drupal_add_js($path .'/js/drushop.js');
+}
+
+// добавляем пункты меню
+function drushop_general_menu() {
+
 $items = array();
     $items['admin/settings/other'] = array(
         'title' => 'Other settings', 
@@ -32,20 +37,7 @@ $items = array();
         'type' => MENU_NORMAL_ITEM,  
     'file' => 'system.admin.inc',
 	'file path' => drupal_get_path('module', 'system'),		
-    );
-	
-	$items['admin/db'] = array(
-        'title' => 'База данных', 
-        'description' => 'Инструменты для работы с базой данных',
-'page callback' => 'system_admin_menu_block_page',
-    'position' => 'left',
-    'weight' => 20,		
-        'access arguments' => array('administer site configuration'), 
-        'type' => MENU_NORMAL_ITEM,  
-    'file' => 'system.admin.inc',
-	'file path' => drupal_get_path('module', 'system'),		
-    );
-	
+    );	
     return $items;
 }
 
@@ -134,8 +126,9 @@ function drushop_general_menu_alter(&$items) {
 	$items['admin/build/views']['weight'] = -35;
 	$items['admin/build/panels']['weight'] = -34;
 	$items['admin/build/flags']['weight'] = -33;
-	$items['admin/build/language']['weight'] = -32;
-	$items['admin/build/translate']['weight'] = -31;
+	$items['admin/build/imagecache']['weight'] = -33;
+	$items['admin/build/language']['weight'] = -31;
+	$items['admin/build/translate']['weight'] = -30;
 	
 	$items['admin/content/node']['weight'] = -40;
 	$items['admin/content/comment']['weight'] = -39;
@@ -179,10 +172,9 @@ function drushop_general_menu_alter(&$items) {
 	$items['admin/user/logintoboggan']['weight'] = 40;
 
 	// удаляем ненужные пункты меню
-  unset($items['admin/settings/image-toolkit']);
   unset($items['admin/build/cron']);
-  unset($items['admin/settings/language']);
   unset($items['admin/build/contact']);
+  unset($items['admin/build/path']);
   
 	unset($items['admin/build/formdefaults']);
 	unset($items['admin/build/taxonomy_redirect']);
@@ -209,7 +201,12 @@ function drushop_general_menu_alter(&$items) {
 	unset($items['admin/settings/comment_notify']);
 	unset($items['admin/settings/module_filter']);
 	unset($items['admin/settings/clean-urls']);
+	unset($items['admin/settings/language']);
+    unset($items['admin/settings/language/add']);
+    unset($items['admin/settings/image-toolkit']);
+	
 	unset($items['admin/user/user']);
+
 	
 	unset($items['admin/content/nodewords']);
 	unset($items['admin/settings/page-title']);
@@ -218,7 +215,6 @@ function drushop_general_menu_alter(&$items) {
 	unset($items['admin/store/reports/customers']);
 	unset($items['admin/store/reports/sales']);
 	unset($items['admin/store/reports/products']);
-	unset($items['admin/build/path']);
 	
 	unset($items['admin/store/products/files']);
 	unset($items['admin/store/products/classes']);
@@ -386,10 +382,19 @@ function drushop_general_preprocess_block_admin_display_form(&$vars) {
 }
 
 function drushop_general_preprocess_page(&$vars) {
-
-//выводит url текущей страницы, то что после сайт.ru/
+	// выводит url текущей страницы, то что после сайт.ru/
     $path = drupal_get_path_alias($_GET['q']);
 	$vars['path_now'] = $path;
+	
+	// убираем появление нежелательных таб на страницах категорий админки
+	if ($path == "admin/user" or $path =="admin/settings" or $path == "admin/build" or $path == "admin/content") {
+	unset($vars['tabs']); 
+	unset($vars['tabs2']);
+	}	
+	
+	/*Аргументы - это части урла, разделённые символом '/'. Небольшой пример: имеется ссылка мой_сайт.ru/node/186/edit. Здесь в роли аргументов выступают: node - 0й аргумент, 186 - 1й аргумент, edit - 2й аргумент.
+Программно можно вызывать эти аргументы функцией arg(). То есть написав с echo arg(0); находять на странице материала  - у тебя будет выведено слово 'node'.Написав  echo arg(1); ты получишь число, равное nid ноды на которой ты находишься.*/
+
 	// Аргументы из алиасов страниц, аналог arg() для алиасов
 	// $alias_arg[0]; //первая часть url. пример "node"
 	// $alias_arg[1]; //вторая часть url пример "26"
@@ -410,7 +415,8 @@ function drushop_general_preprocess_page(&$vars) {
 	if(function_exists('uc_country_get_by_id')) {
     $vars['store_country'] = uc_country_get_by_id(variable_get('uc_store_country', FALSE));
 	}	
-	$vars['version_store'] = "Drushop версия 2.0";
+	$ver = drushop_version();
+	$vars['version_store'] = "Drushop версия ".$ver;
 	
 }
 drupal_set_html_head('<meta name="generator" content="drushop" />');

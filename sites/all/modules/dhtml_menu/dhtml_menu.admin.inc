@@ -20,6 +20,7 @@ function dhtml_menu_settings(&$form_state) {
       'children' => t('Close menus when their parent menu is closed.'),
       'clone' => t('Add an extra page link to each expanding menu item.'),
       'doubleclick' => t('Go to the page on double-click.'),
+	  'bullets' => t('Use bullet to expand menu items (If selected the two preceding options will be ignored).'),
     ),
     '#default_value' => variable_get('dhtml_menu_effects', unserialize(DHTML_MENU_DEFAULT)),
   );

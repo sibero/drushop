@@ -258,3 +258,16 @@ ini_set('max_execution_time',       360);
 #   'forum'      => 'Discussion board',
 #   '@count min' => '@count minutes',
 # );
+// engine, the current available options are: apc, db, file, memcache and xcache.
+$conf['cache_inc'] = './sites/all/modules/cacherouter/cacherouter.inc';
+$conf['cacherouter'] = array(
+  'default' => array(
+    'engine' => 'db',
+    'servers' => array(),
+    'shared' => FALSE,
+    'prefix' => '',
+    'path' => 'sites/default/files/filecache',
+    'static' => FALSE,
+    'fast_cache' => FALSE,
+  ),
+);

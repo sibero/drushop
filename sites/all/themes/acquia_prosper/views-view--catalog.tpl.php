@@ -41,9 +41,20 @@
   <?php endif; ?>
 
   <?php if ($exposed): ?>
-    <div class="view-filters">
+  
+  
+<input type='button' value='<?php print t("Filter by:"); ?>' 
+        onclick="toggle_visibility('my_div')">
+<div id='my_div' class='div_container'> 
+   <div class="view-filters">
+   
       <?php print $exposed; ?>
     </div>
+   <input type='hidden'
+         onclick="toggle_visibility('my_div')">
+</div>
+
+    
   <?php endif; ?>
 
   <?php if ($attachment_before): ?>
@@ -54,6 +65,8 @@
 
   <?php if ($rows): ?>
     <div class="view-content">
+	</br>
+	</br>
       <?php print $rows; ?>
     </div>
   <?php elseif ($empty): ?>

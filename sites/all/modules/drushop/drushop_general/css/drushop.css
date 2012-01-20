@@ -1,0 +1,92 @@
+.sortby {
+	float: right;
+    width: 200px;
+	text-align:right;
+	
+}
+
+.filterby {
+padding-bottom: 20px;
+width: 200px;
+}
+
+.div_container{
+	display: none; 
+}
+
+.stock_out {color: red; font-size: 14px;}
+
+#edit-sell-price-up-wrapper{width: 60px;}
+#edit-sell-price-to-wrapper{width: 60px;}
+#edit-title-wrapper{width: 180px;}
+#edit-tid-wrapper{width: 180px;}
+
+.grid-tovar div.views-field-list-price {color: #AEAEAE;}
+.grid-tovar div.views-field-title{font-size:20px; padding-bottom: 10px;}
+.grid-tovar span.uc-price-sell_price {font-size:20px;font-weight: bold;}
+.grid-tovar div.views-field-list-price {text-decoration: line-through;}
+
+.grid-tovar td {
+background: #F3F3F3;
+text-align:center;
+width: 33%;
+height: auto;
+
+}
+.grid-tovar .corner {
+border: 1px solid #AEAEAE; 
+padding: 5px;
+-webkit-border-radius: 15px;
+-moz-border-radius: 15px;
+border-radius: 15px;
+background: white;
+height: 300px;
+
+}
+
+.grid-tovar .corner:hover{
+border: 1px solid #AEAEAE; 
+padding: 5px;
+-webkit-border-radius: 15px;
+-moz-border-radius: 15px;
+border-radius: 15px;
+background: #EDEDED;
+}
+
+.view-news td {
+width: 50%;
+border: 1px solid #AEAEAE;
+}
+
+.view-news {
+  background: #fff;
+  border-left: none;
+  border-right: none;
+  color: black;
+  padding: o;
+  margin: 10px;
+
+}
+
+.old_price {text-decoration: line-through; color: gray;}
+.field-type-discounted-price .field-label-inline,
+.field-type-discounted-price .field-label-inline-first {
+  font-weight: normal;
+}
+
+.field-type-discounted-price, td.views-field-discounted-price,
+.views-field-discounted-price .field-content {
+	color: black;
+	font-size:16px;
+}
+.product-additional {padding-top: 30px;}
+
+.views-field-discounted-price .field-content {
+font-size: 20px; font-weight: bold;
+}
+
+#product-group .content {
+float: right;
+width: 70%;
+}
+td.views-field-list-price {text-decoration: line-through;}

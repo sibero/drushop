@@ -68,19 +68,20 @@ function uc_roboxchange_form_alter(&$form, &$form_state, $form_id) {
  */
 
 
-  function uc_roboxchange_done_payment() {
-  $order_id           = $GLOBALS['_POST']['InvId'];
-  $amount             = $GLOBALS['_POST']['OutSum'];
-  $hash               = drupal_strtoupper($GLOBALS['_POST']['SignatureValue']);
-  
-    $mps2 = variable_get('uc_roboxchange_mps2', '');
-    $crc=strtoupper(md5($amount .':'. $order_id .':'. $mps2));
+function uc_roboxchange_done_payment() {
+  $order_id           = $_REQUEST["InvId"];
+  $amount             = $_REQUEST["OutSum"];
+  $hash               = drupal_strtoupper($_REQUEST["SignatureValue"]);
+
+  $mps2 = variable_get('uc_roboxchange_mps2', '');
+  $crc=strtoupper(md5($amount .':'. $order_id .':'. $mps2));
 
   $data = db_fetch_object(db_query("SELECT * FROM {uc_roboxchange_transaction} WHERE txnid = '%d' ", $order_id));
   $un=unserialize($data->description);
   $order = uc_order_load($order_id);
-watchdog('roboxchange', print_r($_POST, TRUE));
+  watchdog('roboxchange', print_r($_REQUEST, TRUE));
   $res="";
+
   if ($order === FALSE || (uc_order_status_data($order->order_status, 'state') != 'in_checkout' && uc_order_status_data($order->order_status, 'state') != 'payment_received') ) {
     $res=t('An error has occurred during payment.  Please contact us to ensure your order has submitted.');
     print $res;
@@ -88,27 +89,28 @@ watchdog('roboxchange', print_r($_POST, TRUE));
     uc_order_update_status($order_id, 'canceled');
     exit();
   }
-  if ($un['amount']!=$amount) {
+
+  if ((int)$un['amount'] != (int)$amount) {
     $res = t('This number @out_summa does not match the original price @in_summa.', array('@out_summa' => $amount, '@in_summa' => $un['amount']));
   }
 
-  if ($crc!=$hash ) {
+  if ($crc != $hash ) {
       $res = t('Security check failed');
   }
-  if ($res==="") {
+  if ($res === "") {
       $description = t('A payment was accepted.');
       db_query("UPDATE {uc_roboxchange_transaction} SET description = '%s' WHERE txnid = %d", $description, $order_id);
-        uc_payment_enter($order_id, 'roboxchange', $amount, $order->uid, NULL, $description);
-        uc_cart_complete_sale($order);
-        uc_order_comment_save($order_id, 0, t('A payment has been accepted.'), 'admin');
-        print "OK". $order_id; exit;
-    }
-    else {
-        uc_order_comment_save($order_id, 0, $res, 'admin');
-        uc_order_update_status($order_id, 'canceled');
-        print $res; exit;
-    }
+      uc_payment_enter($order_id, 'roboxchange', $un['order_total'], $order->uid, NULL, $description);
+      uc_cart_complete_sale($order);
+      uc_order_comment_save($order_id, 0, t('A payment has been accepted.'), 'admin');
+      print "OK". $order_id; exit;
   }
+  else {
+      uc_order_comment_save($order_id, 0, $res, 'admin');
+      uc_order_update_status($order_id, 'canceled');
+      print $res; exit;
+  }
+}
 
 /********************************************************************
  * other Functions
@@ -185,41 +187,42 @@ function uc_payment_method_roboxchange($op, &$arg1) {
 
 function uc_roboxchange_submit_form(&$form_state, $order) {
   $amount = $order->order_total * variable_get('uc_roboxchange_rate', '1.00');
-  $ser['amount']=$amount;
+  $ser['order_total'] = $order->order_total;
+  $ser['amount'] = $amount;
   $description=serialize($ser);
   if (db_result(db_query("SELECT COUNT(txnid) FROM {uc_roboxchange_transaction} WHERE txnid = '%s'", $order->order_id))) {
     db_query("UPDATE {uc_roboxchange_transaction} SET description = '%s' WHERE txnid = %d", $description, $order->order_id);
   }
   else {
     db_query("INSERT INTO {uc_roboxchange_transaction} (txnid, description) VALUES (%d, '%s')", $order->order_id, $description);
-    }
-    $mrh=variable_get('uc_roboxchange_mrh', '');
-    $form['MrchLogin'] = array(
-      '#type' => 'hidden',
-      '#value' => $mrh,
-    );
-    $form['InvId'] = array(
-      '#type' => 'hidden',
-      '#value' => $order->order_id,
-    );
+  }
+  $mrh=variable_get('uc_roboxchange_mrh', '');
+  $form['MrchLogin'] = array(
+    '#type' => 'hidden',
+    '#value' => $mrh,
+  );
+  $form['InvId'] = array(
+    '#type' => 'hidden',
+    '#value' => $order->order_id,
+  );
 
   $sitename=variable_get('site_name', 'Drupal');
-    $desc = t('Purchase from site !sitename. Transaction !ID.', array('!sitename' => $sitename, '!ID' => $order->order_id));
-  
-    $form['Desc'] = array(
-      '#type' => 'hidden',
-      '#default_value' => $desc,
-    );
-  
-    $form['OutSum'] = array(
-      '#type' => 'hidden',
-      '#value' => $amount,
-    );
-    $crc=md5($mrh .':'. $amount .':'. $order->order_id .':'. variable_get('uc_roboxchange_mps1', ''));
-    $form['SignatureValue'] = array(
-      '#type' => 'hidden',
-      '#value' => $crc,
-    );
+  $desc = t('Purchase from site !sitename. Transaction !ID.', array('!sitename' => $sitename, '!ID' => $order->order_id));
+
+  $form['Desc'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $desc,
+  );
+
+  $form['OutSum'] = array(
+    '#type' => 'hidden',
+    '#value' => $amount,
+  );
+  $crc=md5($mrh .':'. $amount .':'. $order->order_id .':'. variable_get('uc_roboxchange_mps1', ''));
+  $form['SignatureValue'] = array(
+    '#type' => 'hidden',
+    '#value' => $crc,
+  );
 
   $form['#action'] = variable_get('uc_roboxchange_action_url', cRoboXchangeActionUrl);
   $form['submit'] = array(

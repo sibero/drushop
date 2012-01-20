@@ -43,23 +43,40 @@ Drupal.behaviors.dhtmlMenu = function() {
    */
    $('ul.menu li.dhtml-menu:not(.leaf,.no-dhtml)').each(function() {
     var li = this;
-    if (effects.clone) {
+    // Add class to 'branch' links for theming
+    $(li).find('a:first').attr("class","branch");
+    if (effects.clone && !effects.bullets) {
       var ul = $(li).find('ul:first');
       if (ul.length) {
         $(li).find('a:first').clone().prependTo(ul).wrap('<li class="leaf fake-leaf"></li>');
       }
     }
 
-    if (effects.doubleclick) {
+    if (effects.doubleclick && !effects.bullets) {
       $(li).find('a:first').dblclick(function(e) {
         window.location = this.href;
       });
     }
 
-    $(li).find('a:first').click(function(e) {
-      Drupal.dhtmlMenu.toggleMenu($(li));
-      return false;
-    });
+   /* If item bullets are to be used for the toggle behaviour,
+     * insert a new link tag to be used for menu expansion.
+     */  
+    if(effects.bullets) {
+      var toggleLinkTitle = Drupal.t('Show/Hide Submenu');
+      var toggleLinkText = Drupal.t('Toggle Menu');
+      var toggleLink = '<a class="dhtmlMenuControl" href="#" title="'+ toggleLinkTitle +'">'+ toggleLinkText +'</a>';
+      $(li).find('a:first').before(toggleLink);
+      $(li).find('a.dhtmlMenuControl').click(function(e) {
+        Drupal.dhtmlMenu.toggleMenu($(li));
+        return false;
+      });
+    }
+    else {
+      $(li).find('a:first').click(function(e) {
+        Drupal.dhtmlMenu.toggleMenu($(li));
+        return false;
+      });
+    }
   });
 }
 
@@ -155,9 +172,13 @@ Drupal.dhtmlMenu.cookieGet = function() {
  * Saves the dhtml_menu cooki.
  */
 Drupal.dhtmlMenu.cookieSet = function() {
+	var effects = Drupal.settings.dhtmlMenu;
   var expanded = new Array();
   $('li.expanded').each(function() {
-    expanded.push($(this).find('a:first').attr('id').substr(5));
+    if(effects.bullets)
+      expanded.push($(this).find('a:eq(1)').attr('id').substr(5));
+    else
+      expanded.push($(this).find('a:first').attr('id').substr(5));
   });
   document.cookie = 'dhtml_menu=' + expanded.join(',') + ';path=/';
 }

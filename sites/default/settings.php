@@ -263,7 +263,7 @@ ini_set('max_execution_time',       360);
 $conf['cache_inc'] = './sites/all/modules/cacherouter/cacherouter.inc';
 $conf['cacherouter'] = array(
   'default' => array(
-    'engine' => 'file',
+    'engine' => 'db',
     'servers' => array(),
     'shared' => FALSE,
     'prefix' => '',

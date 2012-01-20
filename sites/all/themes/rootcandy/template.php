@@ -64,7 +64,6 @@ function _rootcandy_admin_navigation() {
 	$menu_tree[] = array('href' => 'admin/store', 'title' => t('Admin store'));
     $menu_tree[] = array('href' => 'admin/settings', 'title' => t('Configuration'));
     $menu_tree[] = array('href' => 'admin/user', 'title' => t('Users'));
-	$menu_tree[] = array('href' => 'admin/rules', 'title' => t('Rules'));
 	$menu_tree[] = array('href' => 'admin/seo', 'title' => t('SEO'));
     $menu_tree[] = array('href' => 'admin/reports', 'title' => t('Reports'));
     $menu_tree[] = array('href' => 'http://drushop.ru/howto', 'title' => t('Help'));

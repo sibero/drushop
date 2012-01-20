@@ -9,3 +9,30 @@ li.start-collapsed ul
   display:none;
 }
 
+li.dhtml-menu 
+{
+  position: relative;
+}
+
+li.dhtml-menu a.dhtmlMenuControl 
+{
+  position: absolute;
+  left: -2em;
+  width: 1em;
+  height: 0;
+  padding: 19px 7px 1px;
+  overflow: hidden;
+  background: none;
+  text-decoration: none;
+}
+li.dhtml-menu a.dhtmlMenuControl,
+li.dhtml-menu a.dhtmlMenuControl:hover,
+li.dhtml-menu a.dhtmlMenuControl:active,
+li.dhtml-menu a.dhtmlMenuControl:visited 
+{
+  text-decoration: none;
+  outline: none;
+}
+
+
+

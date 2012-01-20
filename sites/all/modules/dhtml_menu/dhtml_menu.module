@@ -11,7 +11,7 @@
  * Effects enabled by default. This is an array and
  * must be unserialized to be used. Constants can not contain arrays.
  */
-define('DHTML_MENU_DEFAULT', serialize(array('slide' => 'slide', 'clone' => 'clone')));
+define('DHTML_MENU_DEFAULT', serialize(array('slide' => 'slide', 'clone' => 'clone', 'bullets' => 'bullets')));
 
 /**
  * Implementation of hook_init().
@@ -121,6 +121,11 @@ function dhtml_menu_theme_menu_item($link, $has_children, $menu = '', $in_active
     if (!$menu) $has_children = FALSE; // Sanitize tree. If we found no children, the item has none.
   }
 
+  // Add extra CSS class to menu items with children
+  if($has_children) {
+    $extra_class .= ' branch ';   
+  }
+  
   // If the current item can expand, and is neither saved as open nor in the active trail, close it.
   if ($menu && !($in_active_trail || in_array(substr($item['options']['attributes']['id'], 5), $cookie))) {
     $extra_class .= ' collapsed start-collapsed ';

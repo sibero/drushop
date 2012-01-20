@@ -14,7 +14,6 @@ scripts[] = js/jquery.corner.js
 scripts[] = js/acquia-prosper-script.js
 scripts[] = js/hide_user_block.js
 scripts[] = js/corner.js
-scripts[] = js/jquery.biggerlink.js
 
 regions[sidebar_first] = sidebar first
 regions[sidebar_last] = sidebar last

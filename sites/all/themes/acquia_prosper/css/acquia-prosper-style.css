@@ -1712,6 +1712,9 @@ table.order-review-table #edit-submit.form-submit {
   padding: 3px;
   float: right;
   	margin: 3px;
+	-webkit-border-radius: 25px;
+-moz-border-radius: 25px;
+border-radius: 25px;
 }
   
 #header-group-wrapper .block-uc_ajax_cart .links li:hover,
@@ -1742,37 +1745,9 @@ border-bottom: 1px solid white;
   padding: 5px;
 }
 
-.grid-tovar td {
-background: #FFFFFF none repeat scroll 0 0;
-text-align:center;
-width: 33%;
-height: auto;
 
-}
-.grid-tovar .corner {
-border: 1px solid #AEAEAE; 
-padding: 5px;
--webkit-border-radius: 15px;
--moz-border-radius: 15px;
-border-radius: 15px;
-background: #F3F3F3;
-height: 300px;
 
-}
 
-.grid-tovar .corner:hover{
-border: 1px solid #AEAEAE; 
-padding: 5px;
--webkit-border-radius: 15px;
--moz-border-radius: 15px;
-border-radius: 15px;
-background: #EDEDED;
-}
-
-.grid-tovar div.views-field-list-price {color: #AEAEAE;}
-.grid-tovar div.views-field-title{font-size:20px; padding-bottom: 10px;}
-.grid-tovar span.uc-price-sell_price {font-size:20px;font-weight: bold;}
-.grid-tovar div.views-field-list-price {text-decoration: line-through;}
 div.links li.comment_add {cursor:pointer;
 padding:3px 10px;
 background:#F7F7F7 url(images/button-bg.png) repeat-x scroll center top;
@@ -1786,7 +1761,7 @@ float:right;
 font-size: 12px;
 }
 
-td.views-field-list-price {text-decoration: line-through;}
+
 
 .grid-center span.uc-price-sell_price {font-size:20px;font-weight: bold;}
 .grid-center td.views-field-title {font-size:16px;}
@@ -1855,18 +1830,6 @@ div.content-content {
 div#block-views-pohojie_tovari-block_1 {
     padding-top:15px;
 }
-.product-additional {padding-top: 30px;}
-
-.field-type-discounted-price .field-label-inline,
-.field-type-discounted-price .field-label-inline-first {
-  font-weight: normal;
-}
-
-.field-type-discounted-price, td.views-field-discounted-price,
-.views-field-discounted-price .field-content {
-	color: black;
-	font-size:16px;
-}
 
 .views-field {
     text-align:center;
@@ -1887,19 +1850,11 @@ form.fivestar-widget {
 .vote_result {margin: 0 auto; width: 110px; }
 
 .bookmarks { bottom: -170px; position: relative;}
-.old_price {text-decoration: line-through; color: gray;}
+
 .form-item {
 margin: 0;
 }
 
-.sortby {text-align:right;}
-
-#edit-sell-price-up-wrapper{width: 60px;}
-#edit-sell-price-to-wrapper{width: 60px;}
-#edit-title-wrapper{width: 180px;}
-#edit-tid-wrapper{width: 180px;}
-
-.stock_out {color: red; font-size: 14px;}
 .flag-message {
     font-size: 0.8em;
     line-height: normal;
@@ -1907,33 +1862,31 @@ margin: 0;
 }
 
 .flag {clear: both:}
-.views-field-discounted-price .field-content {
-font-size: 20px; font-weight: bold;
-}
-#product-group .content {
-float: right;
-width: 70%;
-}
 
-.view-news td {
-width: 50%;
-border: 1px solid #AEAEAE;
-}
 
-.view-news {
-  background: #fff;
-  border-left: none;
-  border-right: none;
-  color: black;
-  padding: o;
-  margin: 10px;
 
-}
+
 
 .ajax-cart-submit-form-button:hover  {
 font-size: 12px;
 }
 .list-add-to-cart:hover {
 font-size: 12px;
+}
+.center-wrapper {
+background: #F3F3F3;
+}
+
+.center-wrapper .panel-col-last{
+background: #F3F3F3;
+}
+
+.center-wrapper .panel-col-first{
+background: #F3F3F3;
+}
+
+.fieldset {
+    margin: 0;
+    padding: 10px;
 }
 
