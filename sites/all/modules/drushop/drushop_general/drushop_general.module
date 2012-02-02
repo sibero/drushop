@@ -463,11 +463,36 @@ function _drushop_hide_module(&$form, $module){
     if ($vars['product_weight'] == '') {
       unset($node->content['weight']);
     }
-    $dimensions = !empty($node->height) && !empty($node->width) && !empty($node->length);                 // Hide dimensions if empty
-    $vars['product_dimensions'] = ($dimensions) ? drupal_render($node->content['dimensions']) : '';
-    if ($vars['product_dimensions'] == '') {
-      unset($node->content['dimensions']);
-    }
+    
+	$vars['product_length_units'] = $node->length_units;
+	if ($vars['product_length_units'] == "cm") { $vars['product_length_units'] = "см.";}
+	if ($vars['product_length_units'] == "in") { $vars['product_length_units'] = "дм.";}
+	if ($vars['product_length_units'] == "ft") { $vars['product_length_units'] = "фт.";}
+	if ($vars['product_length_units'] == "mm") { $vars['product_length_units'] = "мм.";}
+    $vars['product_dimension'] = drupal_render($node->content['dimensions']); 
+	$vars['product_length_format'] = $node->length;
+	$vars['product_length'] = t("Length").": ".$node->length." ".$vars['product_length_units'];
+	$vars['product_width_format'] = $node->width;
+	$vars['product_width'] = t("Width").": ".$node->width." ".$vars['product_length_units'];
+	$vars['product_height_format'] = $node->height;
+	$vars['product_height'] = t("Height").": ".$node->height." ".$vars['product_length_units'];	
+	$vars['product_weight_units'] = $node->weight_units;
+	$vars['product_shipping_type'] = $node->shipping_type;
+	$vars['product_pkg_qty'] = $node->pkg_qty;
+	$vars['product_default_qty'] = $node->default_qty;
+	$vars['product_shippable'] = $node->shippable;
+	$vars['product_ordering'] = $node->ordering;
+	
+	// проверяем введены ли значения длины, щирины, высоты
+	$prod_length = $vars['product_length_format']." ".$vars['product_length_units'];
+	if ($vars['product_length_format'] == 0 or $vars['product_length_format'] == "") {unset($prod_length);}
+	$prod_width = " x ".$vars['product_width_format']." ".$vars['product_length_units'];	
+	if ($vars['product_width_format'] == 0 or $vars['product_width_format'] == "") {unset($prod_width);}
+	$prod_height = " x ".$vars['product_height_format']." ".$vars['product_length_units'];
+	if ($vars['product_height_format'] == 0 or $vars['product_height_format'] == "") {unset($prod_height);}
+	
+	//создаем переменную "размеры"
+    $vars['product_dimensions'] = t("Dimensions:")." ".$prod_length.$prod_width.$prod_height;
 
     $list_price = !empty($node->list_price) && $node->list_price > 0;                                     // Hide list price if empty or zero
     $vars['product_list_price'] = ($list_price) ? drupal_render($node->content['list_price']) : '';

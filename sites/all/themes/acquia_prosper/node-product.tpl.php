@@ -29,12 +29,12 @@
           <?php print $product_body; ?>
         </div>
 
-        <?php $product_details = $product_weight || $product_dimensions || $product_list_price || $product_sell_price || $product_model || $product_cost; ?>
+        <?php $product_details = $product_weight || $product_dimensions || $product_list_price || $product_sell_price || $product_sku || $product_cost; ?>
         <div id="product-details" class="clear<?php if (!$product_details): ?> field-group-empty<?php endif; ?>">
           <div id="field-group">
 			<?php print $product_sku; ?>
             <?php print $product_weight; ?>
-            <?php print $product_dimensions; ?>           
+            <?php print $product_dimensions; ?> 
 			<?php print $product_cost ?>
 			 
 			
@@ -42,7 +42,7 @@
         <div id="product-additional" class="product-additional">
 			
 			<?php print $field_stock; ?>
-			<?php print $product_additional; ?>  
+			<?php print $product_additional; ?> 	
 			</br>
 			</br>
 			<?php print $product_bookmarks; ?>

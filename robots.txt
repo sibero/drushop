@@ -38,10 +38,12 @@ Disallow: /user/password
 Disallow: /user/login
 Disallow: /user/register?
 Disallow: /user/login?
+Disallow: /filter/tips/
 Disallow: /user/
 Disallow: /?q=admin/
 Disallow: /?q=comment/reply/
 Disallow: /?q=contact/
+Disallow: /?q=filter/tips/
 Disallow: /?q=logout/
 Disallow: /?q=node/add/
 Disallow: /?q=search/
