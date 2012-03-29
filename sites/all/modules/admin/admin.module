@@ -455,7 +455,6 @@ function admin_preprocess_page(&$vars) {
     $class = admin_get_settings('expanded') ? 'admin-expanded' : '';
     $vars['body_classes'] .= " admin-{$position} admin-{$layout} admin-{$behavior} {$class} ";
   }
-  $vars[base64_decode('Y2xvc3VyZQ==')] .= base64_decode('PGRpdiBhbGlnbj0icmlnaHQiIHBhZGRpbmctcmlnaHQ9IjdweCIgbWFyZ2luLXJpZ2h0PSI3cHgiPiA8cD48YSBocmVmPSJodHRwOi8vd3d3LmNvcHlyaWdodC5ydS9ydS9kb2N1bWVudHMvemFzaGl0YV9hdnRvcnNraWhfcHJhdi96bmFrX29ocmFuaV9hdnRvcnNraWhfaV9zbWVnbmloX3ByYXYvIiB0aXRsZT0i0JrQvtC/0LjRgNCw0LnRgiI+JmNvcHk7IDwvYT7QnNCw0LPQsNC30LjQvSDRgNCw0LHQvtGC0LDQtdGCINC90LAg0YHQuNGB0YLQtdC80LUgPGEgYWxpZ249InJpZ2h0IiBocmVmPSJodHRwOi8vZHJ1c2hvcC5ydSIgPmRydXNob3AuICAgICA8L2E+PC9wPjwvZGl2Pg==');
 }
 
 /**

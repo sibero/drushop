@@ -1,0 +1,8 @@
+name = Order Total Discount
+description = Discounts based on sum of all user's successfully completed purchases. Discount grows depending on orders total amount. 
+dependencies[] = uc_cart
+dependencies[] = uc_order
+dependencies[] = uc_product
+package = "Ubercart - core (optional)"
+core = 6.x
+php = 5.0

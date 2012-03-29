@@ -2,9 +2,10 @@
 name = drushop general
 description = Базовые функции drushop
 dependencies[]  = taxonomy_redirect
+dependencies[]  = admin
 package = drushop
 core = 6.x
-version = "6.x-2.0"
+version = "6.x-2.1"
 project = "drushop_general"
 project status url = "http://drushop.ru/fserver"
 

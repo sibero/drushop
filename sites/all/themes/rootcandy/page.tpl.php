@@ -37,7 +37,7 @@
         </div>
         
         <div id="header-title" class="clearfix">
-         <?php print $version_store ?>
+         <?php print $version_store ?><?php print $version_store_curent?>
         </div>
         
       </div>

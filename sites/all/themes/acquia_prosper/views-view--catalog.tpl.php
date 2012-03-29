@@ -1,33 +1,3 @@
-<?php
-/**
- * @file views-view.tpl.php
- * Main view template
- *
- * Variables available:
- * - $classes_array: An array of classes determined in
- *   template_preprocess_views_view(). Default classes are:
- *     .view
- *     .view-[css_name]
- *     .view-id-[view_name]
- *     .view-display-id-[display_name]
- *     .view-dom-id-[dom_id]
- * - $classes: A string version of $classes_array for use in the class attribute
- * - $css_name: A css-safe version of the view name.
- * - $css_class: The user-specified classes names, if any
- * - $header: The view header
- * - $footer: The view footer
- * - $rows: The results of the view query, if any
- * - $empty: The empty text to display if the view is empty
- * - $pager: The pager next/prev links to display, if any
- * - $exposed: Exposed widget form/info to display
- * - $feed_icon: Feed icon to display, if any
- * - $more: A link to view more, if any
- * - $admin_links: A rendered list of administrative links
- * - $admin_links_raw: A list of administrative links suitable for theme('links')
- *
- * @ingroup views_templates
- */
-?>
 <div class="<?php print $classes; ?>">
   <?php if ($admin_links): ?>
     <div class="views-admin-links views-hide">
@@ -40,10 +10,34 @@
     </div>
   <?php endif; ?>
 
+  <?php if ($attachment_before): ?>
+    <div class="attachment attachment-before">
+      <?php print $attachment_before; ?>
+    </div>
+  <?php endif; ?>
+  
+
+
+<?php $path1 = drupal_get_path_alias($_GET['q']); ?> 
+<?php $path = $GLOBALS['base_path'].$path1; ?>
+
+<div class="sortby"><?php print t("Sort by:"); ?> <form name="menu2">
+<select name="sel" onChange="linklist(document.menu2.sel)">
+<option value="#">выбрать</option>
+<option title="<?php print t("Цене (от минимальной до максимальной)"); ?>" value="<?php print $path; ?>?orderby=sell_price_asc"><?php print t("Цене (убывание)"); ?></option>
+<option title="<?php print t("Цене (от максимальной до минимальной)"); ?>" value="<?php print $path; ?>?orderby=sell_price_desc"><?php print t("Цене (возрастание)"); ?></option>
+
+<option title="<?php print t("Названию"); ?>" value="<?php print $path; ?>?orderby=node_title_asc"><?php print t("Названию (от а до я)"); ?></option>
+<option title="<?php print t("Названию"); ?>" value="<?php print $path; ?>?orderby=node_title_desc"><?php print t("Названию (от я до а)"); ?></option>
+<option title="<?php print t("По рейтингу"); ?>" value="<?php print $path; ?>?orderby=voting_desc"><?php print t("Рейтингу"); ?></option>
+<option title="<?php print t("Новые поступления"); ?>" value="<?php print $path; ?>?orderby=node_created_desc"><?php print t("Новые поступления"); ?></option>
+<option title="<?php print t("Самые комментируемые"); ?>" value="<?php print $path; ?>?orderby=node_comment_desc"><?php print t("Самые коменнтируемые"); ?></option>
+</select>
+</form>
+</div>
+
   <?php if ($exposed): ?>
-  
-  
-<input type='button' value='<?php print t("Filter by:"); ?>' 
+<input id='filterby' type='button' value='<?php print t("Filter by"); ?>' 
         onclick="toggle_visibility('my_div')">
 <div id='my_div' class='div_container'> 
    <div class="view-filters">
@@ -53,20 +47,12 @@
    <input type='hidden'
          onclick="toggle_visibility('my_div')">
 </div>
-
-    
-  <?php endif; ?>
-
-  <?php if ($attachment_before): ?>
-    <div class="attachment attachment-before">
-      <?php print $attachment_before; ?>
-    </div>
-  <?php endif; ?>
-
-  <?php if ($rows): ?>
+	<?php endif; ?>
+	
+	<?php print $pager; ?>
+	<?php if ($rows): ?>
     <div class="view-content">
-	</br>
-	</br>
+	
       <?php print $rows; ?>
     </div>
   <?php elseif ($empty): ?>
@@ -75,9 +61,9 @@
     </div>
   <?php endif; ?>
 
-  <?php if ($pager): ?>
+ 
     <?php print $pager; ?>
-  <?php endif; ?>
+
 
   <?php if ($attachment_after): ?>
     <div class="attachment attachment-after">
@@ -85,9 +71,9 @@
     </div>
   <?php endif; ?>
 
-  <?php if ($more): ?>
+  
     <?php print $more; ?>
-  <?php endif; ?>
+
 
   <?php if ($footer): ?>
     <div class="view-footer">
@@ -101,4 +87,4 @@
     </div>
   <?php endif; ?>
 
-</div> <?php /* class view */ ?>
+</div>

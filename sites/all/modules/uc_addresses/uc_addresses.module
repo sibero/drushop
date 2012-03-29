@@ -1,86 +1,217 @@
 <?php
-// $Id: uc_addresses.module,v 1.34 2010/03/17 16:05:28 freixas Exp $
-
 /**
  * @file
  * Adds user profile address support to Ubercart.
  *
- * The uc_addresses module adds support for one or more addresses in
- * the user's profile. When users register, they must provide an
- * address. Users can then add more addresses and edit or delete
- * existing addresses. One address must be designated as the default
- * address and cannot be deleted (but it can be edited).
+ * The uc_addresses module adds an address book to the user's profile.
+ * In the address book users can manage their addresses: add new
+ * addresses and edit or delete existing addresses. One address must
+ * be designated as the default billing address and one must be
+ * designated as the default shipping address. This may be the same
+ * address. The default addresses cannot be deleted (but they can be
+ * edited).
+ *
+ * When users register, they must provide an address.
  *
  * The Ubercart order process is altered so that users select delivery
  * and billing addresses from their collection of addresses rather
  * than from previous orders. Any new addresses entered during the
  * order process are automatically added to the user's list.
- * <!--break-->
  *
- * @author Ben Thompson with inspiration from uc_order.module and uc_cart.module.
- * @author Rich from Freestyle Systems (enhancements).
- * @author Tony Freixas (maintainer) from Tiger Heron LLC (major revisions).
+ * Authors who developed the Drupal 5 version and the 6.x-1.x version:
+ * - Ben Thompson with inspiration from uc_order.module and uc_cart.module.
+ * - Rich from Freestyle Systems (enhancements).
+ * - Tony Freixas (maintainer) from Tiger Heron LLC (major revisions).
+ *
+ * Authors of the current 6.x-2.x version:
+ * @author MegaChriz (maintainer)
+ * @author Tony Freixas (maintainer) from Tiger Heron LLC. (initially setup of the architecture)
  *
  * @ingroup uc_addresses
  */
 
-/* TODO Implement the hook_theme registry. Combine all theme registry entries
-   into one hook_theme function in each corresponding module file.
-*/
+// Register autoloader
+spl_autoload_register('uc_addresses_load_class');
 
-module_load_include('inc', 'uc_addresses', 'uc_addresses_address_pane');
-
-/**
- * Give users the ability to view anyone's default address.
- */
-define('UC_ADDRESSES_ACCESS_VIEW_DEFAULT', 'view default addresses');
+// -----------------------------------------------------------------------------
+// DRUPAL HOOKS
+// -----------------------------------------------------------------------------
 
 /**
- * Give users the ability to view anyone's addresses.
- * Anyone with this permission also has UC_ADDRESSES_ACCESS_VIEW_DEFAULT.
- */
-define('UC_ADDRESSES_ACCESS_VIEW_ALL', 'view all addresses');
-
-/**
- * Give users the ability to add or edit anyone's addresses.
- * Anyone with this permission also has
- * UC_ADDRESSES_ACCESS_VIEW_DEFAULT and UC_ADDRESSES_ACCESS_VIEW_ALL.
- */
-define('UC_ADDRESSES_ACCESS_ADD_EDIT', 'add/edit addresses');
-
-/*******************************************************************************
- * Hook Functions
- ******************************************************************************/
-
-/**
- * Implementation of hook_init()
- */
-function uc_addresses_init() {
-  drupal_add_css(drupal_get_path('module', 'uc_order') .'/uc_order.css');
-}
-
-/**
- * Given a wildcard of %uc_addresses_address in path, replace it with
- * the corresponding address object.
+ * Implementation of hook_help().
  *
- * @param $aid The value matched by %uc_addresses_address.
- * @param $uid The value of the user ID in the same path.
- * @return FALSE if the value is a valid address, else the address object.
+ * @param string $path
+ * @param array $arg
+ *
+ * @return string
  */
-function uc_addresses_address_load($aid, $uid) {
-  if (!isset($aid)) return FALSE;
-  return _uc_addresses_db_get_address($uid, $aid);
+function uc_addresses_help($path, $arg = array()) {
+  global $user;
+  switch ($path) {
+    case 'admin/help#uc_addresses':
+      $output = '<p>' . t("The Ubercart Addresses module adds an address book to the user's profile. In the address book users can manage their addresses: add new addresses and edit or delete existing addresses. One address must be designated as the default billing address and one address must be designated as the default shipping address. This may be the same address. The default addresses cannot be deleted (but they can be edited).") . '</p>';
+      $output .= '<p>' . t("The module changes the way Ubercart handles addresses. By default, Ubercart looks at a customer's previous orders and finds all unique addresses. It displays these in a select box, using the Street Address as a label. A customer who has registered but never ordered will have no contact information other than an e-mail address.") . '</p>';
+
+      $output .= '<h2>' . t('Module overview') . '</h2>';
+
+      $output .= '<h3>' . t('Address book') . '</h3>';
+      $output .= '<p>' . t('When users visit their <a href="!my-account-link">!my-account-page-title</a> page, a new tab will be present: <a href="!address-book-link">!address-book-page-title</a>. They will be able to:', array('!my-account-link' => url('user/' . $user->uid), '!my-account-page-title' => t('My account'), '!address-book-link' => url('user/' . $user->uid . '/addresses'), '!address-book-page-title' => t('Address book'))) . '</p>';
+      $output .= '<ul>';
+      $output .= '<li>' . t('Add new addresses') . '</li>';
+      $output .= '<li>' . t('Edit an existing address') . '</li>';
+      $output .= '<li>' . t('Mark one address as their default shipping address') . '</li>';
+      $output .= '<li>' . t('Mark one address as their default billing address') . '</li>';
+      $output .= '<li>' . t('Delete any address except the "default" addresses') . '</li>';
+      $output .= '</ul>';
+      $output .= '<p>' . t('Each address can be given a short "nickname".') . '</p>';
+
+      $output .= '<h3>' . t('Checkout') . '</h3>';
+      $output .= '<p>' . t('When placing an order, users will be able to:') . '</p>';
+      $output .= '<ul>';
+      $output .= '<li>' . t('Select an address from their address book') . '</li>';
+      $output .= '<li>' . t('Modify the address for the order and save it as another address in their address book') . '</li>';
+      $output .= '</ul>';
+      $output .= '<p>' . t('The delivery and billing addresses can be prefilled with the customer\'s default shipping and default billing addresses. This is the default behaviour. You can change this behaviour at the <a href="!address-settings-link">!address-settings-page-title</a> page.', array('!address-settings-link' => url('admin/store/settings/addresses'), '!address-settings-page-title' => t('Address settings'))) . '</p>';
+      $output .= '<p>' . t("Instead of selecting an address by street name, the selector will display the address's nickname or else the entire address: Name, street1, street2, city, etc.") . '</p>';
+      $output .= '<p>' . t('Warning: If pre-filling the delivery address and you charge for shipping, be sure to require that the user select a shipping method before they can place an order. Otherwise, the order may go through without shipping being charged.') . '</p>';
+
+      $output .= '<h3>' . t('Registering') . '</h3>';
+      $output .= '<p>' . t('When users create an account, you can request that they be asked to provide contact information. This initial entry can be edited later.') . '</p>';
+
+      $output .= '<h3>' . t('Notes') . '</h3>';
+      $output .= '<p>' . t('When a user is deleted, all their addresses are also deleted.') . '</p>';
+
+      $output .= '<h2>' . t('Address fields') . '</h2>';
+      $output .= '<p>' . t('Configure the address fields at the <a href="!address-fields-link">!address-fields-page-title</a> page.', array('!address-fields-link' => url('admin/store/settings/checkout/edit/fields'), '!address-fields-page-title' => t('Address fields'))) . '</p>';
+
+      $output .= '<h2>' . t('Changes to Drupal/Ubercart: technical information') . '</h2>';
+      $output .= '<p>' . t('The following changes are made to Drupal and Ubercart to provide the functionality:') . '</p>';
+      $output .= '<ul>';
+      $output .= '<li>' . t('A tab called <a href="!address-book-link">!address-book-page-title</a> is added to the <a href="!my-account-link">user\'s profile</a>.', array('!my-account-link' => url('user/' . $user->uid), '!address-book-link' => url('user/' . $user->uid . '/addresses'), '!address-book-page-title' => t('Address book'))) . '</li>';
+      $output .= '<li>' . t('The delivery and billing checkout panes provided by Ubercart are overridden.') . '</li>';
+      $output .= '<li>' . t('The "ship to" and "bill to" order panes provided by Ubercart are overridden.') . '</li>';
+      $output .= '<li>' . t('Delivery and billing addresses are formatted with Ubercart Addresses address formats.') . '</li>';
+      $output .= '<li>' . t('On the user register form an address form is present.') . '</li>';
+      $output .= '<li>' . t('A page to <a href="!address-settings-link">configure the module</a> is added.', array('!address-settings-link' => url('admin/store/settings/addresses'))) . '</li>';
+      $output .= '<li>' . t('A page to <a href="!uc-addresses-country-settings-link">configure Ubercart Addresses address formats</a> is added.', array('!uc-addresses-country-settings-link' => url('admin/store/settings/countries/edit/uc_addresses_formats'))) . '</li>';
+      $output .= '</ul>';
+
+      $output .= '<h2>' . t('Ubercart Addresses country formats') . '</h2>';
+      $output .= '<p>' . t("Ubercart Addresses comes with it's own address formats that are build by using tokens, rather than the predefined set of variables Ubercart uses. This way it's possible to add any extra address values to an address format. Note that not all addresses used in Ubercart are formatted this way. Only the following addresses are formatted by Ubercart Addresses:") . '</p>';
+      $output .= '<ul>';
+      $output .= '<li>' . t('Addresses in the address book.') . '</li>';
+      $output .= '<li>' . t('Delivery and billing addresses on the checkout page, the order review page and the order view pages.') . '</li>';
+      $output .= '<li>' . t('Delivery and billing addresses in the invoice Ubercart sends when the customer places an order.') . '</li>';
+      $output .= '</ul>';
+      $output .= '<p>' . t('Address format example:') . '</p>';
+      $output .= "<code>[uc_addresses_company]<br />[uc_addresses_first_name] [uc_addresses_last_name]<br />[uc_addresses_street1]<br />[uc_addresses_street2]<br />[uc_addresses_city], [uc_addresses_zone_code] [uc_addresses_postal_code]<br />[uc_addresses_country_name_if]</code>";
+      $output .= '<p>' . t('Configure the address formats for Ubercart Addresses at the <a href="!uc-addresses-country-settings-link">!uc-addresses-country-settings-page-title</a> page.', array('!uc-addresses-country-settings-link' => url('admin/store/settings/countries/edit/uc_addresses_formats'), '!uc-addresses-country-settings-page-title' => t('Ubercart Addresses country formats'))) . '</p>';
+
+      $output .= '<h2>' . t('Permissions') . '</h2>';
+      $output .= '<dt>' . t('view own default addresses') . '</dt>';
+      $output .= '<dd>' . t('Roles with this permission can view their own default addresses in their address book.') . '</dd>';
+      $output .= '<dt>' . t('view own addresses') . '</dt>';
+      $output .= '<dd>' . t('Roles with this permission can view all own addresses in their address book, <em>including</em> their default addresses.') . '</dd>';
+      $output .= '<dt>' . t("view everyone's default addresses") . '</dt>';
+      $output .= '<dd>' . t('Roles with this permission can view all default addresses of all users, <em>including</em> their own default addresses.') . '</dd>';
+      $output .= '<dt>' . t("view everyone's addresses") . '</dt>';
+      $output .= '<dd>' . t('Roles with this permission can view all addresses of all users, including addresses of their own.') . '</dd>';
+      $output .= '<dt>' . t('add/edit own addresses') . '</dt>';
+      $output .= '<dd>' . t('Roles with this permission can add addresses to their own address book and edit own addresses. They are also able to view their own addresses.') . '</dd>';
+      $output .= '<dt>' . t("add/edit everyone's addresses") . '</dt>';
+      $output .= '<dd>' . t('Roles with this permission can add addresses to address books of any user and edit addresses of all users. They are also be able to view all addresses.') . '</dd>';
+      $output .= '<dt>' . t('delete own addresses') . '</dt>';
+      $output .= '<dd>' . t("Roles with this permission can delete own addresses that are not marked as the default shipping or the default billing address. (Ubercart Addresses doesn't allow anyone to delete default addresses, including the superuser. This is by design.)") . '</dd>';
+      $output .= '<dt>' . t("delete everyone's addresses") . '</dt>';
+      $output .= '<dd>' . t('Roles with this permission can delete all addresses of all users, except addresses that are marked as default shipping or default billing.') . '</dd>';
+      return $output;
+
+    case 'admin/store/settings/addresses/edit':
+      $output = '<p>' . t('On this page you can configure the settings of the Ubercart Addresses module.') . '</p>';
+      $output .= '<h3>' . t('Other settings') . '</h3>';
+      $output .= '<ul>';
+      $output .= '<li>' . t('To configure the address field settings, go to the <a href="!address-fields-link">!address-fields-page-title</a> page.', array('!address-fields-link' => url('admin/store/settings/checkout/edit/fields'), '!address-fields-page-title' => t('Address fields'))) . '</li>';
+      $output .= '<li>' . t('To configure the address formats for Ubercart Addresses, go to the <a href="!uc-addresses-country-settings-link">!uc-addresses-country-settings-page-title</a> page.', array('!uc-addresses-country-settings-link' => url('admin/store/settings/countries/edit/uc_addresses_formats'), '!uc-addresses-country-settings-page-title' => t('Ubercart Addresses country formats'))) . '</li>';
+      $output .= '</ul><br />';
+      return $output;
+
+    case 'admin/store/settings/countries/edit/uc_addresses_formats':
+      $output .= '<p>' . t("Ubercart Addresses comes with it's own address formats that are build by using tokens, rather than the predefined set of variables Ubercart uses. This way it's possible to add any extra address values to an address format. Only addresses used by Ubercart Addresses are formatted using Ubercart Addresses' address formats.") . '</p>';
+      return $output;
+  }
 }
 
 /**
  * Implementation of hook_menu().
  *
- * @return A array of menu items.
+ * @return array
  */
 function uc_addresses_menu() {
-  global $user;
   $items = array();
 
+  // Address book
+  $items['user/%user_uid_optional/addresses'] = array(
+    'title' => 'Address book',
+    'description' => 'Manage your addresses',
+    'page callback' => 'uc_addresses_address_book',
+    'page arguments' => array(1, NULL),
+    'access callback' => 'UcAddressesPermissions::canViewAddress',
+    'access arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'uc_addresses.pages.inc',
+  );
+  $items['user/%user_uid_optional/addresses/list'] = array(
+    'title' => 'Address list',
+    'description' => 'Manage your addresses',
+    'access callback' => 'UcAddressesPermissions::canViewAddress',
+    'access arguments' => array(1),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+  );
+  $items['user/%user_uid_optional/addresses/add'] = array(
+    'title' => 'Add address',
+    'description' => 'Add a new address.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_addresses_get_address_form', 1, NULL),
+    'access callback' => 'UcAddressesPermissions::canEditAddress',
+    'access arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+    'file' => 'uc_addresses.pages.inc',
+  );
+  $items['user/%user_uid_optional/addresses/%uc_addresses_address'] = array(
+    'title' => 'View address',
+    'description' => 'View one saved address',
+    'load arguments' => array(1),
+    'page callback' => 'uc_addresses_list_one_address',
+    'page arguments' => array(1, 3),
+    'access callback' => 'UcAddressesPermissions::canViewAddress',
+    'access arguments' => array(1, 3),
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_addresses.pages.inc',
+  );
+  $items['user/%user_uid_optional/addresses/%uc_addresses_address/edit'] = array(
+    'title' => 'Edit address',
+    'load arguments' => array(1),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_addresses_get_address_form', 1, 3),
+    'access callback' => 'UcAddressesPermissions::canEditAddress',
+    'access arguments' => array(1, 3),
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_addresses.pages.inc',
+  );
+  $items['user/%user_uid_optional/addresses/%uc_addresses_address/delete'] = array(
+    'title' => 'Delete address',
+    'load arguments' => array(1),
+    'page callback' => 'uc_addresses_delete_address_confirm',
+    'page arguments' => array(1, 3),
+    'access callback' => 'UcAddressesPermissions::canDeleteAddress',
+    'access arguments' => array(1, 3),
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_addresses.pages.inc',
+  );
+
+  // Admin
   $items['admin/store/settings/addresses'] = array(
     'title' => 'Address settings',
     'description' => 'Configure the address settings.',
@@ -88,14 +219,14 @@ function uc_addresses_menu() {
     'access arguments' => array('administer store'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'uc_addresses.admin.inc',
-    );
+  );
   $items['admin/store/settings/addresses/overview'] = array(
     'title' => 'Overview',
     'access arguments' => array('administer store'),
     'description' => 'View the address settings.',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
-    );
+  );
   $items['admin/store/settings/addresses/edit'] = array(
     'title' => 'Edit',
     'page callback' => 'drupal_get_form',
@@ -105,1415 +236,1045 @@ function uc_addresses_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => -5,
     'file' => 'uc_addresses.admin.inc',
-    );
-
-  $items['user/%user_uid_optional/addresses'] = array(
-    'title' => 'Addresses',
-    'description' => 'Manage your addresses',
-    'page callback' => 'uc_addresses_list_addresses',
-    'page arguments' => array(1, NULL),
-    'access callback' => 'uc_addresses_can_view_addresses',
-    'access arguments' => array(1),
+  );
+  $items['admin/store/settings/countries/edit/uc_addresses_formats'] = array(
+    'title' => 'Ubercart Addresses country formats',
+    'description' => 'Edit the country specific format settings for Ubercart Addresses.',
+    'page callback' => 'uc_addresses_country_formats_page',
+    'access arguments' => array('administer store'),
+    'weight' => -4,
     'type' => MENU_LOCAL_TASK,
-    );
-
-  $items['user/%user_uid_optional/addresses/list'] = array(
-    'title' => 'Address list',
-    'description' => 'Manage your addresses',
-    'access callback' => 'uc_addresses_can_view_addresses',
-    'access arguments' => array(1),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => 0,
-    );
-  $items['user/%user_uid_optional/addresses/add'] = array(
-    'title' => 'Add address',
-    'description' => 'Add a new address.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('uc_addresses_get_address_form', 1, NULL, 'add'),
-    'access callback' => 'uc_addresses_can_add_edit_address',
-    'access arguments' => array(1),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 3,
-    );
-
-  $items['user/%user_uid_optional/addresses/%uc_addresses_address'] = array(
-    'title' => 'View Address',
-    'description' => 'View one saved address',
-    'load arguments' => array(1),
-    'page callback' => 'uc_addresses_list_addresses',
-    'page arguments' => array(1, arg(3)),
-    'access callback' => 'uc_addresses_can_view_addresses',
-    'access arguments' => array(1),
-    'type' => MENU_CALLBACK,
-    );
-  $items['user/%user_uid_optional/addresses/%uc_addresses_address/edit'] = array(
-    'title' => 'Edit address',
-    'load arguments' => array(1),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('uc_addresses_get_address_form', 1, 3, 'edit'),
-    'access callback' => 'uc_addresses_can_add_edit_address',
-    'access arguments' => array(1),
-    'type' => MENU_CALLBACK,
-    );
-  $items['user/%user_uid_optional/addresses/%uc_addresses_address/delete'] = array(
-    'title' => 'Delete address',
-    'load arguments' => array(1),
-    'page callback' => 'uc_addresses_delete_address_confirm',
-    'page arguments' => array(1, 3),
-    'access callback' => 'uc_addresses_can_add_edit_address',
-    'access arguments' => array(1),
-    'type' => MENU_CALLBACK,
-    );
-
+    'file' => 'uc_addresses.admin.inc',
+    '_visible' => TRUE, // This property is set to make this path visible on the help page as an admin task.
+  );
   return $items;
 }
 
 /**
- * Implementation of hook_theme.
- */
-function uc_addresses_theme() {
-  return array(
-    'uc_addresses_list_address' => array(
-      'arguments' => array('address' => NULL, 'panes' => array()),
-      ),
-    'uc_addresses_get_address_form' => array(
-      'arguments' => array('form' => NULL),
-      ),
-    'uc_addresses_address_delete_confirm' => array(
-      'arguments' => array('help' => '', 'panes' => array(), 'form' => NULL),
-      ),
-    'uc_addresses_pane' => array(
-      'arguments' => array('form' => NULL),
-      'file' => 'uc_addresses_address_pane.inc',
-      ),
-  );
-}
-
-/**
  * Implementation of hook_perm().
- *
- * @return array An array of permission names.
+ * @return array
  */
 function uc_addresses_perm() {
-  return array(UC_ADDRESSES_ACCESS_VIEW_DEFAULT,
-	       UC_ADDRESSES_ACCESS_VIEW_ALL,
-	       UC_ADDRESSES_ACCESS_ADD_EDIT);
-}
-
-function uc_addresses_can_view_addresses($address_user) {
-  global $user;
-
-  $access =
-    user_access(UC_ADDRESSES_ACCESS_VIEW_DEFAULT) ||
-    user_access(UC_ADDRESSES_ACCESS_VIEW_ALL) ||
-    user_access(UC_ADDRESSES_ACCESS_ADD_EDIT) ||
-    $user->uid == $address_user->uid;
-
-  return $access;
-}
-
-function uc_addresses_can_add_edit_address($address_user) {
-  global $user;
-
-  $access =
-    user_access(UC_ADDRESSES_ACCESS_ADD_EDIT) ||
-    $user->uid == $address_user->uid;
-
-  return $access;
+  return array(
+    'view own default addresses',
+    'view own addresses',
+    "view everyone's default addresses",
+    "view everyone's addresses",
+    'add/edit own addresses',
+    "add/edit everyone's addresses",
+    'delete own addresses',
+    "delete everyone's addresses",
+  );
 }
 
 /**
  * Implementation of hook_user().
  *
- * @param $op An integer representing the action being performed.
- * @param $edit An array of form values submitted by the user.
- * @param $account The user on which the operation is being performed.
- * @param $category The active category of user information being edited.
+ * @param string $op
+ *   The action being performed.
+ * @param array $edit
+ *   Form values submitted by the user.
+ * @param object $account
+ *   The user on which the operation is being performed.
+ * @param string $category
+ *   The active category of user information being edited.
+ *
+ * @return
+ *   A form array in case the operation is 'register'.
+ *   void otherwise.
  */
 function uc_addresses_user($op, &$edit, &$account, $category = NULL) {
-  global $user;
   switch ($op) {
     case 'register':
-      // For registration, we may want the user to enter his default
-      // address
+      // Check if we need to ask for an address upon registering
+      if (user_access('administer users')) {
+        // User is admin
+        $require_address = variable_get('uc_addresses_require_address_admin', TRUE);
+      }
+      else {
+        $require_address = variable_get('uc_addresses_require_address', TRUE);
+      }
 
-      if (variable_get('uc_addresses_require_address', TRUE)) {
-	$form = uc_addresses_pane_address('new', NULL, $edit);
-	$form = array($form['contents']); 	// Modify to what we need
-	$form[0]['#title'] = t('Address'); 	// Rename the fieldset
-	return $form;
+      if ($require_address) {
+        $address = UcAddressesAddressBook::newAddress();
+        $form['uc_addresses'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Address'),
+        );
+        $form['uc_addresses']['address'] = array(
+          '#type' => 'uc_addresses_address',
+          '#uc_addresses_address' => $address,
+          '#uc_addresses_context' => 'register',
+        );
+        $form['uc_addresses']['uc_addresses_address'] = array(
+          '#type' => 'value',
+          '#value' => $address,
+        );
+        return $form;
+      }
+      break;
+    case 'insert':
+      // Save the address the user entered during registering.
+      if (isset($edit['uc_addresses_address']) && $edit['uc_addresses_address'] instanceof UcAddressesAddress) {
+        $address = $edit['uc_addresses_address'];
+        $address->setOwner($account->uid);
+        // Mark this address as both the default shipping and billing address.
+        $address->setAsDefault('shipping');
+        $address->setAsDefault('billing');
+        $address->save();
+        // Unset address from $edit to prevent it from being saved as user data in the user table.
+        unset($edit['address']);
+        unset($edit['uc_addresses_address']);
       }
       return;
-
-    case 'insert':
-      // We're about to add the user to the database, so get the address
-      // info and add it to the address table
-
-      $address = (object)$edit;
-      $address->is_default = 0;
-      _uc_addresses_db_add_address($address);
-      return;
-
     case 'delete':
-      // We're deleting the user, so delete all his/her addresses as
-      // well
-
+      // We're deleting the user, so delete all his/her addresses as well.
       db_query("DELETE FROM {uc_addresses} WHERE uid = %d", $account->uid);
-      db_query("DELETE FROM {uc_addresses_defaults} WHERE uid = %d", $account->uid);
       return;
   }
 }
 
 /**
- * Implementation of hook_form_alter().
+ * Given a wildcard of %uc_addresses_address in path, replace it with
+ * the corresponding address object.
  *
- * Here we're going to override the saved address options on the
- * checkout form.
+ * @param int $aid
+ *   The value matched by %uc_addresses_address.
+ * @param int $uid
+ *   The value of the user ID in the same path.
  *
- * @param $form The form array.
- * @param $form_state A keyed array containing the current state of
- *	the form.
+ * @return
+ *   UcAddressesAddress
+ *     if the value is a valid address it returns the address object.
+ *   Otherwise FALSE will be returned.
  */
-function uc_addresses_form_uc_cart_checkout_form_alter(&$form, &$form_state) {
-  global $user;
+function uc_addresses_address_load($aid, $uid) {
+  if (!$aid || !$uid) {
+    return FALSE;
+  }
+  return UcAddressesAddressBook::get($uid)->getAddressById($aid);
+}
 
-  // This is a good place to clear any addresses we might have
-  // leftover from a previous checkout
+/**
+ * Implementation of hook_elements().
+ *
+ * Register address field type, just as in Ubercart 7.x-3.x
+ *
+ * @return array
+ * @see uc_addresses_process_address_field()
+ * @see uc_addresses_validate_address_field()
+ */
+function uc_addresses_elements() {
+  $types = array();
 
-  if (isset($_SESSION['uc_addresses_saved_addresses'])) {
-    $_SESSION['uc_addresses_saved_addresses'] = null;
-    unset($_SESSION['uc_addresses_saved_addresses']);
+  $types['uc_addresses_address'] = array(
+    '#input' => TRUE,
+    '#tree' => TRUE,
+    '#process' => array('uc_addresses_process_address_field'),
+    '#element_validate' => array('uc_addresses_validate_address_field'),
+    '#theme' => 'uc_addresses_pane',
+    '#uc_addresses_address' => NULL, // Will get a default value in uc_addresses_process_address_field().
+    '#uc_addresses_context' => 'default',
+    '#uc_addresses_required' => TRUE,
+    '#key_prefix' => '',
+  );
+
+  return $types;
+}
+
+// -----------------------------------------------------------------------------
+// FIELDS
+// -----------------------------------------------------------------------------
+
+/**
+ * Element process hook for address fields.
+ *
+ * @param array $element
+ * @param array $form_state
+ *
+ * @return array
+ * @see uc_addresses_elements()
+ * @see uc_addresses_validate_address_field()
+ */
+function uc_addresses_process_address_field(&$element, $form_state) {
+  if (!($element['#uc_addresses_address'] instanceof UcAddressesSchemaAddress)) {
+    $element['#uc_addresses_address'] = UcAddressesAddress::newAddress();
+  }
+  $element['#tree'] = TRUE;
+  $prefix = $element['#key_prefix'] ? ($element['#key_prefix'] . '_') : '';
+
+  if (isset($form_state['uc_addresses_address'])) {
+    // Use submitted Ajax values.
+    $values = $form_state['uc_addresses_address'];
+  }
+  elseif (is_array($element['#value']) || is_object($element['#value'])) {
+    // Use provided default value.
+    $values = (array) $element['#value'];
+  }
+  else {
+    $values = array();
   }
 
-  // Create the list of addresses the user can select from
-  // Each address is just line a full address, but on one line
-
-  $options = NULL;
-  if ($addresses = _uc_addresses_db_get_address($user->uid)) {
-    $options = array('0' => t('Select one...'));
-    foreach ($addresses as $address) {
-      if ($address->is_default) {
-        $default_address = $address;
+  // Delete prefixes from value array if available
+  if ($prefix) {
+    foreach ($values as $fieldname => $fieldvalue) {
+      if (strpos($fieldname, $prefix) === 0) {
+        $fixed_fieldname = drupal_substr($fieldname, drupal_strlen($prefix));
+        $values[$fixed_fieldname] = $fieldvalue;
+        unset($values[$fieldname]);
       }
-      $address = (array)$address;
+    }
+  }
 
-      if ($address['is_default']) {
-        $default = drupal_to_js($address);
+  $handler_instances = uc_addresses_get_address_field_handler_instances($element['#uc_addresses_address'], $element['#uc_addresses_context']);
+  foreach ($handler_instances as $instance) {
+    if ($instance->isFieldEnabled() && $instance->checkContext()) {
+      $element += $instance->getFormField($element, $values);
+    }
+  }
+
+  // Allow other modules to alter the element
+  drupal_alter('uc_addresses_address_field', $element);
+
+  // Make all fields non-required if property "uc_addresses_required" is set to FALSE.
+  if ($element['#uc_addresses_required'] === FALSE) {
+    foreach (element_children($element) as $fieldname) {
+      $element[$fieldname]['#required'] = FALSE;
+    }
+  }
+  // Change the requirement setting for some fields if property "uc_addresses_required" is an array.
+  elseif (is_array($element['#uc_addresses_required'])) {
+    foreach ($element['#uc_addresses_required'] as $fieldname => $required) {
+      if (isset($element[$fieldname])) {
+        $element[$fieldname]['#required'] = ($required) ? TRUE : FALSE;
       }
-      if ($address['address_name']) {
-        $options[drupal_to_js($address)] = $address['address_name'];
+    }
+  }
+
+  // Add prefixes if set
+  if ($prefix) {
+    foreach (element_children($element) as $fieldname) {
+      $element[$prefix . $fieldname] = $element[$fieldname];
+      unset($element[$fieldname]);
+    }
+  }
+
+  return $element;
+}
+
+/**
+ * Validate the address fields form
+ *
+ * Sets form values to address object
+ *
+ * @param array $element
+ * @param array $form_state
+ *
+ * @return void
+ * @see uc_addresses_elements()
+ * @see uc_addresses_process_address_field()
+ */
+function uc_addresses_validate_address_field(&$element, $form_state) {
+  $handler_instances = uc_addresses_get_address_field_handler_instances($element['#uc_addresses_address'], $element['#uc_addresses_context']);
+  $prefix = $element['#key_prefix'] ? ($element['#key_prefix'] . '_') : '';
+
+  foreach ($handler_instances as $fieldname => $instance) {
+    if ($instance->isFieldEnabled() && isset($element[$prefix . $fieldname])) {
+      $instance->validateValue($element[$prefix . $fieldname]['#value']);
+    }
+  }
+
+  if (!form_get_errors()) {
+    // Put form values into address object
+    foreach ($handler_instances as $fieldname => $instance) {
+      if ($instance->isFieldEnabled() && isset($element[$prefix . $fieldname])) {
+        $instance->setValue($element[$prefix . $fieldname]['#value']);
       }
+    }
+  }
+}
 
-      else {
-        // Not happy about this--if uc_address_format() ever changes
-        // it's output, we're hosed
+/**
+ * Prepare address fields for display
+ *
+ * @param UcAddressesSchemaAddress $address
+ *   The address object
+ * @param string $context
+ *   The context in which the fields will be displayed
+ *
+ * @return array
+ *   An array with fieldname => data
+ */
+function uc_addresses_preprocess_address(UcAddressesSchemaAddress $address, $context = 'default') {
+  // Build field list
+  $fields = array();
+  $weight = 1;
 
-        $options[drupal_to_js($address)] =
-        preg_replace('/<.*?>/', ', ',
-          uc_address_format(
-            $address['first_name'],
-            $address['last_name'],
-            $address['company'],
-            $address['street1'],
-            $address['street2'],
-            $address['city'],
-            $address['zone'],
-            $address['postal_code'],
-            $address['country']
-          )
+  $handlers = uc_addresses_get_address_field_handler_instances($address, $context);
+  foreach ($handlers as $fieldname => $handler) {
+    if ($handler->isFieldEnabled() && $handler->checkContext()) {
+      if (($value = $handler->outputValue()) !== '') {
+        $fields[$fieldname] = array(
+          'title' => $handler->getFieldTitle(),
+          'data' => $value,
+          '#weight' => $weight++,
         );
       }
     }
   }
 
-  $address_book_icon =
-    l(uc_store_get_icon('file:address_book', FALSE, 'address-book-icon'),
-      'user/'. $user->uid . '/addresses', array('html' => TRUE));
+  // Set weight of address name (if available)
+  if (isset($fields['address_name'])) {
+    $fields['address_name']['#weight'] = -10;
+  }
 
-  // If we have some addresses saved (almost always true), revise
-  // the delivery/billing address selection
+  // Address format
+  $fields['address'] = array(
+    'title' => t('Address'),
+    'data' => uc_addresses_format_address($address, $context),
+    '#weight' => -1,
+  );
+  if ($context == 'order_view') {
+    // Don't show address label when viewing the order.
+    unset($fields['address']['title']);
+  }
 
-  if ($options) {
-    //drupal_add_js(drupal_get_path('module', 'uc_addresses') .'/uc_addresses.js');
+  // Allow other modules to alter the preprocessed address fields
+  drupal_alter('uc_addresses_preprocess_address', $fields, $address, $context);
 
-    // Might not have any shippable products so make sure the
-    // delivery address exists before mucking with it
+  // Sort fields
+  uasort($fields, 'element_sort');
 
-    $default_country = uc_store_default_country();
-    $js_zone = FALSE;
-    if ($form['panes']['delivery'] &&
-    ((uc_cart_is_shippable() || !variable_get('uc_cart_delivery_not_shippable', TRUE)))) {
-      if (variable_get('uc_pane_delivery_enabled', TRUE)) {
-        $form['panes']['delivery']['#description'] =
-        (variable_get('uc_addresses_default_delivery_address', TRUE) ?
-        t('Edit the address below or select an address from the list. ') :
-        t('Enter an address below or select an address from the list. ')) .
-        t('Click !here to manage your saved addresses.',
-        array('!here' => l(t('here'), 'user/'. $user->uid . '/addresses')));
+  return $fields;
+}
 
-        $form['panes']['delivery']['delivery_address_select'] = array(
-          '#type' => 'select',
-          '#title' => t('Saved addresses'),
-          '#options' => $options,
-          '#attributes' => array('onchange' => 'apply_address(\'delivery\', this.value);'),
-          '#suffix' => $address_book_icon,
-          '#weight' => -10,
-        );
+// ---------------------------------------------------------------------------
+// UBERCART HOOKS
+// ---------------------------------------------------------------------------
 
-        // Copy the default address to the delivery address fields if
-        // the option is enabled and if the fields are empty
-        if (variable_get('uc_addresses_default_delivery_address', TRUE) && _uc_addresses_address_fields_empty($form['panes']['delivery'], 'delivery')) {
-          $form['panes']['delivery']['delivery_address_select']['#default_value'] = $default;
-          if (uc_address_field_enabled('first_name')) {
-            $form['panes']['delivery']['delivery_first_name']['#default_value'] = $default_address->first_name;
-          }
-          if (uc_address_field_enabled('last_name')) {
-            $form['panes']['delivery']['delivery_last_name']['#default_value'] = $default_address->last_name;
-          }
-          if (uc_address_field_enabled('phone')) {
-            $form['panes']['delivery']['delivery_phone']['#default_value'] = $default_address->phone;
-          }
-          if (uc_address_field_enabled('company')) {
-            $form['panes']['delivery']['delivery_company']['#default_value'] = $default_address->company;
-          }
-          if (uc_address_field_enabled('street1')) {
-            $form['panes']['delivery']['delivery_street1']['#default_value'] = $default_address->street1;
-          }
-          if (uc_address_field_enabled('street2')) {
-            $form['panes']['delivery']['delivery_street2']['#default_value'] = $default_address->street2;
-          }
-          if (uc_address_field_enabled('city')) {
-            $form['panes']['delivery']['delivery_city']['#default_value'] = $default_address->city;
-          }
-          if (uc_address_field_enabled('country')) {
-            $form['panes']['delivery']['delivery_country']['#default_value'] = $default_address->country;
-          }
-          if (uc_address_field_enabled('zone')) {
-            if ($default_country == $default_address->country) {
-              $form['panes']['delivery']['delivery_zone']['#default_value'] = $default_address->zone;
-            }
-            else {
-              $js_zone = TRUE;
-            }
-          }
-          if (uc_address_field_enabled('postal_code')) {
-            $form['panes']['delivery']['delivery_postal_code']['#default_value'] = $default_address->postal_code;
-          }
-        }
-      }
+/**
+ * Implementation of hook_checkout_pane_alter().
+ *
+ * Alters delivery and billing pane
+ *
+ * @param array $panes
+ *
+ * @return void
+ */
+function uc_addresses_checkout_pane_alter(&$panes) {
+  // Load file with the callback functions
+  module_load_include('ubercart.inc', 'uc_addresses');
+
+  foreach ($panes as $key => $pane) {
+    switch ($pane['id']) {
+      case 'billing':
+        $panes[$key]['callback'] = 'uc_addresses_checkout_pane_billing';
+        break;
+      case 'delivery':
+        $panes[$key]['callback'] = 'uc_addresses_checkout_pane_shipping';
+        break;
     }
+  }
+}
 
-    if (variable_get('uc_pane_billing_enabled', TRUE)) {
-      $form['panes']['billing']['#description'] =
-      (variable_get('uc_addresses_default_billing_address', TRUE) ?
-      t('Edit the address below or select an address from the list. ') :
-      t('Enter an address below or select an address from the list. ')) .
-      t('Click !here to manage your saved addresses.',
-      array('!here' => l(t('here'), 'user/'. $user->uid . '/addresses')));
+/**
+ * Implementation of hook_order_pane_alter().
+ *
+ * Alters delivery and billing pane
+ *
+ * @param array $panes
+ *
+ * @return void
+ */
+function uc_addresses_order_pane_alter(&$panes) {
+  // Load file with the callback functions
+  module_load_include('ubercart.inc', 'uc_addresses');
 
-      $form['panes']['billing']['billing_address_select'] = array(
-        '#type' => 'select',
-        '#title' => t('Saved addresses'),
-        '#options' => $options,
-        '#attributes' => array('onchange' => 'apply_address(\'billing\', this.value);'),
-        '#suffix' => $address_book_icon,
-        '#weight' => -10,
+  foreach ($panes as $key => $pane) {
+    switch ($pane['id']) {
+      case 'ship_to':
+        $panes[$key]['callback'] = 'uc_addresses_order_pane_ship_to';
+        break;
+      case 'bill_to':
+        $panes[$key]['callback'] = 'uc_addresses_order_pane_bill_to';
+        break;
+    }
+  }
+}
+
+/**
+ * Implementation of hook_order().
+ *
+ * @param string $op
+ * @param object $order
+ * @param mixed $arg2
+ *
+ * @return void
+ */
+function uc_addresses_order($op, &$order, $arg2) {
+  switch ($op) {
+    case 'load':
+      $order->uc_addresses = array();
+      $address_types = array(
+        'delivery',
+        'billing',
       );
 
-      // Copy the default address to the billing address fields if the
-      // option is enabled and if the fields are empty
-      if (variable_get('uc_addresses_default_billing_address', TRUE) && _uc_addresses_address_fields_empty($form['panes']['billing'], 'billing')) {
-        $form['panes']['billing']['billing_address_select']['#default_value'] = $default;
-        if (uc_address_field_enabled('first_name')) {
-          $form['panes']['billing']['billing_first_name']['#default_value'] = $default_address->first_name;
+      foreach ($address_types as $order_type) {
+        $address_type = $order_type;
+        if ($order_type == 'delivery') {
+          $address_type = 'shipping';
         }
-        if (uc_address_field_enabled('last_name')) {
-          $form['panes']['billing']['billing_last_name']['#default_value'] = $default_address->last_name;
+
+        // Check session first for temporary saved addresses
+        if (isset($_SESSION['uc_addresses_order'][$order->order_id][$address_type])) {
+          $address = unserialize($_SESSION['uc_addresses_order'][$order->order_id][$address_type]);
         }
-        if (uc_address_field_enabled('phone')) {
-          $form['panes']['billing']['billing_phone']['#default_value'] = $default_address->phone;
-        }
-        if (uc_address_field_enabled('company')) {
-          $form['panes']['billing']['billing_company']['#default_value'] = $default_address->company;
-        }
-        if (uc_address_field_enabled('street1')) {
-          $form['panes']['billing']['billing_street1']['#default_value'] = $default_address->street1;
-        }
-        if (uc_address_field_enabled('street2')) {
-          $form['panes']['billing']['billing_street2']['#default_value'] = $default_address->street2;
-        }
-        if (uc_address_field_enabled('city')) {
-          $form['panes']['billing']['billing_city']['#default_value'] = $default_address->city;
-        }
-        if (uc_address_field_enabled('country')) {
-          $form['panes']['billing']['billing_country']['#default_value'] = $default_address->country;
-        }
-        if (uc_address_field_enabled('zone')) {
-          if ($default_country == $default_address->country) {
-            $form['panes']['billing']['billing_zone']['#default_value'] = $default_address->zone;
-          }
-          else {
-            $js_zone = TRUE;
+        else {
+          // Construct new address
+          $address = UcAddressesAddressBook::get($order->uid)->addAddress();
+          foreach ($order as $fieldname => $fieldvalue) {
+            if (strpos($fieldname, $order_type) === 0) {
+              // Get substracted fieldname
+              $address_fieldname = substr($fieldname, strlen($order_type) +1);
+              $address->setField($address_fieldname, $fieldvalue);
+            }
           }
         }
-        if (uc_address_field_enabled('postal_code')) {
-          $form['panes']['billing']['billing_postal_code']['#default_value'] = $default_address->postal_code;
+        $order->uc_addresses[$address_type] = $address;
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_uc_checkout_complete().
+ *
+ * Saves any new addresses to the address book.
+ *
+ * @param object $order
+ *   The Ubercart order
+ * @param object $user
+ *   The user who ordered
+ *
+ * @return void
+ */
+function uc_addresses_uc_checkout_complete($order, $user) {
+  if (isset($order->uc_addresses)) {
+    foreach ($order->uc_addresses as $address_type => $address) {
+      if (isset($address->save_address) && $address->save_address == TRUE) {
+        // Check if the user already has similar looking addresses.
+        if (UcAddressesAddressBook::get($user->uid)->compareAddress($address)) {
+          // Don't save the address
+        }
+        else {
+          if (!$address->isOwned()) {
+            $address->setOwner($user->uid);
+          }
+
+          // Check if there is any other default address of type $type for this user
+          if (!$address->getAddressBook()->getDefaultAddress($address_type)) {
+            // If there is no such address, then make this address the default
+            $address->setAsDefault($address_type);
+          }
+          $address->save();
         }
       }
     }
-    if ($js_zone) {
-      drupal_add_js(drupal_get_path('module', 'uc_addresses') .'/uc_addresses.js');
-      drupal_add_js(array('uc_address_default' => array('country' => $default_address->country, 'zone' => $default_address->zone)), 'setting');
-    }
   }
 
-  // If we have no addresses, remove the selection field. This
-  // occurs only when this module is added to a system that already
-  // has users
-
-  else {
-    unset($form['panes']['delivery']['delivery_address_select']);
-    unset($form['panes']['billing']['billing_address_select']);
-  }
-
-  // Add the "Save address" checkbox
-  // TODO: (Tony) I can add these, but don't know how to find out if
-  // the checkbox was checked. For now, all order addresses are
-  // automatically saved.
-
-//     $form['panes']['billing']['billing_address_save_address'] = array(
-//       '#title' => t('Save this address'),
-//       '#type' => 'checkbox',
-//       '#default_value' => 1,
-//       '#weight' => 10
-//       );
-//     $form['panes']['delivery']['delivery_address_save_address'] = array(
-//       '#title' => t('Save this address'),
-//       '#type' => 'checkbox',
-//       '#default_value' => 1,
-//       '#weight' => 10
-//       );
-
+  // Remove any temporary addresses from session.
+  unset($_SESSION['uc_addresses_order']);
 }
 
-function _uc_addresses_address_fields_empty($fields, $type)
-{
-  if (uc_address_field_enabled('first_name') &&
-      $fields[$type . '_first_name']['#default_value']) return FALSE;
-  else if (uc_address_field_enabled('last_name') &&
-	   $fields[$type . '_last_name']['#default_value']) return FALSE;
-  else if (uc_address_field_enabled('phone') &&
-	 $fields[$type . '_phone']['#default_value']) return FALSE;
-  else if (uc_address_field_enabled('company') &&
-	 $fields[$type . '_company']['#default_value']) return FALSE;
-  else if (uc_address_field_enabled('street1') &&
-	   $fields[$type . '_street1']['#default_value']) return FALSE;
-  else if (uc_address_field_enabled('street2') &&
-	   $fields[$type . '_street2']['#default_value']) return FALSE;
-  else if (uc_address_field_enabled('city') &&
-	   $fields[$type . '_city']['#default_value']) return FALSE;
-  else if (uc_address_field_enabled('postal_code') &&
-	   $fields[$type . '_postal_code']['#default_value']) return FALSE;
-  return TRUE;
-}
-
-/*******************************************************************************
- * Hook Functions (Ubercart)
- ******************************************************************************/
+// ---------------------------------------------------------------------------
+// CTOOLS HOOKS
+// + function for finding the plugins
+// ---------------------------------------------------------------------------
 
 /**
- * Implementation of hook_address_pane().
+ * Implementation of hook_ctools_plugin_api().
+ */
+function uc_addresses_ctools_plugin_api($owner, $api) {
+  if ($owner == 'uc_addresses' && $api == 'uc_addresses_fields') {
+    return array(
+      'version' => 2,
+    );
+  }
+}
+
+/**
+ * Psuedo hook definition plugin system options and defaults.
  *
  * @return array
  */
-function uc_addresses_address_pane() {
-  $panes[] = array(
-    'id' => 'address',
-    'callback' => 'uc_addresses_pane_address',
-    'title' => t('Address'),
-    'desc' => t("Manage the user's addresses and contact information."),
-    'class' => 'pos-left',
-    'weight' => 1,
-    'show' => array('view', 'add', 'edit'),
-    );
-
-  return $panes;
+function uc_addresses_ctools_plugin_field_handlers() {
+  return array(
+    'cache' => FALSE,
+    'use hooks' => TRUE,
+  );
 }
 
 /**
- * Use hook_uc_checkout_complete to catch any new addresses.
+ * Returns all fields registered by hook_uc_addresses_fields().
  *
- * @param $order The order.
- * @param $user The user.
+ * @return array
  */
-function uc_addresses_uc_checkout_complete($order, $user) {
+function uc_addresses_get_address_fields() {
+  static $fields = array();
+  if (count($fields) < 1) {
+    ctools_include('plugins');
+    ctools_plugin_api_include('uc_addresses', 'uc_addresses_fields', 2, 2);
+    $fields = module_invoke_all('uc_addresses_fields');
 
-  $address = new stdClass();
+    // Allow other modules to alter the field definitions
+    drupal_alter('uc_addresses_fields', $fields);
 
-  // Add the billing address first. If the user has no addresses,
-  // this is the one that will become the default address
-
-  if (variable_get('uc_pane_billing_enabled', TRUE)) {
-    $address->address_name = '';
-    $address->uid = $order->uid;
-    $address->first_name = $order->billing_first_name;
-    $address->last_name = $order->billing_last_name;
-    $address->company = $order->billing_company;
-    $address->street1 = $order->billing_street1;
-    $address->street2 = $order->billing_street2;
-    $address->city = $order->billing_city;
-    $address->zone = $order->billing_zone;
-    $address->postal_code = $order->billing_postal_code;
-    $address->country = $order->billing_country;
-    $address->phone = $order->billing_phone;
-    $address->is_default = 0;
-    _uc_addresses_db_add_address($address, TRUE);
-  }
-
-  if (uc_order_is_shippable($order)) {
-    $address->address_name = '';
-    $address->uid = $order->uid;
-    $address->first_name = $order->delivery_first_name;
-    $address->last_name = $order->delivery_last_name;
-    $address->company = $order->delivery_company;
-    $address->street1 = $order->delivery_street1;
-    $address->street2 = $order->delivery_street2;
-    $address->city = $order->delivery_city;
-    $address->zone = $order->delivery_zone;
-    $address->postal_code = $order->delivery_postal_code;
-    $address->country = $order->delivery_country;
-    $address->phone = $order->delivery_phone;
-    $address->is_default = 0;
-    _uc_addresses_db_add_address($address, TRUE);
-  }
-}
-
-/*******************************************************************************
- * Callback Functions, Forms, and Tables
- ******************************************************************************/
-
-/**
- * Generate a list of one or all addresses defined by one user and
- * then theme the list for display.
- *
- * If the current user can edit the addresses, then provide an edit
- * link for each address.
- *
- * @param $address_user The user whose address list we want to display.
- * @param $address The address to display or null to display all.
- * @return The themed list (as a string).
- */
-function uc_addresses_list_addresses($address_user, $address = NULL) {
-  global $user;
-
-  $uid = $address_user->uid;
-
-  // Save this for later use
-
-  $saved_address = $address;
-
-  // Determine if the user can view all addresses or just the default address
-
-  $can_view_all_addresses =
-    $user->uid == $uid ||
-    user_access(UC_ADDRESSES_ACCESS_VIEW_ALL) ||
-    user_access(UC_ADDRESSES_ACCESS_ADD_EDIT);
-
-  // Flag to determine error message
-
-  $allowed_to_view_address = true;
-
-  // If they can view all addresses, fetch the addresses
-
-  if ($can_view_all_addresses) {
-    if ($address) {
-      $addresses = $address;
-    }
-    else {
-      $addresses = _uc_addresses_db_get_address($uid, NULL);
-    }
-  }
-
-  // Otherwise, they can view only the default address
-
-  else {
-    if ($address) {
-      if ($address->is_default === false) {
-	$addresses = FALSE;
-	$allowed_to_view_address = FALSE;
+    foreach ($fields as $fieldname => $fielddata) {
+      // Add name for the field (never set manually).
+      $fields[$fieldname]['name'] = $fieldname;
+      // Add title if not set.
+      if (!isset($fielddata['title'])) {
+        $fields[$fieldname]['title'] = check_plain($fieldname);
       }
-    }
-    else {
-      $aid = _uc_addresses_get_default_address_id($uid);
-      if ($aid === NULL) $aid = 0; // NULL would mean read all addresses
-
-      $addresses = _uc_addresses_db_get_address($uid, $aid);
-      if (is_object($addresses) && $addresses->is_default === false) {
-	$addresses = FALSE;
-	$allowed_to_view_address = FALSE;
+      // Add description if not set.
+      if (!isset($fielddata['description'])) {
+        $fields[$fieldname]['description'] = '';
+      }
+      // Add display settings array
+      if (!isset($fielddata['display_settings'])) {
+        $fields[$fieldname]['display_settings'] = array();
+      }
+      if (!isset($fielddata['display_settings']['default'])) {
+        $fields[$fieldname]['display_settings']['default'] = TRUE;
+      }
+      // Add compare setting
+      if (!isset($fielddata['compare'])) {
+        $fields[$fieldname]['compare'] = TRUE;
       }
     }
   }
-
-  $output = '';
-
-  // We have multiple addresses
-
-  if (is_array($addresses)) {
-    foreach ($addresses as $address) {
-      $output .= _uc_addresses_list_one_address($address);
-    }
-  }
-
-  // We have one address
-
-  elseif (is_object($addresses)) {
-    $output .= _uc_addresses_list_one_address($addresses);
-  }
-
-  // We don't have any addresses. The message we report depends on the
-  // user and what they asked for
-
-  else {
-
-    // If they asked for all addresses and got nothing, it's because
-    // there is nothing
-
-    if ($saved_address === NULL) {
-      $output .= t('No addresses have been saved.<br />');
-    }
-
-    // If they asked for a specific address, it could be because it
-    // doesn't exist or because they are only permitted to view the
-    // default address and the one they picked is not the default
-
-    elseif ($allowed_to_view_address) {
-      $output .= t('This address does not exist.<br />');
-    }
-
-    else {
-      $output .= t('You are not allowed to view this address.<br />');
-    }
-  }
-
-  // Decide whether to include a link for adding a new address based
-  // on whether the current user can edit the addresses
-
-  if (user_access(UC_ADDRESSES_ACCESS_ADD_EDIT) || $user->uid == $uid) {
-    $link = l(t('Add a new address'), 'user/'. $uid .'/addresses/add');
-    $output .= $link;
-  }
-
-  return $output;
+  return $fields;
 }
 
 /**
- * List one address.
+ * Returns all handler instances of fields registered by hook_uc_addresses_fields().
  *
- * @param $address The address object to list.
- * @return The HTML string for the address.
+ * @param UcAddressesSchemaAddress $address
+ *   An address object
+ * @param string $context
+ *   The context where the fields are used for
+ *
+ * @return array
  */
-function _uc_addresses_list_one_address($address) {
-
-  $panes = _address_pane_list();
-  foreach ($panes as $pane) {
-    if (variable_get('uc_addresses_pane_'. $pane['id'] .'_enabled', TRUE)) {
-      $func = $pane['callback'];
-      if (function_exists($func)) {
-	$return = $func('view', $address, NULL);
-	if (!is_NULL($return)) {
-	  $data[$pane['title']] = $return;
-	}
-      }
-    }
+function uc_addresses_get_address_field_handler_instances(UcAddressesSchemaAddress $address, $context = 'default') {
+  ctools_include('plugins');
+  ctools_plugin_api_include('uc_addresses', 'uc_addresses_fields', 2, 2);
+  $handlers = array();
+  $fields_data = uc_addresses_get_address_fields();
+  foreach ($fields_data as $fieldname => $fielddata) {
+    $class = ctools_plugin_load_class('uc_addresses', 'field_handlers', $fielddata['handler'], 'handler');
+    $handlers[$fieldname] = new $class($fieldname, $address, $context);
   }
-  $output = '<div class="list_address">';
-  $output .= theme('uc_addresses_list_address', $address, $data);
-  $output .= '</div>';
-  return $output;
+  return $handlers;
 }
 
+// ---------------------------------------------------------------------------
+// TOKEN HOOKS
+// ---------------------------------------------------------------------------
+
 /**
- * Theme the address list view.
+ * Implementation of hook_token_list().
  *
- * @param $address The address object we are theming.
- * @param $panes An associative array for each address pane.
- *	The key is the pane's title and the value is either the data
- *	returned for that pane or an array of returned data.
- * @return The themed address.
- * @ingroup themeable
+ * @param string $type
+ *
+ * @return array
  */
-function theme_uc_addresses_list_address($address, $panes) {
-  global $user;
-
-  $uid = $address->uid;
-  $aid = $address->aid;
-
-  drupal_add_css(drupal_get_path('module', 'uc_addresses') .'/uc_addresses.css');
-
-  $output = '';
-  if ($address->is_default) {
-    $output = '<table class="address-preview-table addresses-default-address">';
-  }
-  else {
-    $output = '<table class="address-preview-table">';
-  }
-
-  foreach ($panes as $title => $data) {
-
-    // We add an edit link only if the user is allowed to edit this address
-
-    if (user_access(UC_ADDRESSES_ACCESS_ADD_EDIT) || $user->uid == $uid) {
-      $output .= '<tr class="pane-title-row"><td colspan="2">'
-	. l(t('Edit this address'), 'user/'. $uid .'/addresses/' . $aid . '/edit')
-	. ($address->is_default ? '' :
-	   ' | '
-	   . l(t('Delete this address'), 'user/'. $uid .'/addresses/' . $aid . '/delete'))
-	.'</td></tr>';
-    }
-
-    if ($address->is_default) {
-      $output .= '<tr><td colspan="2" class="addresses-default-address-label"> '
-	. t('Default address') . '</td></tr>';
-    }
-
-    if ($address->address_name) {
-      $output .=
-	'<tr class="pane-data-row"><td class="title-col" '
-	.'>'.t('Name') .':</td><td class="data-col">'
-	. $address->address_name .'</td></tr>';
-    }
-
-    if (is_array($data)) {
-      foreach ($data as $row) {
-        if (is_array($row)) {
-          if (isset($row['border'])) {
-            $border = ' class="row-border-'. $row['border'] .'"';
-          }
-          else {
-            $border = '';
-          }
-          $output .= '<tr class="pane-data-row"'. $border .'><td class="title-col" '
-	    .'>'. $row['title'] .':</td><td class="data-col">'
-	    . $row['data'] .'</td></tr>';
+function uc_addresses_token_list($type = 'all') {
+  $tokens = array();
+  // Ubercart Addresses tokens
+  if ($type == 'uc_addresses' || $type == 'all') {
+    $address = UcAddressesAddress::newAddress();
+    $fields = uc_addresses_get_address_field_handler_instances($address, 'token');
+    foreach ($fields as $fieldname => $handler) {
+      // Check if handler supports multiple output formats
+      $formats = $handler->getOutputFormats();
+      if (count($formats) > 0) {
+        foreach ($formats as $format => $label) {
+          $tokens['uc_addresses']['uc_addresses_' . $format] = $label;
         }
-        else {
-          $output .= '<tr class="pane-data-row"><td colspan="2">'. $row .'</td></tr>';
-        }
-      }
-    }
-    else {
-      $output .= '<tr class="pane-data-row"><td colspan="2">'. $data .'</td></tr>';
-    }
-  }
-  $output .= '</table><br />';
-
-  return $output;
-}
-
-/**
- * Create a form used to add a new address or edit an existing address.
- *
- * @param $form_state The form state.
- * @param $address_user The user who "owns" this address.
- * @param $address The address to edit (NULL for new addresses)
- * @param $view The URL path for which form to display. 'add' or 'edit'.
- * @return An address form
- * @ingroup forms
- */
-function uc_addresses_get_address_form(&$form_state, $address_user, $address, $view) {
-
-  $uid = $address_user->uid;
-  $aid = $address ? $address->aid : 0;
-
-  $form['stored_values'] = array(
-    '#type' => 'value',
-    '#value' => array(
-      'user' => $address_user,
-      'address' => $address,
-      'view' => $view),
-    );
-
-  // Get the panes to display
-
-  $form['panes'] = array('#tree' => TRUE);
-  $panes = _address_pane_list($view);
-  foreach ($panes as $pane) {
-    if (in_array($view, $pane['show']) &&
-        variable_get('uc_addresses_pane_'. $pane['id'] .'_show_'. $view, TRUE)) {
-      $return = $pane['callback']($view, $address, NULL);
-
-      // Add the pane if any display data is returned from the
-      // callback
-
-      if (is_array($return) && (!empty($return['description']) || !empty($return['contents']))) {
-
-        // Create the fieldset for the pane
-
-        $form['panes'][$pane['id']] = array(
-          '#type' => 'fieldset',
-          '#title' => $pane['title'],
-          '#description' => !empty($return['description']) ? $return['description'] : NULL,
-          '#collapsible' => !empty($pane['collapsible']) ? $pane['collapsible'] : FALSE,
-          '#collapsed' => FALSE,
-          '#attributes' => array('id' => $pane['id'] .'-pane'),
-          '#theme' => $return['theme'],
-	  );
-
-        // Add the contents of the fieldset if any were returned
-
-        if (!empty($return['contents'])) {
-          $form['panes'][$pane['id']] = array_merge($form['panes'][$pane['id']], $return['contents']);
-        }
-      }
-    }
-  }
-
-  // Edit an existing address
-
-  if ($view == 'edit') {
-    $form['submit'] =
-      array('#type' => 'submit',
-	    '#value' => variable_get('uc_addresses_update_button', t('Update address')));
-    $form['delete'] =
-      array('#type' => 'submit',
-	    '#value' => variable_get('uc_addresses_delete_button', t('Delete address')),
-	    '#suffix' => l(t('Cancel'), 'user/'. $uid .'/addresses/'),
-	    '#disabled' => $address->is_default);
-  }
-
-  // Add a new address
-
-  else {
-    $form['submit'] =
-      array('#type' => 'submit',
-	    '#value' => variable_get('uc_addresses_update_button', t('Add address')),
-	    '#suffix' => l(t('Cancel'), 'user/'. $uid .'/addresses/'));
-  }
-
-  return $form;
-}
-
-/**
- * Theme the add or edit address form.
- *
- * @param $form The form array to theme.
- * @return The themed form (as a string).
- * @ingroup themeable
- */
-function theme_uc_addresses_get_address_form($form) {
-  drupal_add_css(drupal_get_path('module', 'uc_addresses') .'/uc_addresses.css');
-
-  $output = '<p>';
-
-  foreach (element_children($form['panes']) as $pane_id) {
-
-    // TODO: (Tony) Not sure what's going on here.
-
-    if (function_exists(($func = _address_pane_data($pane_id, 'callback')))) {
-      $result = $func('theme', $form['panes'][$pane_id], NULL);
-      if (!empty($result)) {
-	$output .= $result;
-	$form['panes'][$pane_id] = array();
       }
       else {
-	$output .= drupal_render($form['panes'][$pane_id]);
+        // Only a single format is supported
+        $tokens['uc_addresses']['uc_addresses_' . $fieldname] = t('!name, formatted', array('!name' => $handler->getFieldTitle()));
       }
-    }
-    else {
-      $output .= drupal_render($form['panes'][$pane_id]);
+      $tokens['uc_addresses']['uc_addresses_' . $fieldname . '-raw'] = t('!name, raw', array('!name' => $handler->getFieldTitle()));
     }
   }
-
-  $output .= '<div id="checkout-form-bottom">'. drupal_render($form) .'</div>';
-
-  return $output;
-}
-
-/**
- * Handle the form submit for adding a new address or editing an
- * existing address.
- *
- * @param $form The form.
- * @param $form_state The form state.
- * @return The path where we should wind up.
- */
-function uc_addresses_get_address_form_submit($form, &$form_state) {
-  global $user;
-
-  $address_user = $form['stored_values']['#value']['user'];
-  $address = $form['stored_values']['#value']['address'];
-  $view = $form['stored_values']['#value']['view'];
-
-  if ($form_state['clicked_button']['#value'] == t('Delete address')) {
-      cache_clear_all();
-      $form_state['redirect'] =
-	array('user/'. $address_user->uid .'/addresses/' . $address->aid . '/delete');
+  // Ubercart order tokens
+  if ($type == 'order' || $type == 'all') {
+    $tokens['order']['uc-addresses-shipping-address'] = t('The order shipping address, formatted with the Ubercart Addresses module.');
+    $tokens['order']['uc-addresses-billing-address'] = t('The order billing address, formatted with the Ubercart Addresses module.');
   }
-  else {
-    if (!$address) {
-      $address = new stdClass();
-      $address->uid = $address_user->uid;
-    }
-
-    $valid = TRUE;
-    foreach (element_children($form_state['values']['panes']) as $pane_id) {
-      $func = _address_pane_data($pane_id, 'callback');
-      $isvalid = $func('process', $address, $form_state['values']['panes'][$pane_id]);
-      if ($isvalid === FALSE) {
-	$_SESSION['expanded_panes'][] = $key;
-	$valid = FALSE;
+  // User tokens
+  if ($type == 'user' || $type == 'all') {
+    $address_tokens = uc_addresses_token_list('uc_addresses');
+    foreach ($address_tokens['uc_addresses'] as $token => $description) {
+      if (strpos($token, 'uc_addresses_default_') === FALSE) {
+        $user_token = str_replace('uc_addresses', 'uc_addresses-shipping', $token);
+        $tokens[t('Ubercart Addresses') . ' - ' . t('Default shipping address')][$user_token] = t('Default shipping address') . ': ' . $description;
+        $user_token = str_replace('uc_addresses', 'uc_addresses-billing', $token);
+        $tokens[t('Ubercart Addresses') . ' - ' . t('Default billing address')][$user_token] = t('Default billing address') . ': ' . $description;
       }
-    }
-    if ($view == 'edit') { // Update database
-      _uc_addresses_db_update_address($address);
-    }
-    elseif ($view == 'new' || $view == 'add') { // Insert into datebase
-      _uc_addresses_db_add_address($address);
-    }
-    $form_state['redirect'] = array('user/'. $address_user->uid .'/addresses');
-  }
-}
-
-/**
- * Format an address the same as the rest of the Ubercart store.
- *
- * @param $items An object containing address information.
- * @return A formatted address.
- */
-function uc_addresses_address($items) {
-  $address = uc_address_format(
-    $items->first_name,
-    $items->last_name,
-    $items->company,
-    $items->street1,
-    $items->street2,
-    $items->city,
-    $items->zone,
-    $items->postal_code,
-    $items->country
-    );
-  return $address;
-}
-
-/**
- * Display a confirmation page before deleting an address.
- *
- * @param $address_user The user who "owns" the address.
- * @param $address The address to delete.
- */
-function uc_addresses_delete_address_confirm($address_user, $address) {
-  $uid = $address_user->uid;
-  $aid = $address->aid;
-
-  $form = drupal_get_form('uc_addresses_delete_address_confirm_form', $address_user, $address);
-
-  $help =
-    variable_get('uc_addresses_delete_instructions',
-		 t('Are you are sure you want to Delete this address? ' .
-		   'Once deleted, the address cannot be recovered.',
-		   array('!delete' => variable_get('uc_addresses_delete_button',
-						   t('Delete address')))
-		   )
-      );
-
-  $panes = _address_pane_list();
-  foreach ($panes as $pane) {
-    if (variable_get('uc_addresses_pane_'. $pane['id'] .'_enabled', TRUE)) {
-      $func = $pane['callback'];
-      if (function_exists($func)) {
-        $return = $func('view', $address, NULL);
-        if (!is_NULL($return)) {
-          $data[$pane['title']] = $return;
-        }
-      }
+      $tokens[t('Ubercart Addresses') . ' - ' . t('Default shipping address')]['uc-addresses-shipping-address'] = t('The default shipping address, formatted with the Ubercart Addresses module.');
+      $tokens[t('Ubercart Addresses') . ' - ' . t('Default billing address')]['uc-addresses-billing-address'] = t('The default billing address, formatted with the Ubercart Addresses module.');
     }
   }
-
-  $output = theme('uc_addresses_address_delete_confirm', $help, $data, $form);
-
-  return $output;
+  return $tokens;
 }
 
 /**
- * Theme the address deletion confirmation form.
+ * Implementation of hook_token_values().
  *
- * @param $help The help message to display.
- * @param $panes An associative array for each address pane that
- *	has information to add to the delete page. The key is the
- *	pane's title and the value is either the data returned for
- *	that pane or an array of returned data.
- * @param $form The HTML version of the form that by default
- *	includes the 'Back' and 'Delete Address' buttons at the bottom
- *	of the confirmation page.
- * @return The themed confirmation form (as a string).
- * @ingroup themeable
+ * @param string $type
+ * @param object $object
+ *
+ * @return array
  */
-function theme_uc_addresses_address_delete_confirm($help, $panes, $form) {
-  drupal_add_css(drupal_get_path('module', 'uc_addresses') .'/uc_addresses.css');
+function uc_addresses_token_values($type, $object = NULL) {
+  $values = array();
+  switch ($type) {
+    case 'uc_addresses':
+      if ($object instanceof UcAddressesAddress) {
+        $address = $object;
+        $fields = uc_addresses_get_address_field_handler_instances($address, 'token');
+        foreach ($fields as $fieldname => $handler) {
+          $value = $address->getField($fieldname);
 
-  $output = '<p>'. $help .'</p>';
-  $output .= '<div class="list_address"><table class="address-preview-table">';
-  foreach ($panes as $title => $data) {
-    $output .= '<tr class="pane-title-row"><td colspan="2">'. t('Address')
-      .'</td></tr>';
-    if (is_array($data)) {
-      foreach ($data as $row) {
-        if (is_array($row)) {
-          if (isset($row['border'])) {
-            $border = ' class="row-border-'. $row['border'] .'"';
+          // Check if handler supports multiple output formats
+          $formats = $handler->getOutputFormats();
+          if (count($formats) > 0) {
+            foreach ($formats as $format => $label) {
+              if ($value != '') {
+                $values['uc_addresses_' . $format] = $handler->outputValue($value, $format);
+              }
+              else {
+                $values['uc_addresses_' . $format] = '';
+              }
+            }
           }
           else {
-            $border = '';
+            // Only a single format is supported
+            if ($value != '') {
+              $values['uc_addresses_' . $fieldname] = $handler->outputValue($value);
+            }
+            else {
+              $values['uc_addresses_' . $fieldname] = '';
+            }
           }
-          $output .= '<tr class="pane-data-row"'. $border .'><td class="title-col" '
-	    .'>'. $row['title'] .':</td><td class="data-col">'
-	    . $row['data'] .'</td></tr>';
-        }
-        else {
-          $output .= '<tr class="pane-data-row"><td colspan="2">'. $row .'</td></tr>';
+          $values['uc_addresses_' . $fieldname . '-raw'] = $value;
         }
       }
-    }
-    else {
-      $output .= '<tr class="pane-data-row"><td colspan="2">'. $data .'</td></tr>';
-    }
+      break;
+    case 'order':
+      if (isset($object->uc_addresses['shipping']) && $object->uc_addresses['shipping'] instanceof UcAddressesAddress) {
+        $values['uc-addresses-shipping-address'] = uc_addresses_format_address($object->uc_addresses['shipping'], 'token');
+      }
+      if (isset($object->uc_addresses['billing']) && $object->uc_addresses['billing'] instanceof UcAddressesAddress) {
+        $values['uc-addresses-billing-address'] = uc_addresses_format_address($object->uc_addresses['billing'], 'token');
+      }
+      break;
+    case 'user':
+      $default_types = array(
+        'shipping',
+        'billing',
+      );
+      foreach ($default_types as $default_type) {
+        if ($address = UcAddressesAddressBook::get($object->uid)->getDefaultAddress($default_type)) {
+          $address_tokens = uc_addresses_token_values('uc_addresses', $address);
+          foreach ($address_tokens as $token => $value) {
+            if (strpos($token, 'uc_addresses_default_') === FALSE) {
+              $user_token = str_replace('uc_addresses', 'uc_addresses-' . $default_type, $token);
+              $values[$user_token] = $value;
+            }
+          }
+          // Address display
+          $values['uc-addresses-' . $default_type . '-address'] = uc_addresses_format_address($address, 'token');
+        }
+      }
+      break;
   }
-  $output .= '<tr class="preview-button-row"><td colspan="2">'. $form
-    .'</td></tr></table>';
-  $output .= '</div>';
-  return $output;
+  return $values;
 }
 
-/**
- * Get the submit buttons to confirm deletion of a user's address.
- *
- * @param $form_state The state of the form.
- * @param $user The user who "owns" the address.
- * @param $address The address we are deleting.
- * @return The buttons for the form (as a string).
- * @ingroup forms
- */
-function uc_addresses_delete_address_confirm_form(&$form_state, $address_user, $address) {
-
-  $form['stored_values'] = array(
-    '#type' => 'value',
-    '#value' => array(
-      'user' => $address_user,
-      'address' => $address),
-    );
-
-
-  // The buttons
-
-  $form['submit'] = array('#type' => 'submit',
-			  '#value' => variable_get('uc_addresses_delete_button', t('Delete address')),
-			  '#suffix' => l(t('Cancel'), 'user/'. $address_user->uid .'/addresses/'));
-  return $form;
-}
+// -----------------------------------------------------------------------------
+// FORM ALTERS
+// -----------------------------------------------------------------------------
 
 /**
- * Delete a user-confirmed address.
+ * Implementation of hook_form_FORM_ID_alter() for form uc_order_address_book_form.
  *
- * @param $form The form.
- * @param $form_state The form state.
- */
-function uc_addresses_delete_address_confirm_form_submit($form, &$form_state) {
-
-  $address_user = $form['stored_values']['#value']['user'];
-  $address = $form['stored_values']['#value']['address'];
-
-  _uc_addresses_db_delete_address($address->aid);
-  drupal_set_message(t('The address has been deleted.'));
-
-  $form_state['redirect'] = array('user/'. $address_user->uid .'/addresses');
-}
-
-/*******************************************************************************
- * Database Functions
- ******************************************************************************/
-
-/**
- * Add a new address to the database table. If the address is already
- * in the database (for this user), it is not added.
+ * @param array $form
+ * @param array $form_state
  *
- * @param $address The address to add (as an object).
- * @param The id of the new address or FALSE if there was an error.
+ * @return void
  */
-function _uc_addresses_db_add_address($address, $silent = FALSE) {
+function uc_addresses_form_uc_order_address_book_form_alter(&$form, &$form_state) {
+  $uid = $form_state['post']['uid'];
+  $type = $form_state['post']['type'];
 
-  // No user -- shouldn't happen
-  if ($address->uid == 0) { echo "User 0\n"; exit(1); }
+  $select = uc_addresses_select_address($uid, 'order_form', $type);
 
-  // No address -- may happen
-  if (!isset($address->first_name)) return TRUE;
-
-  // From this point on, we have both a user and an address to add
-
-  // We need to work with systems where this module is added when
-  // users are already present. Find out how many addresses this user has
-
-  $num_addresses =
-    db_result(db_query("SELECT COUNT(*) FROM {uc_addresses} WHERE uid = %d", $address->uid));
-
-  // If this is the first address the user has ever added, make it the
-  // default address
-
-  if ($num_addresses < 1) $address->is_default = 1;
-
-  if ($num_addresses > 0) {
-    // Check for problems
-
-    $result = _uc_addresses_db_check_address($address, 'add', $silent);
-    if (!$result) return FALSE;
+  if ($uid == 0) {
+    $form['desc'] = array('#value' => '<br />' . t('You must select a customer before address<br />information is available.<br />') . '<br />');
+  }
+  elseif (is_null($select)) {
+    $form['desc'] = array('#value' => '<br />' . t('No addresses found for customer.') . '<br />');
+    $form['addresses']['#access'] = FALSE;
   }
   else {
-    _uc_addresses_db_normalize_address($address);
+    $form['addresses'] = $select;
+    $form['desc']['#value'] = '';
   }
 
-  // Add the address
-
-  db_query("INSERT INTO {uc_addresses} (aid, uid, first_name, last_name, "
-	   ."phone, company, street1, street2, city, zone, postal_code, country, "
-	   ."address_name, "
-	   ."created, modified) VALUES (%d, %d, "
-	   ."'%s', '%s', '%s', "
-	   ."'%s', '%s', '%s', "
-	   ."'%s', %d, '%s', %d, "
-	   ."'%s', "
-	   ."%d, %d)",
-	   0,
-	   $address->uid,
-           $address->first_name,
-	   $address->last_name,
-	   $address->phone,
-           $address->company,
-	   $address->street1,
-	   $address->street2,
-           $address->city,
-	   $address->zone,
-	   $address->postal_code,
-           ((is_NULL($address->country) || $address->country == 0) ?
-	    variable_get('uc_store_country', 840) :
-	    $address->country),
-	   $address->address_name,
-           time(),
-	   time());
-  $aid = db_last_insert_id('uc_addresses', 'aid');
-
-  // Update the default address, if necessary
-
-  if ($address->is_default) {
-    if ($num_addresses < 1) {
-      db_query("INSERT INTO {uc_addresses_defaults} (aid, uid) VALUES (%d, %d)", $aid, $address->uid);
-    }
-    else {
-      db_query("UPDATE {uc_addresses_defaults} SET aid = %d WHERE uid = %d", $aid, $address->uid);
-    }
-  }
-
-  return $aid;
+  $form['close'] = array(
+    '#type' => 'button',
+    '#value' => t('Close'),
+    '#weight' => 50,
+    '#attributes' => array('onclick' => "return close_address_select('#" . $type . "_address_select');"),
+  );
 }
 
 /**
- * Check to see if we saved any addresses for an anonymous user.
+ * Returns an array of addresses to be used to for the selecting address widget.
  *
- * @return True if there are any saved addresses.
- */
-
-function _uc_addresses_db_have_saved_addresses() {
-  return
-    isset($_SESSION['uc_addresses_saved_addresses']) &&
-    is_array($_SESSION['uc_addresses_saved_addresses']);
-}
-
-/**
- * Update an address in the database table.
+ * @param int $uid
+ *   The user ID to select addresses for
+ * @param string $context
+ *   The context in which the addresses are used:
+ *   - checkout_form
+ *   - order_form
+ * @param string $type
+ *   The type of address to select addresses for (shipping or billing)
  *
- * @param $address The address to add.
- * @param A boolean that is TRUE if the address was added, FALSE otherwise.
+ * @return array
+ *   An array of addresses.
  */
-function _uc_addresses_db_update_address($address) {
+function uc_addresses_get_select_addresses($uid, $context = 'default', $type = 'billing') {
+  ctools_include('plugins');
+  ctools_plugin_api_include('uc_addresses', 'uc_addresses_fields', 2, 2);
 
-  // Check for problems
-
-  $result = _uc_addresses_db_check_address($address, 'update', false);
-  if (!$result) return FALSE;
-
-  // We're set to go
-
-  db_query("UPDATE {uc_addresses} SET "
-	   ."first_name = '%s', "
-	   ."last_name = '%s', "
-	   ."phone = '%s', "
-	   ."company = '%s', "
-	   ."street1 = '%s', "
-	   ."street2 = '%s', "
-	   ."city = '%s', "
-	   ."zone = %d, "
-	   ."postal_code = '%s', "
-	   ."country = %d, "
-	   ."address_name = '%s', "
-	   ."modified = %d "
-	   ."WHERE aid = %d",
-           $address->first_name,
-	   $address->last_name,
-	   $address->phone,
-           $address->company,
-	   $address->street1,
-	   $address->street2,
-           $address->city,
-	   $address->zone,
-	   $address->postal_code,
-	   $address->country,
-	   $address->address_name,
-           time(),
-	   $address->aid);
-
-  // Update the default address, if necessary
-
-  if ($address->is_default) {
-      db_query("UPDATE {uc_addresses_defaults} SET aid = %d WHERE uid = %d", $address->aid, $address->uid);
-  }
-  drupal_set_message(t('The address was updated.'));
-
-  return TRUE;
-}
-
-/**
- * Before adding or updating an address, check it for errors.
- *
- * @param $address The address we are about to add or update.
- * @param $op Either 'add' or 'update'.
- * @param A boolean which, if TRUE, tells us not to display warnings
- *	to the user.
- * @return TRUE if the address is valid, FALSE otherwise.
- */
-function _uc_addresses_db_check_address($address, $op, $silent) {
-
-  _uc_addresses_db_normalize_address($address);
-
-  $result =
-    db_query("SELECT aid FROM {uc_addresses} WHERE "
-	     ."uid = %d AND "
-	     ."first_name = '%s' AND "
-	     ."last_name = '%s' AND "
-	     ."phone = '%s' AND "
-	     ."company = '%s' AND "
-	     ."street1 = '%s' AND "
-	     ."street2 = '%s' AND "
-	     ."city = '%s' AND "
-	     ."zone = '%s' AND "
-	     ."postal_code = '%s' AND "
-	     ."country = '%s'",
-	     $address->uid,
-	     $address->first_name,
-	     $address->last_name,
-	     $address->phone,
-	     $address->company,
-	     $address->street1,
-	     $address->street2,
-	     $address->city,
-	     $address->zone,
-	     $address->postal_code,
-	     $address->country);
-
-  $num_rows = 0;
-
-  while ($db_address = db_fetch_object($result)) {
-    $num_rows++;
-
-    // If the address appears more than once, the database table is
-    // corrupted. The fix, however, is simple: delete the extra
-    // address
-
-    if ($num_rows > 1) {
-      drupal_set_message(t('This address appears more than once in your address book. '
-			   .'Please delete the duplicates and file a bug report.'),
-			 'error');
-      return FALSE;
-    }
-
-    // If we get one address, it's OK only if it is the address we're
-    // trying to add or update
-
-    if (!isset($address->aid) || ($db_address->aid != $address->aid)) {
-      if (!$silent) {
-	if ($op == 'add') {
-	  drupal_set_message(
-	    t('This address already appears in your address book. '
-	      .'A new address was not added.'),
-	    'warning');
-	}
-	else {
-	  drupal_set_message(
-	    t('The revised address is already in your address book. '
-	      .'Your change was not made.'),
-	    'warning');
-	}
+  // Ask each module for addresses
+  $addresses = array();
+  foreach (module_implements('uc_addresses_select_addresses') as $module) {
+    $new_addresses = module_invoke($module, 'uc_addresses_select_addresses', $uid, $context, $type);
+    if (is_array($new_addresses) && count($new_addresses) > 0) {
+      // Save source of each address and convert addresses arrays to UcAddressesAddress
+      foreach ($new_addresses as $index => $address) {
+        $new_address = $address;
+        if (is_object($address) && !($address instanceof UcAddressesAddress)) {
+          $address = (array) $address;
+        }
+        if (is_array($address)) {
+          // Convert to UcAddressesAddress
+          $new_address = UcAddressesAddressBook::newAddress();
+          $new_address->setMultipleFields($address);
+          $new_addresses[$index] = $new_address;
+          // Check if the source module has been manually set.
+          if (isset($address['module'])) {
+            $new_address->module = $address['module'];
+          }
+        }
+        if ($new_address instanceof UcAddressesAddress) {
+          // Save the source the address came from (if not already set).
+          if (!isset($new_address->module)) {
+            $new_address->module = $module;
+          }
+        }
+        else {
+          // No valid address. Delete it from array.
+          // @todo throw an exception here?
+          unset($new_addresses[$index]);
+        }
       }
-      return FALSE;
+      // Add to addresses array
+      $addresses = array_merge($addresses, $new_addresses);
     }
   }
 
-  // Now check to make sure the address_name is not already in use
-  // Unless its for the address we are trying to update
-
-  if ($address->address_name) {
-    $result =
-      db_query("SELECT aid FROM {uc_addresses} WHERE "
-	       ."uid = %d AND "
-	       ."address_name = '%s'",
-	       $address->uid,
-	       $address->address_name);
-    while ($db_address = db_fetch_object($result)) {
-      if ($db_address->aid != $address->aid && !$silent) {
-	drupal_set_message(
-	  t('The short name you selected for this address is already in your address book. '
-	    .'Please select a different name.'),
-	  'error');
-	return FALSE;
-      }
-    }
+  if (count($addresses) < 1) {
+    // No addresses found
+    return array();
   }
 
-  return TRUE;
-}
-
-/**
- * SQL gets a little weird when comparing nulls. "value = NULL" is
- * always false, even if the value is NULL! You have to write "value
- * IS NULL" to get the "right" answer. Rather than changing the
- * comparisons all over the place, we will make sure no value is null.
- * Because address fields can be disabled, any field could be null.
- *
- * @param $address The address to normalize (altered in place).
- */
-function _uc_addresses_db_normalize_address(&$address) {
-
-  // Yes, the comparisons are checking for null, '', and 0. This is
-  // deliberate--call me paranoid
-
-  if (!$address->first_name) $address->first_name = '';
-  if (!$address->last_name) $address->last_name = '';
-  if (!$address->phone) $address->phone = '';
-  if (!$address->company) $address->company = '';
-  if (!$address->street1) $address->street1 = '';
-  if (!$address->street2) $address->street2 = '';
-  if (!$address->city) $address->city = '';
-  if (!$address->zone) $address->zone = 0;
-  if (!$address->postal_code) $address->postal_code = '';
-  if (!$address->country) $address->country = variable_get('uc_store_country', 840);
-  if (!isset($address->address_name) || !$address->address_name) $address->address_name = '';
-}
-
-/**
- * Get an address or list of addresses from the database.
- *
- * @param $uid The id of the user who "owns" the address.
- * @param $aid The id of the address to fetch. If NULL, fetch
- *	all addresses owned by the user.
- * @return FALSE on error. An object if $aid was not NULL. An
- *	array of objects if $aid was NULL.
- */
-function _uc_addresses_db_get_address($uid, $aid = NULL) {
-
-  if ($aid === 0) return FALSE;
-
-  // If $aid is present, return just the one address
-
-  if ($aid) {
-    $result = db_query("SELECT * FROM {uc_addresses} WHERE aid = %d ",	$aid);
-
-    // Check to make sure there is data
-
-    if (($address = db_fetch_object($result)) == FALSE) return FALSE;
-
-    // Check to make sure it's from the right user
-
-    if ($address->uid != $uid) return FALSE;
-
-    // Find out if this is the default address
-
-    $address->is_default = 0;
-    $def = db_query("SELECT aid FROM {uc_addresses_defaults} WHERE uid = %d", $uid);
-    if ($default_aid = db_fetch_object($def)) {
-      $address->is_default = $default_aid->aid == $address->aid;
-    }
-
-    // All OK
-
-    return $address;
-  }
-
-  // If $aid is NULL, return all addresses for that user
-
-  $result = db_query("SELECT * FROM {uc_addresses} WHERE uid = %d ORDER BY created", $uid);
-
-  $default_aid = _uc_addresses_get_default_address_id($uid);
-
-  // Gather up everything
-
-  $num_rows = 0;
-  while ($address = db_fetch_object($result)) {
-    $num_rows++;
-    $address->is_default = $default_aid == $address->aid;
-    $addresses[] = $address;
-  }
-  if ($num_rows == 0) return FALSE;
+  // Allow modules to alter the addresses (this hook is only invoked if there are addresses).
+  drupal_alter('uc_addresses_select_addresses', $addresses, $uid, $context, $type);
 
   return $addresses;
 }
 
 /**
- * Get a user's default address id. Because the addresses module can
- * be added to an existing system, it's possible that some people will
- * not have a default address (or any addresses).
+ * Widget for selecting an address.
  *
- * @param $uid The id of the user who "owns" the address.
- * @return The $id of the default address or NULL if none.
+ * @param int $uid
+ *   The user ID to select addresses for
+ * @param string $context
+ *   The context in which the addresses are used:
+ *   - checkout_form
+ *   - order_form
+ * @param string $type
+ *   The type of address to select addresses for (shipping or billing)
+ * @param UcAddressesAddress $default_value
+ *   (optional) The option that should be selected.
+ *
+ * @return array
+ *   A select form element for selecting addresses
+ * @todo make an 'element' of it?
  */
-function _uc_addresses_get_default_address_id($uid) {
-  $def =
-    db_query("SELECT aid FROM {uc_addresses_defaults} WHERE uid = %d", $uid);
+function uc_addresses_select_address($uid, $context = 'default', $type = 'billing', UcAddressesAddress $default_value = NULL) {
+  // Get addresses for select.
+  $addresses = uc_addresses_get_select_addresses($uid, $context, $type);
 
-  $aid = null;
-  while ($obj = db_fetch_object($def)) {
-    $aid = $obj->aid;
+  if (count($addresses) < 1) {
+    // No addresses found
+    return NULL;
   }
-  return $aid;
+
+  // Initialize default value, we don't know yet which address in the list is
+  // equal to the given default value.
+  $address_book_default_value = NULL;
+
+  $options = array(
+    '0' => t('Select one...'),
+  );
+  foreach ($addresses as $address) {
+    $data = array();
+    $fields = $address->getRawFieldData();
+    // Replace underscores and spaces with a hyphen
+    foreach ($fields as $fieldname => $value) {
+      $fieldname_with_hyphens = str_replace(array('_', ' '), '-', $fieldname);
+      $data[$fieldname_with_hyphens] = $value;
+    }
+    if ($address_name = $address->getName()) {
+      $options[drupal_to_js($data)] = $address_name;
+    }
+    else {
+      $options[drupal_to_js($data)] = preg_replace('/<.*?>/', ', ', uc_addresses_format_address($address));
+    }
+
+    // Check if this address is equal to given default value
+    if ($default_value && !$address_book_default_value) {
+      if ($address->compareAddress($default_value)) {
+        // Default value found! Save it for later.
+        $address_book_default_value = drupal_to_js($data);
+      }
+    }
+  }
+
+  $select = array(
+    '#type' => 'select',
+    '#title' => t('Address book'),
+    '#options' => $options,
+    '#attributes' => array('onchange' => "uc_addresses_apply_address('" . $type . "', this.value);"),
+    '#weight' => -50,
+  );
+  // Add default value if found
+  if ($address_book_default_value) {
+    $select['#default_value'] = $address_book_default_value;
+  }
+
+  return $select;
+}
+
+// -----------------------------------------------------------------------------
+// THEMING
+// -----------------------------------------------------------------------------
+
+/**
+ * Implementation of hook_theme().
+ *
+ * @return array
+ */
+function uc_addresses_theme() {
+  return array(
+    'uc_addresses_address_book' => array(
+      'arguments' => array(
+        'addresses' => array(),
+        'address_book' => new stdClass(),
+        'options' => array('add_link' => FALSE),
+      ),
+      'template' => 'templates/uc-addresses-address-book',
+      'file' => 'uc_addresses.pages.inc',
+    ),
+    'uc_addresses_list_address' => array(
+      'arguments' => array(
+        'address' => new stdClass(),
+        'options' => array(
+          'edit_link' => FALSE,
+          'delete_link' => FALSE,
+          'destination' => '',
+        ),
+      ),
+      'template' => 'templates/uc-addresses-list-address',
+      'file' => 'uc_addresses.pages.inc',
+    ),
+    'uc_addresses_get_address_form' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'uc_addresses.pages.inc',
+    ),
+    'uc_addresses_address_delete_confirm' => array(
+      'arguments' => array('help' => '', 'form' => NULL),
+      'file' => 'uc_addresses.pages.inc',
+    ),
+    'uc_addresses_pane' => array(
+      'arguments' => array('form' => NULL),
+      'template' => 'templates/uc-addresses-form',
+      'file' => 'uc_addresses.pages.inc',
+    ),
+    'uc_addresses_address' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
 }
 
 /**
- * Delete an address from the database.
+ * Theme the address form element.
  *
- * @param $aid The id of the address to delete.
- * @return Returns TRUE if the address was deleted.
+ * @param array $element
+ *
+ * @return string
  */
-function _uc_addresses_db_delete_address($aid) {
-  if (_uc_addresses_db_check_if_default($aid)) {
-    drupal_set_message(t('You cannot delete your default address'), 'warning');
-    return FALSE;
+function theme_uc_addresses_address($element) {
+  return theme('form_element', $element, (!empty($element['#children']) ? $element['#children'] : ''));
+}
+
+/**
+ * Overwrite address display values for invoices.
+ *
+ * @param array $variables
+ *
+ * @return void
+ */
+function uc_addresses_preprocess_uc_order(&$variables) {
+  $variables['order_shipping_address'] = $variables['uc_addresses_shipping_address'];
+  $variables['order_billing_address'] = $variables['uc_addresses_billing_address'];
+}
+
+// -----------------------------------------------------------------------------
+// UTIL
+// -----------------------------------------------------------------------------
+
+/**
+ * Format an address by using tokens.
+ *
+ * @param UcAddressesAddress $address
+ *   The address object
+ * @param string $context
+ *   The context in which the address will be displayed
+ *
+ * @return string
+ *   A formatted address.
+ */
+function uc_addresses_format_address(UcAddressesAddress $address, $context = '') {
+  $country_id = $address->getField('country');
+  $format = uc_addresses_get_address_format($country_id);
+
+  // Replace tokens
+  if ($context == 'token') {
+    // Ouch! We can't replace tokens two levels deep!
+    // We use our own token replace system here.
+    module_load_include('tokens.inc', 'uc_addresses');
+    $address_string = uc_addresses_token_replace($format, $address);
   }
   else {
-    db_query("DELETE FROM {uc_addresses} WHERE aid = %d", $aid);
-    return TRUE;
+    // In other cases the token replacement can be handled by the
+    // token module itself.
+    $address_string = token_replace($format, 'uc_addresses', $address);
   }
+
+  // Clean-up address string
+  $address_string = strtr($address_string, array("\n" => '<br />'));
+  $address_string = strtr($address_string, array("\r" => ''));
+  $match = array('`^<br( /)?>`', '`<br( /)?>$`', '`<br( /)?>(\s*|[\s*<br( /)?>\s*]+)<br( /)?>`', '`<br( /)?><br( /)?>`', '`<br( /)?>, N/A`');
+  $replace = array('', '', '<br />', '<br />', '', '');
+  $address_string = preg_replace($match, $replace, $address_string);
+
+  switch ($context) {
+    case 'token':
+    case 'checkout_review':
+    case 'order_view':
+      // Respect Ubercart capitalize address setting
+      if (variable_get('uc_order_capitalize_addresses', TRUE)) {
+        $address_string = drupal_strtoupper($address_string);
+      }
+      break;
+  }
+
+  return $address_string;
 }
 
 /**
- * Check to see if an address is the default address.
+ * Returns address format for specific country
  *
- * @param $aid The id of the address to check.
- * @return Returns TRUE if the address is the default address.
+ * First is checked if there is an Ubercart Addresses specific
+ * address format. This country format can be set at
+ * admin/store/settings/countries/edit/uc_addresses_formats
+ *
+ * When there is no Ubercart Addresses address format found, the
+ * address format defined by Ubercart core will be taken and this
+ * format will be converted to an Ubercart Addresses address format
+ * before it's returned.
+ *
+ * If there is also no Ubercart core address format found, an empty
+ * string will be returned.
+ *
+ * @param int $country_id
+ *   The ID of the country to retrieve the address format for
+ *
+ * @return string
+ *
+ * @todo Don't return an empty string!
  */
-function _uc_addresses_db_check_if_default($aid) {
-  $count =
-    db_result(
-      db_query("SELECT COUNT(*) FROM {uc_addresses_defaults} WHERE "
-	       ."aid = %d", $aid));
-  if ($count > 0) {
-    return TRUE;
+function uc_addresses_get_address_format($country_id) {
+  static $formats = array();
+
+  if (isset($formats[$country_id])) {
+    return $formats[$country_id];
+  }
+
+  if ($format = variable_get('uc_addresses_address_format_' . $country_id, NULL)) {
+    $formats[$country_id] = $format;
+    return $format;
+  }
+  if ($format = variable_get('uc_address_format_' . $country_id, NULL)) {
+    // Convert format to tokens
+    $match = array('/\!([a-z\_0-9]+)/');
+    $replace = array('[uc_addresses_${1}]');
+    $format = preg_replace($match, $replace, $format);
+    $formats[$country_id] = $format;
+    return $format;
+  }
+  return '';
+}
+
+/**
+ * Automatically load classes from Ubercart Addresses.
+ *
+ * @param string $class
+ *   The class file to be loaded
+ *
+ * @return boolean
+ */
+function uc_addresses_load_class($class) {
+  if (strpos($class, 'UcAddress') !== FALSE) {
+    if (strpos($class, 'Exception') !== FALSE) {
+      // Load the Exception classes
+      return module_load_include('inc', 'uc_addresses', 'class/Exceptions');
+    }
+    else {
+      // Load an UcAddresses class
+      return module_load_include('class.php', 'uc_addresses', 'class/' . $class);
+    }
   }
   return FALSE;
 }

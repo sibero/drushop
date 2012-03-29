@@ -187,7 +187,7 @@ function update_selection_page() {
   $output = '<p>The version of Drupal you are updating from has been automatically detected. You can select a different version, but you should not need to.</p>';
   $output .= '<p>Click Update to start the update process.</p>';
 
-  drupal_set_title('Drupal database update');
+  drupal_set_title('База данных обновлена');
   $output .= drupal_get_form('update_script_selection_form');
 
   update_task_list('select');
@@ -366,7 +366,7 @@ function update_info_page() {
   }
 
   update_task_list('info');
-  drupal_set_title('Drupal database update');
+  drupal_set_title('Обновление базы данных');
   $token = drupal_get_token('update');
   $output = '<p>Use this utility to update your database whenever a new release of Drupal or a module is installed.</p><p>For more detailed information, see the <a href="http://drupal.org/node/258">Installation and upgrading handbook</a>. If you are unsure what these terms mean you should probably contact your hosting provider.</p>';
   $output .= "<ol>\n";
@@ -552,10 +552,10 @@ function update_fix_d6_requirements() {
 function update_task_list($active = NULL) {
   // Default list of tasks.
   $tasks = array(
-    'info' => 'Overview',
-    'select' => 'Select updates',
-    'run' => 'Run updates',
-    'finished' => 'Review log',
+    'info' => 'Введение',
+    'select' => 'Выбор обновлений',
+    'run' => 'Запуск обновления',
+    'finished' => 'Просмотр отчета',
   );
 
   drupal_set_content('left', theme('task_list', $tasks, $active));
@@ -615,7 +615,7 @@ if (empty($op)) {
   drupal_maintenance_theme();
 
   // Check the update requirements for Drupal.
-  update_check_requirements();
+  // update_check_requirements();
 
   // Display the warning messages (if any) in a dedicated maintenance page,
   // or redirect to the update information page if no message.

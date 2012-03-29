@@ -1,0 +1,5 @@
+name = Антиспам модуль
+description = Simple antispam module
+version = 6.x-1.0
+package = "Spam control"
+core = 6.x

@@ -1,0 +1,7 @@
+; $Id$
+name = drushop_dev
+description = Инструменты отладки
+package = features
+core = 6.x
+version = "6.x-2.0"
+project = "drushop_dev"

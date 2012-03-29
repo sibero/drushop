@@ -36,7 +36,5 @@
       </div>
     </div>
   </div>
-<!-- /layout -->
-
   </body>
 </html>

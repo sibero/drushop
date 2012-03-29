@@ -182,6 +182,19 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         call_user_func($form_function, $form, array('values' => $options['settings']));
       }
     }
+
+    // Reset runtime settings for this view.
+    unset($_SESSION['vbo_values'][$this->view->name]);
+  }
+
+  /**
+   * Implementation of views_plugin::query().
+   */
+  function query() {
+    // Add base field if not present in the query.
+    if (!isset($this->view->query->fields[$this->view->base_field])) {
+      $this->view->query->add_field($this->view->base_table, $this->view->base_field);
+    }
   }
 
   /**
@@ -196,15 +209,13 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     // We build the groups here to pass them to the node_selector function through the form.
     $this->sets = $this->render_grouping($this->view->result, $this->options['grouping']);
 
-    // Append suffix to avoid clashing between multiple VBOs on same page.
-    static $form_suffix;
-    if (isset($form_suffix)) {
-      $form_suffix++;
-    }
-    else {
-      $form_suffix = 1;
-    }
-    $this->form_id = 'views_bulk_operations_form__' . $form_suffix;
+    // Create a form ID for the form using the name and display of the view.
+    $parts = array(
+      'views_bulk_operations_form',
+      $this->view->name,
+      $this->view->current_display,
+    );
+    $this->form_id = implode('_', $parts);
 
     // Populate hashed results for selection.
     $this->result = array();

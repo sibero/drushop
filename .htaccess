@@ -25,6 +25,10 @@ ErrorDocument 404 /index.php
 # Set the default handler.
 DirectoryIndex index.php
 
+# default charsets
+AddDefaultCharset utf-8
+AddCharset utf-8 .html .css .js .json .xml .rdf .rss
+
 # Override PHP settings. More in sites/default/settings.php
 # but the following cannot be changed at runtime.
 
@@ -112,6 +116,14 @@ DirectoryIndex index.php
   RewriteCond %{REQUEST_URI} !=/favicon.ico
   RewriteRule ^(.*)$ index.php?q=$1 [L,QSA]
 </IfModule>
+
+# Оптимизация за счет использование кэша браузера
+<ifmodule mod_expires.c>
+  <filesmatch "\.(jpg|gif|png|css|js)$">
+       ExpiresActive on
+       ExpiresDefault "access plus 1 year"
+   </filesmatch>
+</ifmodule>
 
 # drushop
 #php_value max_allowed_packet 32M

@@ -456,7 +456,7 @@ function drushop_views_views_default_views() {
   $view = new view;
   $view->name = 'last_products';
   $view->description = '';
-  $view->tag = 'Последние 10 продуктов';
+  $view->tag = 'Новые товары (слайдер)';
   $view->base_table = 'node';
   $view->core = 0;
   $view->api_version = '2';
@@ -500,8 +500,10 @@ function drushop_views_views_default_views() {
         'text' => '',
         'make_link' => 0,
         'path' => '',
+        'absolute' => 0,
         'link_class' => '',
         'alt' => '',
+        'rel' => '',
         'prefix' => '',
         'suffix' => '',
         'target' => '',
@@ -516,9 +518,10 @@ function drushop_views_views_default_views() {
       'empty' => '',
       'hide_empty' => 0,
       'empty_zero' => 0,
+      'hide_alter_empty' => 1,
       'link_to_node' => 0,
       'label_type' => 'none',
-      'format' => 'product_list_linked',
+      'format' => 'product_linked',
       'multiple' => array(
         'group' => 1,
         'multiple_number' => '1',
@@ -530,6 +533,9 @@ function drushop_views_views_default_views() {
       'table' => 'node_data_field_image_cache',
       'field' => 'field_image_cache_fid',
       'relationship' => 'none',
+      'override' => array(
+        'button' => 'Переопределить',
+      ),
     ),
     'list_price' => array(
       'label' => '',
@@ -1520,8 +1526,10 @@ print "<div class=\'old_price\'>".t("Old price").":".uc_currency_format($row->li
         'text' => '',
         'make_link' => 0,
         'path' => '',
+        'absolute' => 0,
         'link_class' => '',
         'alt' => '',
+        'rel' => '',
         'prefix' => '',
         'suffix' => '',
         'target' => '',
@@ -1536,9 +1544,10 @@ print "<div class=\'old_price\'>".t("Old price").":".uc_currency_format($row->li
       'empty' => '',
       'hide_empty' => 0,
       'empty_zero' => 0,
-      'link_to_node' => 0,
+      'hide_alter_empty' => 1,
+      'link_to_node' => 1,
       'label_type' => 'none',
-      'format' => 'product][thickbox',
+      'format' => 'product_hover_preview_product_list',
       'multiple' => array(
         'group' => 1,
         'multiple_number' => '1',
@@ -1550,6 +1559,9 @@ print "<div class=\'old_price\'>".t("Old price").":".uc_currency_format($row->li
       'table' => 'node_data_field_image_cache',
       'field' => 'field_image_cache_fid',
       'relationship' => 'none',
+      'override' => array(
+        'button' => 'Переопределить',
+      ),
     ),
     'value' => array(
       'label' => '',
@@ -1794,37 +1806,6 @@ print "<div class=\'old_price\'>".t("Old price").":".uc_currency_format($row->li
       ),
       'relationship' => 'none',
     ),
-    'addtocartlink' => array(
-      'label' => '',
-      'alter' => array(
-        'alter_text' => 0,
-        'text' => '',
-        'make_link' => 0,
-        'path' => '',
-        'absolute' => 0,
-        'link_class' => '',
-        'alt' => '',
-        'rel' => '',
-        'prefix' => '',
-        'suffix' => '',
-        'target' => '',
-        'help' => '',
-        'trim' => 0,
-        'max_length' => '',
-        'word_boundary' => 1,
-        'ellipsis' => 1,
-        'html' => 0,
-        'strip_tags' => 0,
-      ),
-      'empty' => '',
-      'hide_empty' => 0,
-      'empty_zero' => 0,
-      'exclude' => 0,
-      'id' => 'addtocartlink',
-      'table' => 'uc_products',
-      'field' => 'addtocartlink',
-      'relationship' => 'none',
-    ),
     'field_stock_value' => array(
       'label' => '',
       'alter' => array(
@@ -1895,6 +1876,41 @@ print "<div class=\'old_price\'>".t("Old price").":".uc_currency_format($row->li
       'id' => 'model',
       'table' => 'uc_products',
       'field' => 'model',
+      'relationship' => 'none',
+    ),
+    'buyitnowbutton' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'absolute' => 0,
+        'link_class' => '',
+        'alt' => '',
+        'rel' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'hide_alter_empty' => 1,
+      'exclude' => 0,
+      'id' => 'buyitnowbutton',
+      'table' => 'uc_products',
+      'field' => 'buyitnowbutton',
+      'override' => array(
+        'button' => 'Переопределить',
+      ),
       'relationship' => 'none',
     ),
   ));
@@ -1970,14 +1986,16 @@ print "<div class=\'old_price\'>".t("Old price").":".uc_currency_format($row->li
   ));
   $handler->override_option('title', 'Новые товары');
   $handler->override_option('css_class', 'grid-tovar');
+  $handler->override_option('items_per_page', 9);
   $handler->override_option('use_pager', '0');
   $handler->override_option('distinct', 1);
   $handler->override_option('style_plugin', 'grid');
   $handler->override_option('style_options', array(
     'grouping' => '',
-    'columns' => '2',
+    'columns' => '3',
     'alignment' => 'horizontal',
     'fill_single_line' => 1,
+    'summary' => '',
   ));
   $handler->override_option('row_options', array(
     'inline' => array(),

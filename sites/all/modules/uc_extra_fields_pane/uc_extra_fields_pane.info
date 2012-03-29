@@ -1,0 +1,14 @@
+name = Extra Fields Pane
+description = Checkout pane for Ubercart with custom extra address fields.
+dependencies[] = uc_cart
+dependencies[] = token
+package = "Ubercart - extra"
+core = 6.x
+php = 5.0
+
+; Information added by drupal.org packaging script on 2011-12-16
+version = "6.x-2.0-beta1"
+core = "6.x"
+project = "uc_extra_fields_pane"
+datestamp = "1324044044"
+

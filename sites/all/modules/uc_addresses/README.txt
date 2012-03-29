@@ -1,10 +1,14 @@
-
-uc_addresses Module
+uc_addresses module
 ------------------------
-by Tony Freixas
+by MegaChriz and Tony Freixas
 
-This module was originally authored by Ben Thompson. I've made a lot
-of changes since acquiring the module.
+The uc_addresses module adds an address book to the user's profile.
+In the address book users can manage their addresses: add new
+addresses and edit or delete existing addresses. One address must
+be designated as the default billing address and one must be
+designated as the default shipping address. This may be the same
+address. The default addresses cannot be deleted (but they can be
+edited).
 
 The module changes the way Ubercart handles addresses. By default,
 Ubercart looks at a customer's previous orders and finds all unique
@@ -16,23 +20,20 @@ With this module installed, user addresses are stored in a new
 database table, one that the user can manipulate as part of the user
 profile.
 
-One caveat: The admin order system continues to work as it always did.
-Addresses come from previous orders and not from the uc_addresses
-table. This trips up a lot of people.
 
 Module overview:
 ---------------------
-
 When users create an account, you can request that they be asked to
 provide contact information. This initial entry can be edited later.
 
 When users visit their "My account" page, a new tab will be present:
-Addresses. They will be able to:
+"Address book". They will be able to:
 
   * Add a new address
   * Edit an existing address
-  * Mark any one address as the "default"
-  * Delete any address except the "default" address
+  * Mark one address as their default shipping address
+  * Mark one address as their default billing address
+  * Delete any address except the "default" addresses
 
 Each address can be given a short "nickname".
 
@@ -42,8 +43,9 @@ When placing an order, users will be able to:
   * Modify the address for the order and save it as another address in
     their profile.
 
-At your discretion, the delivery and/or the billing address can be
-pre-filled with the user's "default" address.
+The delivery address can be prefilled with the user's default shipping
+address and the billing address can be prefilled with the user's
+default billing address. This is the default behaviour.
 
   Warning: If pre-filling the delivery address and you charge for
   shipping, be sure to require that the user select a shipping method
@@ -58,16 +60,35 @@ street1, street2, city, etc.
 To accommodate sites that have existing users, the code will work even
 when users have no addresses.
 
-Note: when a user is deleted, all their address are also deleted.
+Note: when a user is deleted, all their addresses are also deleted.
+
+
+Ubercart Addresses country formats 
+---------------------
+Ubercart Addresses comes with it's own address formats that are build
+by using tokens, rather than the predefined set of variables Ubercart
+uses. This way it's possible to add any extra address values to the
+address format. Only addresses used by Ubercart Addresses are
+formatted using Ubercart Addresses' address formats.
+
+The following addresses are formatted by Ubercart Addresses:
+
+  * Address book addresses
+  * Delivery and billing addresses on the checkout page, the order
+    review page and the order pages.
+
+You can configure the address formats for Ubercart Addresses at the
+Ubercart Addresses country formats page:
+admin/store/settings/countries/edit/uc_addresses_formats
+
 
 Dependencies
 ------------
+This module requires uc_store, ctools and token.
 
-This module requires uc_order and uc_store.
 
 Installation
 ------------
-
   * Copy the uc_addresses module's directory to your modules directory
     and activate it. I have mine in /sites/all/modules/uc_addresses.
   * Activate the module, set up permissions and go to your account
@@ -76,21 +97,32 @@ Installation
 
 Permissions
 -----------
-
-view default addresses: Roles with this permission can view anyone's
-default address.
-
-view all addresses: Roles with this permission can view anyone's list
-of addresses.
-
-add/edit addresses: Roles with this permission can add to or edit
-anyone's address list. To be useful, roles with this permission can
-also view anyone's list of addresses.
-
-To be complete, I should add 'view own default address', 'view own
-addresses', and 'add/edit own addresses', but I can't see that any of
-these make sense.
-
-Tony Freixas
-tony@tigerheron.com
-http://www.tigerheron.com
+- view own default addresses:
+    Roles with this permission can view their own default addresses in 
+    their address book.
+- view own addresses:
+    Roles with this permission can view all own addresses in their address
+    book, *including* the default addresses.
+- view everyone's default addresses
+    Roles with this permission can view all default addresses of all
+    users, *including* their own default addresses.
+- view everyone's addresses
+    Roles with this permission can view all addresses of all users,
+    including addresses of their own.
+- add/edit own addresses
+    Roles with this permission can add addresses to their own address
+    book and edit own addresses. They are also able to view their own
+    addresses.
+- add/edit everyone's addresses
+    Roles with this permission can add addresses to address books of
+    any user and edit addresses of all users. They are also be able
+    to view all addresses.
+- delete own addresses
+    Roles with this permission can delete own addresses that are not
+    marked as the default shipping or the default billing address.
+    (Ubercart Addresses doesn't allow anyone to delete default addresses,
+    including the superuser. This is by design.)
+- delete everyone's addresses
+    Roles with this permission can delete all addresses of all users,
+    except addresses that are marked as default shipping or default
+    billing.

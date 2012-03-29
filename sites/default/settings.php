@@ -89,7 +89,7 @@
  *   $db_url = 'mysqli://username:password@localhost/databasename';
  *   $db_url = 'pgsql://username:password@localhost/databasename';
  */
-$db_url = 'mysqli://drushop:drushop@localhost/drushop';
+$db_url = 'mysqli://root:@localhost/drushop';
 $db_prefix = 'drushop_';
 
 /**
@@ -202,7 +202,7 @@ ini_set('max_execution_time',       360);
  *
  * Remove the leading hash signs to enable.
  */
-# $conf = array(
+ $conf = array(
 #   'site_name' => 'My Drupal site',
 #   'theme_default' => 'minnelli',
 #   'anonymous' => 'Visitor',
@@ -214,7 +214,7 @@ ini_set('max_execution_time',       360);
  * theme. It is located inside 'modules/system/maintenance-page.tpl.php'.
  * Note: This setting does not apply to installation and update pages.
  */
-#   'maintenance_theme' => 'minnelli',
+   'maintenance_theme' => 'rootcandy',
 /**
  * reverse_proxy accepts a boolean value.
  *
@@ -243,7 +243,7 @@ ini_set('max_execution_time',       360);
  * your web server spoofing the X-Forwarded-For headers.
  */
 #   'reverse_proxy_addresses' => array('a.b.c.d', ...),
-# );
+ );
 
 /**
  * String overrides:

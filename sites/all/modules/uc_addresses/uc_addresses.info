@@ -1,14 +1,16 @@
-; $Id: uc_addresses.info,v 1.9 2009/12/14 17:15:24 freixas Exp $
 name = Ubercart Addresses
 description = "Allows users to manage a set of addresses that can be referenced when placing an order."
-dependencies[] = uc_order
 dependencies[] = uc_store
+dependencies[] = ctools
+dependencies[] = token
 package = "Ubercart - extra"
-
 core = 6.x
-; Information added by drupal.org packaging script on 2010-07-11
-version = "6.x-1.0"
+php = 5.0
+
+
+; Information added by drupal.org packaging script on 2011-12-16
+version = "6.x-2.0-alpha1"
 core = "6.x"
 project = "uc_addresses"
-datestamp = "1278806418"
+datestamp = "1324042844"
 

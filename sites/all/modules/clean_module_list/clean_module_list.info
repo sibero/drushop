@@ -1,0 +1,10 @@
+name = Clean Module List
+description = Dynamically shows or hides dependency information in the site's module list to make it easier to search through.
+core = 6.x
+
+; Information added by drupal.org packaging script on 2011-12-18
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "clean_module_list"
+datestamp = "1324209830"
+

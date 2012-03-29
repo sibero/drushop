@@ -180,7 +180,6 @@ function fusion_core_preprocess_node(&$vars) {
   $node_classes[] = ($vars['sticky']) ? 'sticky' : '';                   // Node is sticky
   $node_classes[] = $vars['teaser'] ? 'teaser' : 'full-node';            // Node is teaser or full-node
   $node_classes[] = 'node-type-'. $vars['node']->type;                   // Node is type-x, e.g., node-type-page
-  $node_classes[] = (isset($vars['skinr'])) ? $vars['skinr'] : '';       // Add Skinr classes if present
   $node_classes = array_filter($node_classes);                           // Remove empty elements
   $vars['node_classes'] = implode(' ', $node_classes);                   // Implode class list with spaces
 
@@ -188,31 +187,7 @@ function fusion_core_preprocess_node(&$vars) {
   $vars['node_top'] = theme('blocks', 'node_top');
   $vars['node_bottom'] = theme('blocks', 'node_bottom');
 
-  // Render Ubercart fields into separate variables for node-product.tpl.php
-  if (module_exists('uc_product') && uc_product_is_product($vars) && $vars['template_files'][0] == 'node-product') {
-    $node = node_build_content(node_load($vars['nid']), $vars['teaser'], $vars['page']);
-    $vars['fusion_uc_image'] = drupal_render($node->content['image']);
-    $vars['fusion_uc_body'] = drupal_render($node->content['body']);
-    $vars['fusion_uc_display_price'] = drupal_render($node->content['display_price']);
-    $vars['fusion_uc_add_to_cart'] = drupal_render($node->content['add_to_cart']);
-    $vars['fusion_uc_sell_price'] = drupal_render($node->content['sell_price']);
-    $vars['fusion_uc_cost'] = drupal_render($node->content['cost']);
-    $vars['fusion_uc_weight'] = (!empty($node->weight)) ? drupal_render($node->content['weight']) : '';   // Hide weight if empty
-    if ($vars['fusion_uc_weight'] == '') {
-      unset($node->content['weight']);
-    }
-    $dimensions = !empty($node->height) && !empty($node->width) && !empty($node->length);                 // Hide dimensions if empty
-    $vars['fusion_uc_dimensions'] = ($dimensions) ? drupal_render($node->content['dimensions']) : '';
-    if ($vars['fusion_uc_dimensions'] == '') {
-      unset($node->content['dimensions']);
-    }
-    $list_price = !empty($node->list_price) && $node->list_price > 0;                                     // Hide list price if empty or zero
-    $vars['fusion_uc_list_price'] = ($list_price) ? drupal_render($node->content['list_price']) : '';
-    if ($vars['fusion_uc_list_price'] == '') {
-      unset($node->content['list_price']);
-    }
-    $vars['fusion_uc_additional'] = drupal_render($node->content);                                        // Render remaining fields
-  }
+  
 }
 
 
@@ -280,31 +255,6 @@ function fusion_core_preprocess_block(&$vars) {
   $total_blocks = $regions[$vars['block']->region]['total'];
   $vars['position'] = ($region_count == 1) ? 'first' : '';
   $vars['position'] .= ($region_count == $total_blocks) ? ' last' : '';
-
-  // Set a default block width if not already set by Skinr
-  if (!isset($vars['skinr']) || (strpos($vars['skinr'], $grid_name) === false)) {
-    // Stack blocks vertically in sidebars by setting to full sidebar width
-    if ($vars['block']->region == 'sidebar_first') {
-      $width = ($grid_fixed) ? $sidebar_first_width : $grid_width;  // Sidebar width or 100% (if fluid)
-    }
-    elseif ($vars['block']->region == 'sidebar_last') {
-      $width = ($grid_fixed) ? $sidebar_last_width : $grid_width;  // Sidebar width or 100% (if fluid)
-    }
-    else {
-      // Default block width = region width divided by total blocks, adding any extra width to last block
-      $region_width = ($grid_fixed) ? $regions[$vars['block']->region]['width'] : $grid_width;  // fluid grid regions = 100%
-      $width_adjust = (($region_count == $total_blocks) && ($region_width % $total_blocks)) ? $region_width % $total_blocks : 0;
-      $width = ($total_blocks) ? floor($region_width / $total_blocks) + $width_adjust : 0;
-    }
-    $vars['skinr'] = (isset($vars['skinr'])) ? $vars['skinr'] . ' ' . $grid_name . $width : $grid_name . $width;
-  }
-
-  if (isset($vars['skinr']) && (strpos($vars['skinr'], 'superfish') !== false) &&
-     ($vars['block']->module == 'menu' || ($vars['block']->module == 'user' && $vars['block']->delta == 1))) {
-    $superfish = ' sf-menu';
-    $superfish .= (strpos($vars['skinr'], 'superfish-vertical')) ? ' sf-vertical' : '';
-    $vars['block']->content = preg_replace('/<ul class="menu/i', '<ul class="menu' . $superfish, $vars['block']->content, 1);
-  }
 
   // Add block edit links for admins
   if (user_access('administer blocks', $user) && theme_get_setting('block_config_link')) {

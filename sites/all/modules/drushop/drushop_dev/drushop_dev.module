@@ -1,0 +1,13 @@
+ <?php
+ 
+	function drushop_dev_form_alter(&$form, &$form_state, $form_id) {
+	
+	
+	 
+  // выводит id формы
+   drupal_set_message("form_id: " . $form_id); 
+   drupal_set_message(dpm($form));  
+   drupal_set_message(dpm($form_state));
+   
+  
+  }

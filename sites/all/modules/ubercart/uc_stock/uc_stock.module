@@ -48,7 +48,7 @@ function uc_stock_menu() {
     'file' => 'uc_stock.admin.inc',
   );
   if (module_exists('uc_reports')) {
-    $items['admin/store/reports/stock'] = array(
+    $items['admin/reports/stock'] = array(
       'title' => 'Stock reports',
       'description' => 'View reports for product stock.',
       'page callback' => 'uc_stock_report',

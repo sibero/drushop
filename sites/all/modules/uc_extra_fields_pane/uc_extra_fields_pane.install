@@ -1,0 +1,480 @@
+<?php
+/**
+ * @file
+ * Module: uc_extra_fields_pane.module
+ *
+ * This module extends Ubercart panes by allowing you to set values
+ * by a variety of methods to variables that will show up in the order.
+ *
+ * co-authored by:
+ * blackice78 - Maurizio Ganovelli - drupal@ganovelli.it
+ * and
+ * panthar - Bobby Kramer - panthar1@gmail.com
+ * and
+ * MegaChriz - megachriz@hotmail.com
+ *
+ * Sponsored by CHG Digital Solutions - http://chgnet.com
+ *
+ */
+
+/**
+ * Implementation of hook_schema().
+ * @return array
+ */
+function uc_extra_fields_pane_schema() {
+  $schema['uc_extra_fields_values'] = array(
+    'description' => t('Stored values belonging to orders or addresses.'),
+    'fields' => array(
+      'element_id' => array(
+        'description' => t('Order id or address id'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'element_type' => array(
+        'description' => t('Type of element: order or address'),
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'field_id' => array(
+        'description' => t('ID of the field used in the uc_extra_fields table'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'value' => array(
+        'description' => t('The value filled in by the user'),
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('element_id', 'element_type', 'field_id'),
+  );
+
+  $schema['uc_extra_fields'] = array(
+    'description' => t('Custom order fields are stored in this table.'),
+    'fields' => array(
+      'field_id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'type' => 'varchar',
+        'length' => '100',
+        'not null' => TRUE,
+      ),
+      'description' => array(
+        'type' => 'text',
+      ),
+      'db_name' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => TRUE,
+      ),
+      'pane_type' => array(
+        'description' => t('The defined pane type for this field to appear in. If you want more panes, one of the things you will have to do is add another pane type inside uc_extra_fields_pane.module.'),
+        'type' => 'varchar',
+        'length' => '36',
+        'not null' => FALSE,
+      ),
+      'weight' => array(
+        'description' => t('The list position of this field on the pane selected for this field.'),
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'value_type' => array(
+        'description' => t('The type of input to the field_value database field.'),
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => FALSE,
+      ),
+      'value' => array(
+        'description' => t('A blob that can be used to store anything from php code, to constant values, to select values'),
+        'type' => 'blob',
+        'not null' => FALSE,
+      ),
+      'enabled' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'display_settings' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+      ),
+      'required' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('field_id'),
+    'unique keys' => array(
+      'db_name' => array('db_name')
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ * @return void
+ */
+function uc_extra_fields_pane_install() {
+  drupal_install_schema('uc_extra_fields_pane');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ * @return void
+ */
+function uc_extra_fields_pane_uninstall() {
+  drupal_uninstall_schema('uc_extra_fields_pane');
+  variable_del('uc_address_fields_weight');
+}
+
+/**
+ * Upgrade from uc_extra_fields_pane 6.x.1.x
+ */
+function uc_extra_fields_pane_update_6200() {
+  $ret = array();
+
+  $fields = array(
+    'field_pane_type' => array(
+      'type' => 'varchar',
+      'length' => 20,
+      'description' => 'The defined pane type for this variable to appear in. If you want more panes, one of the things you will have to do is add another pane type inside uc_extra_fields_pane.module.',
+    ),
+    'field_delta' => array(
+      'type' => 'int',
+      'length' => 10,
+      'description' => 'The delta position of this field on the pane selected for this field.',
+    ),
+    'field_value_type' => array(
+      'type' => 'int',
+      'length' => 10,
+      'description' => 'The type of input to the field_value database field.',
+    ),
+    'field_value' => array(
+      'type' => 'blob',
+      'description' => 'A blob that can be used to store anything from php code, to constant values, to select values',
+    ),
+    'field_display' => array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+    ),
+  );
+
+  foreach ($fields as $fieldname => $definition) {
+    db_add_field($ret, 'uc_extra_fields', $fieldname, $definition);
+  }
+
+  // Change unique key
+  db_drop_unique_key($ret, 'uc_extra_fields', 'field_name');
+  db_add_unique_key($ret, 'uc_extra_fields', 'field_db_name', array('field_db_name'));
+
+  // Make length longer, or else adding suffixes may fail.
+  db_change_field($ret, 'uc_extra_fields', 'field_db_name', 'field_db_name', array(
+      'type' => 'varchar',
+      'length' => '32',
+      'not null' => TRUE,
+    )
+  );
+
+  // Add suffixes to every field ('_delivery' or '_billing').
+  $rows = array();
+  $result = db_query("SELECT * FROM {uc_extra_fields}");
+  while ($row = db_fetch_array($result)) {
+    $rows[] = $row;
+  }
+  $ret[] = update_sql("TRUNCATE TABLE {uc_extra_fields}");
+  foreach ($rows as $row) {
+    $db_name = $row['field_db_name'] . '_delivery';
+    $pane_type = 'extra_delivery';
+    $ret[] = update_sql("INSERT INTO {uc_extra_fields} (field_name, field_description, field_db_name, field_pane_type, field_value_type, field_display, field_required) VALUES('" . $row['field_name'] . "', '" . $row['field_description'] . "', '" . $db_name . "', '" . $pane_type . "', 0, 1, '" . $row['field_required'] . "')");
+    $db_name = $row['field_db_name'] . '_billing';
+    $pane_type = 'extra_billing';
+    $ret[] = update_sql("INSERT INTO {uc_extra_fields} (field_name, field_description, field_db_name, field_pane_type, field_value_type, field_display, field_required) VALUES('" . $row['field_name'] . "', '" . $row['field_description'] . "', '" . $db_name . "', '" . $pane_type . "', 0, 1, '" . $row['field_required'] . "')");
+  }
+  return $ret;
+}
+
+/**
+ * Change the key used for textfields from 0 to 5
+ */
+function uc_extra_fields_pane_update_6201() {
+  $ret = array();
+  $ret[] = update_sql("UPDATE {uc_extra_fields} SET field_value_type = 5 WHERE field_value_type = 0");
+  return $ret;
+}
+
+/**
+ * Changes field 'delta' to 'weight', also changes length of field_value_type and field_weight
+ * Completely changes values table
+ */
+function uc_extra_fields_pane_update_6202() {
+  $ret = array();
+
+  // ------------------------------------------------
+  // Rename fields
+  // ------------------------------------------------
+  db_change_field($ret, 'uc_extra_fields', 'field_name', 'label', array(
+      'type' => 'varchar',
+      'length' => '100',
+      'not null' => TRUE,
+    )
+  );
+
+  db_change_field($ret, 'uc_extra_fields', 'field_description', 'description', array(
+      'type' => 'text',
+    )
+  );
+  db_change_field($ret, 'uc_extra_fields', 'field_db_name', 'db_name', array(
+      'type' => 'varchar',
+      'length' => '32',
+      'not null' => TRUE,
+    )
+  );
+  db_change_field($ret, 'uc_extra_fields', 'field_pane_type', 'pane_type', array(
+      'description' => t('The defined pane type for this field to appear in. If you want more panes, one of the things you will have to do is add another pane type inside uc_extra_fields_pane.module.'),
+      'type' => 'varchar',
+      'length' => '36',
+      'not null' => FALSE,
+    )
+  );
+  db_change_field($ret, 'uc_extra_fields', 'field_delta', 'weight', array(
+      'description' => t('The list position of this field on the pane selected for this field.'),
+      'type' => 'int',
+      'not null' => FALSE,
+    )
+  );
+  db_change_field($ret, 'uc_extra_fields', 'field_value_type', 'value_type', array(
+      'description' => t('The type of input to the field_value database field.'),
+      'type' => 'int',
+      'size' => 'small',
+      'not null' => FALSE,
+    )
+  );
+  db_change_field($ret, 'uc_extra_fields', 'field_value', 'value', array(
+      'description' => t('A blob that can be used to store anything from php code, to constant values, to select values'),
+      'type' => 'blob',
+      'not null' => FALSE,
+    )
+  );
+  db_change_field($ret, 'uc_extra_fields', 'field_display', 'display', array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+    )
+  );
+  db_change_field($ret, 'uc_extra_fields', 'field_required', 'required', array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+    )
+  );
+
+  // Add field 'enabled'
+  db_add_field($ret, 'uc_extra_fields', 'enabled', array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 1,
+    )
+  );
+
+  // ------------------------------------------------
+  // Update values table
+  // ------------------------------------------------
+  // Change order_id in element_id
+  db_change_field($ret, 'uc_extra_fields_values', 'order_id', 'element_id', array(
+      'description' => t('Order id or address id'),
+      'type' => 'int',
+      'not null' => TRUE,
+    )
+  );
+
+  // Add element_type, field_id and value
+  db_add_field($ret, 'uc_extra_fields_values', 'element_type', array(
+      'description' => t('Type of element: order or address'),
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+    )
+  );
+  db_add_field($ret, 'uc_extra_fields_values', 'field_id', array(
+      'description' => t('ID of field used in uc_extra_fields table'),
+      'type' => 'int',
+      'not null' => TRUE,
+    )
+  );
+  db_add_field($ret, 'uc_extra_fields_values', 'value', array(
+      'description' => t('The value filled in by the user'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => TRUE,
+    )
+  );
+
+  // Set new primary key
+  db_drop_primary_key($ret, 'uc_extra_fields_values');
+  db_add_primary_key($ret, 'uc_extra_fields_values', array('element_id', 'element_type', 'field_id'));
+
+  // Move values
+  $orders = array();
+  $fieldsresult = db_query('SELECT field_id, db_name, pane_type FROM {uc_extra_fields}');
+  while ($field = db_fetch_array($fieldsresult)) {
+    // Get element type: info = 11, delivery = 12, billing = 13
+    switch ($field['pane_type']) {
+      case 'extra_delivery':
+        $element_type = 12;
+        break;
+      case 'extra_billing':
+        $element_type = 13;
+        break;
+      default:
+        $element_type = 11;
+        break;
+    }
+    // Get value of column db_name and save it to orders array
+    $query = "SELECT element_id AS order_id, %s AS value FROM {uc_extra_fields_values}";
+    $orderresult = db_query($query, $field['db_name']);
+    while ($order = db_fetch_array($orderresult)) {
+      $orders[$order['order_id']][$field['field_id']] = array(
+        'element_type' => $element_type,
+        'value' => $order['value'],
+      );
+    }
+    // Drop column
+    db_drop_field($ret, 'uc_extra_fields_values', $field['db_name']);
+  }
+
+  // Remove all rows (all additional order data will be re-added)
+  $ret[] = update_sql("TRUNCATE TABLE {uc_extra_fields_values}");
+
+  // Insert new rows
+  foreach ($orders as $order_id => $orderfields) {
+    $query = "INSERT INTO {uc_extra_fields_values} (element_id, element_type, field_id, value) VALUES ";
+    $count = 0;
+    foreach ($orderfields as $field_id => $field) {
+      if ($count > 0) {
+        // After the first insert a comma must be added to the query, because multiple values will be inserted.
+        $query .= ",";
+      }
+      $query .= "(" . $order_id . ", " . $field['element_type'] . ", " . $field_id . ", '" . check_plain($field['value']) . "')";
+      $count++;
+    }
+    $ret[] = update_sql($query);
+  }
+
+  // Merge billing fields into delivery fields (needed for nice upgrade from 6.x-1.x)
+  $delivery_rows = array();
+  $billing_rows = array();
+  $result = db_query("SELECT field_id, db_name FROM {uc_extra_fields} WHERE db_name LIKE '%_delivery' OR db_name LIKE '%_billing'");
+  while ($row = db_fetch_array($result)) {
+    $db_name = $row['db_name'];
+    if (preg_match('/\_delivery$/i', $row['db_name'])) {
+      $db_name = substr($db_name, 0, drupal_strlen($db_name) - strlen('_delivery'));
+      $delivery_rows[$db_name] = $row;
+    }
+    if (preg_match('/\_billing$/i', $row['db_name'])) {
+      $db_name = substr($db_name, 0, drupal_strlen($db_name) - strlen('_billing'));
+      $billing_rows[$db_name] = $row;
+    }
+  }
+  foreach ($delivery_rows as $db_name => $row) {
+    if (isset($billing_rows[$db_name])) {
+      // Match found, merge them
+      $delivery_field_id = $row['field_id'];
+      $billing_field_id = $billing_rows[$db_name]['field_id'];
+      $ret[] = update_sql("UPDATE {uc_extra_fields_values} SET field_id=" . $delivery_field_id . " WHERE field_id=" . $billing_field_id);
+      // Delete billing field
+      $ret[] = update_sql("DELETE FROM {uc_extra_fields} WHERE field_id=" . $billing_field_id);
+      // Update delivery field
+      $ret[] = update_sql("UPDATE {uc_extra_fields} SET db_name='" . $db_name . "', pane_type='extra_delivery|extra_billing' WHERE field_id=" . $delivery_field_id);
+    }
+  }
+
+  return $ret;
+}
+
+/**
+ * Removes field 'display'
+ * Adds field 'display_settings'
+ */
+function uc_extra_fields_pane_update_6203() {
+  $ret = array();
+
+  // Get current display settings (checkout page only)
+  $fields_display = array();
+  $fields_nodisplay = array();
+  $fieldsresult = db_query('SELECT field_id, display FROM {uc_extra_fields}');
+  while ($field = db_fetch_array($fieldsresult)) {
+    if ($field['display']) {
+      $fields_display[] = $field['field_id'];
+    }
+    else {
+      $fields_nodisplay[] = $field['field_id'];
+    }
+  }
+
+  // Remove field 'display'
+  db_drop_field($ret, 'uc_extra_fields', 'display');
+
+  // Add field 'display_settings'
+  db_add_field($ret, 'uc_extra_fields', 'display_settings', array(
+      'type' => 'text',
+      'size' => 'medium',
+      'not null' => TRUE,
+      'serialize' => TRUE,
+    )
+  );
+
+  // Save display settings
+  if (count($fields_display) > 0) {
+    $display_settings = array('checkout' => TRUE);
+    $sql_display_settings = serialize($display_settings);
+    $query = "UPDATE {uc_extra_fields}
+    SET display_settings='%s'
+    WHERE field_id in(" . implode(",", $fields_display) . ")
+    ";
+    $result = db_query($query, $sql_display_settings);
+    $ret[] = array('success' => $result !== FALSE, 'query' => check_plain($query));
+  }
+  if (count($fields_nodisplay) > 0) {
+    $display_settings = array('checkout' => FALSE);
+    $sql_display_settings = serialize($display_settings);
+    $query = "UPDATE {uc_extra_fields}
+    SET display_settings='%s'
+    WHERE field_id in(" . implode(",", $fields_nodisplay) . ")
+    ";
+    $result = db_query($query, $sql_display_settings);
+    $ret[] = array('success' => $result !== FALSE, 'query' => check_plain($query));
+  }
+
+  return $ret;
+}
+
+/**
+ * Limit length of db_name to 32 (was 20)
+ */
+function uc_extra_fields_pane_update_6204() {
+  $ret = array();
+  db_change_field($ret, 'uc_extra_fields', 'db_name', 'db_name', array(
+      'type' => 'varchar',
+      'length' => '32',
+      'not null' => TRUE,
+    )
+  );
+  return $ret;
+}

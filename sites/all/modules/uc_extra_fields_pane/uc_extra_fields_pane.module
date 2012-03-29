@@ -1,0 +1,1344 @@
+<?php
+/**
+ * @file
+ * Module: uc_extra_fields_pane.module
+ *
+ * This module extends Ubercart panes by allowing you to set values
+ * by a variety of methods to variables that will show up in the order.
+ *
+ * co-authored by:
+ * blackice78 - Maurizio Ganovelli - drupal@ganovelli.it
+ * and
+ * panthar - Bobby Kramer - panthar1@gmail.com
+ * and
+ * MegaChriz - megachriz@hotmail.com
+ *
+ */
+
+/**
+ **********************************************
+ * TABLE OF CONTENTS
+ **********************************************
+ * - DRUPAL HOOKS
+ *   implementations of hook_help(), hook_enable(), hook_menu() and hook_user().
+ *
+ * - UBERCART HOOKS
+ *   implementations of hook_checkout_pane(), hook_checkout_pane_alter(), hook_order_pane(),
+ *   hook_order_pane_alter() and hook_order().
+ *
+ * - UBERCART CALLBACKS
+ *   callbacks for checkout panes and order panes.
+ *
+ * - TOKEN HOOKS
+ *   uc_extra_fields_pane_token_values(), uc_extra_fields_pane_token_list().
+ *
+ * - VIEWS HOOKS
+ *   uc_extra_fields_pane_views_api(), other views hooks are in views/uc_extra_fields_pane.views.inc
+ *
+ * - UCXF HOOKS
+ *   Adds display options
+ *
+ * - DATABASE REQUESTS
+ *   functions to load and delete order/address fields
+ *   function to load fields from a particular pane type
+ *
+ * - FORM ALTERS
+ *   Adds extra address fields to forms
+ *   Adds weight to address fields
+ *
+ * - MULTILANGUAGE (i18n)
+ *   Makes user defined strings in this module translatable
+ *
+ * - THEMING
+ *   functions using the Drupal theme layer
+ *
+ * - UTIL
+ *   Util functions for Extra Fields Pane, contains function for loading classes.
+ **********************************************
+ */
+
+// Element types
+define('UCXF_VALUE_ORDER_INFO', 11);
+define('UCXF_VALUE_ORDER_DELIVERY', 12);
+define('UCXF_VALUE_ORDER_BILLING', 13);
+define('UCXF_VALUE_ADDRESS', 21);
+
+// Register autoloader
+spl_autoload_register('uc_extra_fields_pane_load_class');
+
+// -------------------------------------------------------------------
+// DRUPAL HOOKS
+// -------------------------------------------------------------------
+
+/**
+ * Implementation of hook_help().
+ * @param string $path
+ * @param array $arg
+ * @return string
+ */
+function uc_extra_fields_pane_help($path, $arg = array()) {
+  switch ($path) {
+    case 'admin/help#uc_extra_fields_pane':
+      $output = '<p>' . t('This modules allows an administrator to define additional (billing and shipping) address fields (i.e. VAT) as well as custom order fields in Ubercart e-commerce suite. These fields will be available during checkout process and in order handling pages.') . '</p>';
+
+      $output .= '<h2>' . t('Adding fields for checkout') . '</h2>';
+      $output .= '<ul>';
+      $output .= '<li>' . t('Extra address fields for the delivery and billing checkout panes can be added at the <a href="@address-fields-page-url">@address-fields-page-title</a> page.', array('@address-fields-page-url' => url('admin/store/settings/checkout/edit/fields'), '@address-fields-page-title' => t('Address fields'))) . '</li>';
+      $output .= '<li>' . t('Custom order fields for the extra information checkout pane can be added at the <a href="@custom-fields-page-url">@custom-fields-page-title</a> page.', array('@custom-fields-page-url' => url('admin/store/settings/checkout/edit/extrafields'), '@custom-fields-page-title' => t('Custom order fields'))) . '</li>';
+      $output .= '</ul>';
+
+      $output .= '<h2>' . t('About the field types') . '</h2>';
+      $output .= '<ul>';
+      $output .= '<li><strong>' . t('Textfield') . '</strong><br />' . t('This field type adds a simple text field to the form. This field can be pre-filled with a default value.') . '</li>';
+      $output .= '<li><strong>' . t('Select list') . '</strong><br />' . t('This field type adds a selection field to the form (users can select a value from a dropdown menu). In the value section you can define the available options in the format "safe_key|readable part". The <em>safe_key</em> part is the part that will be saved in the database. The <em>readable</em> part is what will be presented to the user. IMPORTANT NOTE: if you want to make this field required, make sure that the first option of the list has an <em>empty</em> safe key. You can insert an empty safe key by typing a space. Example: !example', array('!example' => '<br />' . UCXF_Field::get_example(UCXF_Field::UCXF_WIDGET_TYPE_SELECT))) . '</li>';
+      $output .= '<li><strong>' . t('Checkbox') . '</strong><br />' . t('This field type adds a checkbox to the form. Note: setting this field to required has no effect, because of a core bug in Drupal. The module <a href="@checkbox-validate-url">@checkbox-validate-title</a> corrects this bug.', array('@checkbox-validate-url' => url('http://drupal.org/project/checkbox_validate'), '@checkbox-validate-title' => t('Checkbox Validate'))) . '</li>';
+      $output .= '<li><strong>' . t('Constant') . '</strong><br />' . t('This field type adds a value to the form which can not be changed by the customer. It is just displayed as plain text. However, admins who can change the Ubercart order are able to adjust the value of this field, because then it\'s displayed as a text field. Example: !example', array('!example' => '<br />' . UCXF_Field::get_example(UCXF_Field::UCXF_WIDGET_TYPE_CONSTANT))) . '</li>';
+      $output .= '<li><strong>' . t('PHP string') . '</strong><br />' . t('This field type is similar to the constant field type. The difference is that the shown value can be defined with PHP code, which means you could get this value from everywhere. In the value section you should return a string, for example: !example', array('!example' => '<br />' . UCXF_Field::get_example(UCXF_Field::UCXF_WIDGET_TYPE_PHP))) . '</li>';
+      $output .= '<li><strong>' . t('PHP select list') . '</strong><br />' . t("This field type is similar to the select list field type. The difference is that you can build the option list with PHP. Be sure to return an array with 'key' => 'value'. IMPORTANT NOTE: if you want to make this field required, make sure that the first option has an <em>empty</em> key. This may be a space, but it can also be an empty string. Example: !example", array('!example' => '<br />' . UCXF_Field::get_example(UCXF_Field::UCXF_WIDGET_TYPE_PHP_SELECT))) . '</li>';
+      $output .= '</ul>';
+      return $output;
+    case 'admin/store/settings/addressfields/add':
+    case 'admin/store/settings/addressfields/%/edit':
+    case 'admin/store/settings/extrafields/add':
+    case 'admin/store/settings/extrafields/%/edit':
+      return t('For more help, visit the <a href="@help-page">Extra Fields Pane help page</a>.', array('@help-page' => url('admin/store/help/uc_extra_fields_pane')));
+  }
+}
+
+/**
+ * Implementation of hook_enable().
+ * Makes sure code of this module is executed after 'uc_addresses' (if that module is available)
+ */
+function uc_extra_fields_pane_enable() {
+  // Get weight of uc_addresses module
+  $sQuery = "SELECT weight
+  FROM {system}
+  WHERE name = 'uc_addresses'
+  AND type = 'module'
+  ";
+  $iWeight = db_result(db_query($sQuery)) + 10;
+
+  // Increase the weight of this module, making it 10 heavier than uc_addresses.
+  db_query("UPDATE {system} SET weight = %d WHERE name = 'uc_extra_fields_pane' AND type = 'module'", $iWeight);
+}
+
+/**
+ * Implementation of hook_menu().
+ * @return array
+ */
+function uc_extra_fields_pane_menu() {
+  // Extra address fields
+  $items['admin/store/settings/addressfields/add'] = array(
+    'title' => 'Add an address field',
+    'description' => 'Add extra address fields.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_extra_fields_pane_addressfield_form'),
+    'access arguments' => array('administer store'),
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_extra_fields_pane.admin.inc',
+  );
+  $items['admin/store/settings/addressfields/%uc_extra_fields_pane_field/edit'] = array(
+    'title' => 'Modify address field',
+    'description' => 'Edit an address field.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_extra_fields_pane_addressfield_form', 4),
+    'access callback' => 'uc_extra_fields_pane_access',
+    'access arguments' => array(4, 'edit'),
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_extra_fields_pane.admin.inc',
+  );
+  $items['admin/store/settings/addressfields/%uc_extra_fields_pane_field/delete'] = array(
+    'title' => 'Delete address field',
+    'description' => 'Delete an address field.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_extra_fields_pane_field_delete_confirm_form', 4),
+    'access arguments' => array('administer store'),
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_extra_fields_pane.admin.inc',
+  );
+
+  // Custom order fields
+  $items['admin/store/settings/checkout/edit/extrafields'] = array(
+    'title' => 'Custom order fields',
+    'description' => 'Create and edit custom order fields.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_extra_fields_pane_customfields'),
+    'access arguments' => array('administer store'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
+    'file' => 'uc_extra_fields_pane.admin.inc',
+  );
+  $items['admin/store/settings/extrafields/add'] = array(
+    'title' => 'Add custom order field',
+    'description' => 'Add custom order fields.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_extra_fields_pane_customfield_form'),
+    'access arguments' => array('administer store'),
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_extra_fields_pane.admin.inc',
+  );
+  $items['admin/store/settings/extrafields/%uc_extra_fields_pane_field/edit'] = array(
+    'title' => 'Modify field',
+    'description' => 'Edit custom order field.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_extra_fields_pane_customfield_form', 4),
+    'access callback' => 'uc_extra_fields_pane_access',
+    'access arguments' => array(4, 'edit'),
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_extra_fields_pane.admin.inc',
+  );
+  $items['admin/store/settings/extrafields/%uc_extra_fields_pane_field/delete'] = array(
+    'title' => 'Delete custom order field',
+    'description' => 'Delete a custom field.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_extra_fields_pane_field_delete_confirm_form', 4),
+    'access arguments' => array('administer store'),
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_extra_fields_pane.admin.inc',
+  );
+
+  // Help
+  $items['admin/store/help/uc_extra_fields_pane'] = array(
+    'title' => 'Extra Fields Pane',
+    'page callback' => 'uc_extra_fields_pane_help',
+    'page arguments' => array('admin/help#uc_extra_fields_pane'),
+    'access arguments' => array('administer store'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ *
+ * @return array
+ */
+function uc_extra_fields_pane_perm() {
+  return array(
+    'use php fields',
+  );
+}
+
+/**
+ * Check if user has access to this field.
+ *
+ * Users that don't have the permission "use php fields" may not edit
+ * fields of this type.
+ *
+ * @param UCXF_Field $field
+ *   The field for which access is requested.
+ * @param string $op
+ *   The operation that is performed on the field.
+ *
+ * @return boolean
+ */
+function uc_extra_fields_pane_access(UCXF_Field $field, $op) {
+  switch ($op) {
+    case 'edit':
+      switch ($field->value_type) {
+        case UCXF_Field::UCXF_WIDGET_TYPE_PHP:
+        case UCXF_Field::UCXF_WIDGET_TYPE_PHP_SELECT:
+          return user_access('use php fields');
+      }
+      break;
+  }
+  return user_access('administer store');
+}
+
+// Ubercart Addresses 6.x-1.x integration
+/**
+ * Implementation of hook_user().
+ *
+ * Saves values of extra address fields.
+ * Note: the implementation of this function is currently a little
+ * bit dirty. It links the extra address fields to the first address
+ * from the user it finds.
+ * Normally, an user will have only one address after registering,
+ * so it assumes this is the case.
+ *
+ * @param $op An integer representing the action being performed.
+ * @param $edit An array of form values submitted by the user.
+ * @param $account The user on which the operation is being performed.
+ * @param $category The active category of user information being edited.
+ * @return void
+ * @see uc_extra_fields_pane_addressfields_user_register_form_alter()
+ */
+function uc_extra_fields_pane_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+
+  if (uc_addresses_version() === 1 && variable_get('uc_addresses_require_address', TRUE)) {
+    switch ($op) {
+      case 'insert':
+        // Load field definitions
+        //$fields = uc_extra_fields_pane_load_fields_from_db('extra_address');
+        $fields = $fields = UCXF_FieldList::getAllAddressFields();
+
+        // Load address id
+        $sQuery = 'SELECT aid FROM {uc_addresses} WHERE uid=%d';
+        $address_id = db_result(db_query($sQuery, $edit['uid']));
+
+        // Save values
+        foreach ($fields as $fieldname => $field) {
+          uc_extra_fields_pane_value_save(
+            array(
+              'element_id' => $address_id,
+              'element_type' => UCXF_VALUE_ADDRESS,
+              'field_id' => $field->field_id,
+              'value' => check_plain($edit[$fieldname]),
+            )
+          );
+        }
+        return;
+    }
+  }
+}
+
+// -------------------------------------------------------------------
+// UBERCART HOOKS
+// -------------------------------------------------------------------
+
+/**
+ * Implementation of hook_checkout_pane().
+ *
+ * Add panes as you feel fit. Must add a new pane definition for both checkout and order... and a new callback function like below.
+ *
+ * Once you have that, just add a new pane_type to the create/edit admin forms, and that pane should be operational right away.
+ *
+ * @return array
+ */
+function uc_extra_fields_pane_checkout_pane() {
+  $panes[] = array(
+    'id' => 'extra_information',
+    'callback' => 'uc_extra_fields_pane_information',
+    'title' => t('Extra order information'),
+    'desc' => t('Extra order information'),
+    'weight' => 10,
+  );
+  return $panes;
+}
+
+/**
+ * Implementation of hook_checkout_pane_alter().
+ * Alters delivery and billing pane
+ * @param array $panes
+ * @return void
+ */
+function uc_extra_fields_pane_checkout_pane_alter(&$panes) {
+  if (uc_addresses_version() === 2) {
+    return;
+  }
+  foreach ($panes as $key => $pane) {
+    switch ($pane['id']) {
+      case 'delivery':
+        $panes[$key]['callback'] = 'uc_extra_fields_pane_uc_checkout_pane_delivery';
+        break;
+      case 'billing':
+        $panes[$key]['callback'] = 'uc_extra_fields_pane_uc_checkout_pane_billing';
+        break;
+    }
+  }
+}
+
+/**
+ * Implementation of hook_order_pane().
+ * Current order-pane definitions
+ * @return array
+ */
+function uc_extra_fields_pane_order_pane() {
+  $panes[] = array(
+    'id' => 'extra_information',
+    'callback' => 'uc_extra_fields_pane_order_information',
+    'title' => t('Extra information'),
+    'desc' => t('Extra information'),
+    'class' => 'pos-left',
+    'weight' => 5,
+    'show' => array('view', 'edit', 'customer'),
+  );
+  // Panes used by Ubercart 2.3 & 2.4
+  $panes[] = array(
+    'id' => 'extra_delivery',
+    'callback' => 'uc_extra_fields_pane_order_handler_extra_delivery',
+    'title' => t('Extra delivery'),
+    'desc' => t('Extra delivery'),
+    'class' => 'pos-left',
+    'weight' => 1.5,
+    'show' => array('view', 'edit', 'customer'),
+  );
+  $panes[] = array(
+    'id' => 'extra_billing',
+    'callback' => 'uc_extra_fields_pane_order_handler_extra_billing',
+    'title' => t('Extra billing'),
+    'desc' => t('Extra billing'),
+    'class' => 'pos-left',
+    'weight' => 2.5,
+    'show' => array('view', 'edit', 'customer'),
+  );
+
+  return $panes;
+}
+
+/**
+ * Implementation of hook_order_pane_alter().
+ * Alters delivery and billing pane
+ * @param array $panes
+ * @return void
+ */
+function uc_extra_fields_pane_order_pane_alter(&$panes) {
+  foreach ($panes as $key => $pane) {
+    switch ($pane['id']) {
+      case 'ship_to':
+        if (uc_addresses_version() !== 2) {
+          $panes[$key]['callback'] = 'uc_extra_fields_pane_order_handler_delivery';
+        }
+        break;
+      case 'bill_to':
+        if (uc_addresses_version() !== 2) {
+          $panes[$key]['callback'] = 'uc_extra_fields_pane_order_handler_billing';
+        }
+        break;
+      case 'extra_delivery':
+      case 'extra_billing':
+        // If this method is called, the Ubercart version is at least 6.x-2.6.
+        // In this version the separate order address panes are no longer needed
+        // and thats why they will be deleted here.
+        unset($panes[$key]);
+        break;
+    }
+  }
+}
+
+/**
+ * Implementation of hook_order().
+ * @param string $op
+ * @param object $order
+ * @param mixed $arg2
+ * @return void
+ */
+function uc_extra_fields_pane_order($op, &$order, $arg2) {
+  $aElementTypes = array(
+    'information' => array(
+      'pane_type' => 'extra_information',
+      'element_type' => UCXF_VALUE_ORDER_INFO,
+      'prefix' => 'information_',
+    ),
+    'delivery' => array(
+      'pane_type' => 'extra_delivery',
+      'element_type' => UCXF_VALUE_ORDER_DELIVERY,
+      'prefix' => 'delivery_',
+    ),
+    'billing' => array(
+      'pane_type' => 'extra_billing',
+      'element_type' => UCXF_VALUE_ORDER_BILLING,
+      'prefix' => 'billing_',
+    ),
+  );
+
+  switch ($op) {
+    case 'new':
+      // do nothing, extra field cannot be handled here
+      break;
+
+    case 'save':
+      // Save values per element type.
+      foreach ($aElementTypes as $element_type => $data) {
+        $fields = UCXF_FieldList::getFieldsFromPane($data['pane_type']);
+        foreach ($fields as $fieldname => $field) {
+          $order_field_name = $data['prefix'] . $fieldname;
+          $value = NULL;
+          if (isset($order->$order_field_name)) {
+            $value = $order->$order_field_name;
+          }
+          if (!is_null($value)) {
+            uc_extra_fields_pane_value_save(
+              array(
+                'element_id' => $order->order_id,
+                'element_type' => $data['element_type'],
+                'field_id' => $field->field_id,
+                'value' => $value,
+              )
+            );
+          }
+        }
+      }
+      break;
+
+    case 'load':
+      // Load values per element type.
+      foreach ($aElementTypes as $element_type => $data) {
+        $value_list = uc_extra_fields_pane_value_list_load($order->order_id, $data['element_type']);
+        foreach ($value_list as $oValue) {
+          $order_field_name = $data['prefix'] . $oValue->db_name;
+          $order->$order_field_name = $oValue->getValue();
+        }
+      }
+
+      // Ubercart Addresses 6.x-2.x integration
+      // Set address field values for Ubercart Addresses if this module is enabled.
+      if (uc_addresses_version() === 2) {
+        // Delivery fields
+        if (isset($order->uc_addresses['shipping'])) {
+          $value_list = uc_extra_fields_pane_value_list_load($order->order_id, UCXF_VALUE_ORDER_DELIVERY);
+          foreach ($value_list as $oValue) {
+            $order->uc_addresses['shipping']->setField($oValue->db_name, $oValue->value);
+          }
+        }
+
+        // Billing fields
+        if (isset($order->uc_addresses['billing'])) {
+          $value_list = uc_extra_fields_pane_value_list_load($order->order_id, UCXF_VALUE_ORDER_BILLING);
+          foreach ($value_list as $oValue) {
+            $order->uc_addresses['billing']->setField($oValue->db_name, $oValue->value);
+          }
+        }
+      }
+      break;
+
+    case 'delete':
+      // Delete Extra Fields Pane values belonging to order
+      $sQuery = "DELETE FROM {uc_extra_fields_values}
+      WHERE element_id=%d
+      AND element_type IN (%d, %d, %d)";
+      db_query($sQuery, $order->order_id, UCXF_VALUE_ORDER_INFO, UCXF_VALUE_ORDER_DELIVERY, UCXF_VALUE_ORDER_BILLING);
+      break;
+  }
+}
+
+// -------------------------------------------------------------------
+// UBERCART CALLBACKS
+// -------------------------------------------------------------------
+
+// Checkout pane callbacks
+
+/**
+ * extra_information checkout pane callback
+ * @param string $op
+ * @param mixed $arg1
+ * @param mixed $arg2
+ * @return mixed
+ */
+function uc_extra_fields_pane_information($op, &$arg1 = NULL, $arg2 = NULL) {
+  $oPane = new UCXF_Pane('information', UCXF_Pane::PANE_CHECKOUT, $arg1, $arg2);
+  return $oPane->execute($op);
+}
+
+/**
+ * Overrides uc_checkout_pane_delivery() function in uc_cart_checkout_pane.inc
+ * @param string $op
+ * @param mixed $arg1
+ * @param mixed $arg2
+ * @return mixed
+ */
+function uc_extra_fields_pane_uc_checkout_pane_delivery($op, &$arg1 = NULL, $arg2 = NULL) {
+  $oPane = new UCXF_AddressPane('delivery', UCXF_Pane::PANE_CHECKOUT, $arg1, $arg2);
+  return $oPane->execute($op);
+}
+
+/**
+ * Overrides uc_checkout_pane_billing() function in uc_cart_checkout_pane.inc
+ * @param string $op
+ * @param mixed $arg1
+ * @param mixed $arg2
+ * @return mixed
+ */
+function uc_extra_fields_pane_uc_checkout_pane_billing($op, &$arg1 = NULL, $arg2 = NULL) {
+  $oPane = new UCXF_AddressPane('billing', UCXF_Pane::PANE_CHECKOUT, $arg1, $arg2);
+  return $oPane->execute($op);
+}
+
+// Order pane callbacks
+
+/**
+ * Order pane callbacks for delivery, billing and extra information
+ * @param string $op
+ * @param mixed $arg1
+ * @param mixed $arg2
+ * @return mixed
+ */
+function uc_extra_fields_pane_order_handler_delivery($op, $arg1 = NULL, $arg2 = NULL) {
+  $oPane = new UCXF_AddressPane('delivery', UCXF_Pane::PANE_ORDER, $arg1, $arg2);
+  return $oPane->execute($op);
+}
+function uc_extra_fields_pane_order_handler_billing($op, $arg1 = NULL, $arg2 = NULL) {
+  $oPane = new UCXF_AddressPane('billing', UCXF_Pane::PANE_ORDER, $arg1, $arg2);
+  return $oPane->execute($op);
+}
+function uc_extra_fields_pane_order_information($op, $arg1 = NULL, $arg2 = NULL) {
+  $oPane = new UCXF_Pane('information', UCXF_Pane::PANE_ORDER, $arg1, $arg2);
+  return $oPane->execute($op);
+}
+// Order handlers for Ubercart 2.3 & 2.4
+function uc_extra_fields_pane_order_handler_extra_delivery($op, $arg1 = NULL, $arg2 = NULL) {
+  $oPane = new UCXF_Pane('delivery', UCXF_Pane::PANE_ORDER, $arg1, $arg2);
+  return $oPane->execute($op);
+}
+function uc_extra_fields_pane_order_handler_extra_billing($op, $arg1 = NULL, $arg2 = NULL) {
+  $oPane = new UCXF_Pane('billing', UCXF_Pane::PANE_ORDER, $arg1, $arg2);
+  return $oPane->execute($op);
+}
+
+/**
+ * Returns title of pane
+ * @param string $pane_type
+ *   The machine name of the pane.
+ * @return string
+ */
+function uc_extra_fields_pane_get_pane_title($pane_type) {
+  // First check variable
+  $pane_title = variable_get('uc_extra_fields_pane_' . $pane_type . '_title', NULL);
+  // Then check checkout pane data
+  if (is_null($pane_title)) {
+    $pane_title = _checkout_pane_data($pane_type, 'title');
+  }
+  // Then check order pane data
+  if (is_null($pane_title)) {
+    if (module_exists('uc_order')) {
+      $pane_title = _order_pane_data($pane_type, 'title');
+    }
+  }
+  // If still NULL, just call uc_extra_fields_pane_order_pane().
+  if (is_null($pane_title)) {
+    $panes = uc_extra_fields_pane_order_pane();
+    foreach ($panes as $pane) {
+      if ($pane['id'] == $pane_type) {
+        $pane_title = $pane['title'];
+      }
+    }
+  }
+  // If still NULL, return $pane_type
+  if (is_null($pane_title)) {
+    return $pane_type;
+  }
+  // Return pane title
+  return $pane_title;
+}
+
+// -------------------------------------------------------------------
+// UBERCART ADDRESSES HOOKS
+// Ubercart Addresses 6.x-2.x integration
+// Tested with dev version from September 14, 2011.
+// -------------------------------------------------------------------
+
+/**
+ * Implementation of hook_uc_addresses_fields().
+ *
+ * Register all address fields used by Ubercart Addresses.
+ *
+ * @return array
+ */
+function uc_extra_fields_pane_uc_addresses_fields() {
+  try {
+    $data = array();
+    $fields = UCXF_FieldList::getAllAddressFields();
+
+    foreach ($fields as $field) {
+      $data[$field->db_name] = array(
+        'title' => $field->output('label'),
+        'handler' => 'UcAddressesUCXFHandler',
+        'display_settings' => array(
+          'default' => TRUE,
+          'address_view' => $field->may_display('uc_addresses'),
+          'checkout_review' => $field->may_display('review'),
+          'order_view' => $field->may_display('order'),
+        ),
+      );
+    }
+
+    return $data;
+  }
+  catch (UCXF_Exception $e) {
+    $e->printMessage();
+    $e->logError();
+  }
+}
+
+/**
+ * Implementation of hook_uc_addresses_field_handlers().
+ *
+ * Register form fields and their definitions.
+ *
+ * @return array
+ */
+function uc_extra_fields_pane_uc_addresses_field_handlers() {
+  $path = drupal_get_path('module', 'uc_extra_fields_pane') .'/includes';
+
+  $info = array();
+  $info['UcAddressesUCXFHandler'] = array(
+    'hidden' => FALSE,
+    'handler' => array(
+      'parent' => 'UcAddressesFieldHandler',
+      'class' => 'UcAddressesUCXFHandler',
+      'file' => 'uc_addresses.handlers.inc',
+      'path' => $path,
+    ),
+  );
+
+  return $info;
+}
+
+/**
+ * Implementation of hook_uc_addresses_address_field_alter().
+ * @param array $element
+ * @return void
+ */
+function uc_extra_fields_pane_uc_addresses_address_field_alter($element) {
+  module_load_include('inc', 'uc_extra_fields_pane', 'includes/weights');
+  // Add weight to the address fields
+  _uc_extra_fields_pane_applyWeights($element);
+}
+
+/**
+ * Implementation of hook_uc_addresses_load_address().
+ * @param UcAddressesAddress $address
+ *   The address object
+ * @param object $obj
+ *   The fetched database record
+ * @return void
+ * @todo Update when field system in Ubercart Addresses is ready
+ */
+function uc_extra_fields_pane_uc_addresses_address_load($address, $obj) {
+  // Load values
+  $value_list = uc_extra_fields_pane_value_list_load($address->getId(), UCXF_Value::UCXF_VALUE_ADDRESS);
+
+  foreach ($value_list as $oValue) {
+    $address->setField($oValue->db_name, $oValue->getValue());
+  }
+}
+
+/**
+ * Implementation of hook_uc_addresses_insert_address().
+ * @param UcAddressesAddress $address
+ *   The address object
+ * @return void
+ */
+function uc_extra_fields_pane_uc_addresses_address_insert($address) {
+  // Load fields for uc_addresses
+  $fields = UCXF_FieldList::getAllAddressFields();
+
+  foreach ($fields as $field) {
+    $value = $address->getField($field->db_name);
+    uc_extra_fields_pane_value_save(
+      array(
+        'element_id' => $address->getId(),
+        'element_type' => UCXF_Value::UCXF_VALUE_ADDRESS,
+        'field_id' => $field->field_id,
+        'value' => $address->getField($field->db_name),
+      )
+    );
+  }
+}
+
+/**
+ * Implementation of hook_uc_addresses_update_address().
+ * @param UcAddressesAddress $address
+ *   The address object
+ * @return void
+ * @todo Untested
+ */
+function uc_extra_fields_pane_uc_addresses_address_update($address) {
+  // Do the same as when an address is inserted
+  uc_extra_fields_pane_uc_addresses_address_insert($address);
+}
+
+/**
+ * Implementation of hook_uc_addresses_delete_address().
+ * @param UcAddressesAddress $address
+ *   The address object
+ * @return void
+ */
+function uc_extra_fields_pane_uc_addresses_address_delete($address) {
+  // Delete all values associated with this address
+  $query = "DELETE FROM {uc_extra_fields_values}
+    WHERE element_id=%d
+    AND element_type=%d
+    ";
+  db_query($query, $address->getId(), UCXF_Value::UCXF_VALUE_ADDRESS);
+}
+
+/**
+ * Implementation of hook_uc_addresses_select_addresses().
+ *
+ * Provide addresses from previous orders combined with extra address fields.
+ *
+ * @param int $uid
+ *   The user ID to select addresses for
+ * @param string $context
+ *   The context in which the addresses are used:
+ *   - checkout_form
+ *   - order_form
+ * @param string $type
+ *   The type of address to select addresses for (shipping or billing)
+ *
+ * @return array
+ *   An array of address arrays
+ */
+function uc_extra_fields_pane_uc_addresses_select_addresses($uid, $context, $type) {
+  // Check if user has any saved addresses
+  $addresses = uc_addresses_uc_addresses_select_addresses($uid, $context, $type);
+  foreach ($addresses as $address) {
+    if ($address instanceof UcAddressesAddress) {
+      if (!$address->isNew()) {
+        // Don't provide addresses if the list contains saved addresses.
+        return array();
+      }
+    }
+  }
+  // Return addresses from previous orders combined with extra address fields.
+  module_load_include('inc', 'uc_extra_fields_pane', 'includes/address_select');
+  $addresses = uc_extra_fields_pane_get_addresses($uid, $type);
+  return $addresses;
+}
+
+/**
+ * Implementation of hook_uc_addresses_select_addresses_alter().
+ *
+ * Remove all uc_order addresses.
+ *
+ * @param array $addresses
+ *   An array of UcAddressesAddress instances.
+ * @param int $uid
+ *   The user ID to select addresses for
+ * @param string $context
+ *   The context in which the addresses are used:
+ *   - checkout_form
+ *   - order_form
+ * @param string $type
+ *   The type of address to select addresses for (shipping or billing)
+ *
+ * @return void
+ */
+function uc_extra_fields_pane_uc_addresses_select_addresses_alter(&$addresses, $uid, $context, $type) {
+  foreach ($addresses as $index => $address) {
+    if ($address->module == 'uc_order') {
+      unset($addresses[$index]);
+    }
+  }
+}
+
+// -------------------------------------------------------------------
+// TOKEN HOOKS
+// -------------------------------------------------------------------
+
+/**
+ * Implementation of hook_token_list().
+ * @param string $type
+ * @return array
+ */
+function uc_extra_fields_pane_token_list($type = 'all') {
+  $tokens = array();
+  if ($type == 'order' || $type == 'ubercart' || $type == 'all') {
+    $result = db_query("SELECT label, pane_type, db_name FROM {uc_extra_fields}");
+    while ($field_data = db_fetch_array($result)) {
+      $field = UCXF_FieldList::createField($field_data['pane_type']);
+      $field->from_array($field_data);
+      $db_name = str_replace('ucxf_', '', $field->db_name);
+      $pane_types = $field->pane_types;
+
+      // Only when $field['pane_type'] is 'extra_delivery|extra_billing' we have more then one pane type
+      foreach ($pane_types as $pane_type) {
+        switch ($pane_type) {
+          case 'extra_delivery':
+            $token_name = 'extra-extra_delivery-' . $db_name;
+            break;
+
+          case 'extra_billing':
+            $token_name = 'extra-extra_billing-' . $db_name;
+            break;
+
+          default:
+            $token_name = 'extra-' . $field->pane_type . '-' . $db_name;
+            break;
+        }
+        $pane_title = uc_extra_fields_pane_get_pane_title($pane_type);
+
+        // Add token
+        $tokens['order'][$token_name] = t('!pane_title: !label, formatted', array('!pane_title' => $pane_title, '!label' => $field->output('label')));
+        $tokens['order'][$token_name . '-raw'] = t('!pane_title: !label, raw', array('!pane_title' => $pane_title, '!label' => $field->output('label')));
+      }
+    }
+  }
+  return $tokens;
+}
+
+/**
+ * Implementation of hook_token_values().
+ * @param string $type
+ * @param object $object
+ * @return array
+ */
+function uc_extra_fields_pane_token_values($type, $object = NULL) {
+  $values = array();
+  switch ($type) {
+    case 'order':
+      $order = $object;
+      $result = db_query("SELECT * FROM {uc_extra_fields}");
+      while ($field_data = db_fetch_array($result)) {
+        $field = UCXF_FieldList::createField($field_data['pane_type']);
+        $field->from_array($field_data);
+        $db_name = str_replace('ucxf_', '', $field->db_name);
+        $pane_types = $field->pane_types;
+
+        // Only when $field->pane_type is 'extra_delivery|extra_billing' we have more then one pane type
+        foreach ($pane_types as $pane_type) {
+          switch ($pane_type) {
+            case 'extra_delivery':
+              $token_name = 'extra-extra_delivery-' . $db_name;
+              $order_field_name = 'delivery_' . $field->db_name;
+              break;
+
+            case 'extra_billing':
+              $token_name = 'extra-extra_billing-' . $db_name;
+              $order_field_name = 'billing_' . $field->db_name;
+              break;
+
+            default:
+              $token_name = 'extra-' . $field->pane_type . '-' . $db_name;
+              $order_field_name = $field->db_name;
+              break;
+          }
+
+          if (isset($order->$order_field_name) && $order->$order_field_name != '') {
+            $values[$token_name] = $field->output_value($order->$order_field_name);
+            $values[$token_name . '-raw'] = $order->$order_field_name;
+          }
+          else {
+            $values[$token_name] = '';
+            $values[$token_name . '-raw'] = '';
+          }
+        }
+      }
+      break;
+  }
+  return $values;
+}
+
+// -------------------------------------------------------------------
+// VIEWS HOOKS
+// -------------------------------------------------------------------
+
+/**
+ * Implementation of hook_views_api().
+ * @return array
+ */
+function uc_extra_fields_pane_views_api() {
+  return array(
+    'api' => '2.0',
+    'path' => drupal_get_path('module', 'uc_extra_fields_pane') . '/views',
+  );
+}
+
+// -------------------------------------------------------------------
+// UCXF HOOKS
+// -------------------------------------------------------------------
+
+/**
+ * Implementation of hook_ucxf_display_options().
+ * @param ucxf_field $field
+ * @return array
+ */
+function uc_extra_fields_pane_ucxf_display_options($field) {
+  $options = array(
+    'checkout' => array(
+      'title' => t('Checkout page'),
+      'description' => t('Uncheck to hide the field on the checkout page. The field will still be added to the order, and will appear in the order confirmation as well. This setting only applies when the field type is %php or %constant.', array('%php' => t('PHP string'), '%constant' => t('Constant'))),
+    ),
+    'review' => array(
+      'title' => t('Order review page'),
+      'description' => t('The page where the order is reviewed by a customer before the order is submitted.'),
+    ),
+    'order' => array(
+      'title' => t('Order view page'),
+      'description' => t('The page where the details of the order can be viewed after the order is submitted.'),
+    ),
+  );
+
+  if ($field instanceof UCXF_AddressField && uc_addresses_version() === 2) {
+    $options['uc_addresses'] = array(
+      'title' => t('Address Book'),
+      'description' => t('The page where the user has an overview of his/her addresses.'),
+    );
+  }
+  return $options;
+}
+
+// -------------------------------------------------------------------
+// DATABASE REQUESTS
+// - load/delete field
+// - load fields from particular pane type
+// -------------------------------------------------------------------
+
+// Deprecated
+/**
+ * Create Field
+ *
+ * Based on pane_type either an instance will of either
+ * UCXF_AddressField or UCXF_CustomField will be created.
+ * If no array is given, an instance of uxcf_field is given.
+ *
+ * @param array $field_data
+ * @return UCXF_Field
+ */
+function uc_extra_fields_pane_create_field($field_data = array()) {
+  trigger_error('uc_extra_fields_pane_create_field() is deprecated. Use UCXF_FieldList::createField($pane_type) instead.');
+  $field = UCXF_FieldList::createField($field_data['pane_type']);
+  $field->from_array($field_data);
+  return $field;
+}
+
+/**
+ * Implementation of hook_load().
+ * @param int $fid
+ * @return object
+ */
+function uc_extra_fields_pane_field_load($fid) {
+  try {
+    return UCXF_FieldList::getFieldByID($fid);
+  }
+  catch (UCXF_Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
+}
+
+// Deprecated function, you can also call $field->delete() now.
+/**
+ * field_delete()
+ * Deletes field
+ * @param int $fid
+ * @return boolean
+ */
+function uc_extra_fields_pane_field_delete($fid) {
+  trigger_error('uc_extra_fields_pane_field_delete() is deprecated. Use $field->delete() or UCXF_FieldList::deleteFieldById() instead.');
+  return UCXF_FieldList::deleteFieldById($fid);
+}
+
+// Deprecated
+/**
+ * Load all extra fields from the database.
+ *
+ * Optionally, give it a $pane_type to specify which pane we want fields from.
+ * @param string $pane_type
+ * @return array
+ */
+function uc_extra_fields_pane_load_fields_from_db($pane_type=NULL) {
+  trigger_error('uc_extra_fields_pane_load_fields_from_db() is deprecated. Use UCXF_FieldList::getFieldsFromPane() instead.');
+
+  try {
+    // If no pane type provided, all fields must be loaded
+    if (!$pane_type) {
+      $pane_type = 'all';
+    }
+    switch ($pane_type) {
+      case 'all':
+        return UCXF_FieldList::getAllCustomFields();
+      case 'extra_address':
+        return UCXF_FieldList::getAllAddressFields();
+      default:
+        return UCXF_FieldList::getFieldsFromPane($pane_type);
+    }
+  }
+  catch (UCXF_Exception $e) {
+    $e->printMessage();
+    $e->logError();
+  }
+}
+
+/**
+ * uc_extra_fields_pane_value_load()
+ * Loads value from database
+ * @param int $p_iElement_id
+ *  id of element, order_id or uc_addresses id
+ * @param int $p_iElementType
+ *  type of element: order or address
+ * @param int $p_iField_id
+ *  id of field as known in uc_extra_fields
+ * @return object
+ */
+function uc_extra_fields_pane_value_load($element_id, $element_type, $field_id) {
+  return UCXF_Value::load($element_id, $element_type, $field_id);
+}
+
+/**
+ * uc_extra_fields_pane_value_list_load()
+ * Loads a list of values from database
+ * @param int $p_iElement_id
+ *  id of element, order_id or uc_addresses id
+ * @param int $p_iElementType
+ *  type of element: order or address
+ * @return array
+ */
+function uc_extra_fields_pane_value_list_load($element_id, $element_type) {
+  return UCXF_Value::load_list($element_id, $element_type);
+}
+
+/**
+ * uc_extra_fields_pane_value_save()
+ * Saves data to database
+ * @param array $data
+ * @return boolean
+ */
+function uc_extra_fields_pane_value_save($data) {
+  $oValue = UCXF_Value::load($data['element_id'], $data['element_type'], $data['field_id']);
+  $oValue->setValue($data['value']);
+  return $oValue->save();
+}
+
+/**
+ * uc_extra_fields_pane_value_delete()
+ * Removes value from db
+ * @param int $p_iElement_id
+ *  id of element, order_id or uc_addresses id
+ * @param int $p_iElementType
+ *  type of element
+ * @param int $p_iField_id
+ *  id of field as known in uc_extra_fields
+ * @return boolean
+ */
+function uc_extra_fields_pane_value_delete($element_id, $element_type, $field_id) {
+  return UCXF_Value::load($element_id, $element_type, $field_id)->delete();
+}
+
+// -------------------------------------------------------------------
+// FORM ALTERS
+// -------------------------------------------------------------------
+
+/**
+ * Implementation of hook_form_alter().
+ * @param array $form
+ * @param array $form_state
+ * @param string $form_id
+ * @return void
+ */
+function uc_extra_fields_pane_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+    // Address fields configuration form
+    case 'uc_store_address_fields_form':
+      module_load_include('inc', 'uc_extra_fields_pane', 'includes/weights');
+      module_load_include('inc', 'uc_extra_fields_pane', 'includes/addressfields');
+
+      // Add extra address fields currently defined on /admin/store/settings/checkout/edit/extrafields
+      _uc_extra_fields_pane_address_fields_uc_store_address_fields_alter($form, $form_state);
+
+      // add the possibility to order the address fields.
+      _uc_extra_fields_pane_weight_uc_store_address_fields_alter($form, $form_state);
+
+      // Add our theme function to the form, so that function can add draggable rows functionality
+      // and also the delete/edit-actions
+      $form['#theme'][] = 'uc_extra_fields_pane_uc_store_address_fields';
+      break;
+
+    // The checkout form and the order edit form are altered by an implementation of hook_form_FORM_ID_alter().
+
+    // Ubercart Addresses 6.x-1.x integration: add/edit address form
+    case 'uc_addresses_get_address_form':
+      if (uc_addresses_version() === 1) {
+        module_load_include('inc', 'uc_extra_fields_pane', 'includes/weights');
+        module_load_include('inc', 'uc_extra_fields_pane', 'includes/addressfields');
+
+        // add extra address fields
+        uc_extra_fields_pane_addressfields_uc_addresses_get_address_form_alter($form, $form_state);
+
+        // add weight to the address fields
+        _uc_extra_fields_pane_applyWeights($form['panes']['address']);
+      }
+      break;
+
+    // Ubercart Addresses 6.x-1.x integration: address fields on user registration page
+    case 'user_register':
+      if (uc_addresses_version() === 1 && variable_get('uc_addresses_require_address', TRUE)) {
+        module_load_include('inc', 'uc_extra_fields_pane', 'includes/weights');
+        module_load_include('inc', 'uc_extra_fields_pane', 'includes/addressfields');
+
+        // add extra address fields
+        uc_extra_fields_pane_addressfields_user_register_form_alter($form, $form_state);
+
+        // add weight to the address fields
+        _uc_extra_fields_pane_applyWeights($form[0]);
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ * Applies ordering to address fields following the 'uc_address_fields_weight'-settings.
+ * @param array $form
+ * @param array $form_state
+ * @access private
+ */
+function uc_extra_fields_pane_form_uc_cart_checkout_form_alter(&$form, $form_state) {
+  // Alter 'address-select' field
+  module_load_include('inc', 'uc_extra_fields_pane', 'includes/addressfields');
+  uc_extra_fields_pane_address_fields_uc_cart_checkout_form_alter($form, $form_state);
+
+  // Apply weights
+  module_load_include('inc', 'uc_extra_fields_pane', 'includes/weights');
+  uc_extra_fields_pane_weight_uc_cart_checkout_form_alter($form, $form_state);
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ * Applies ordering to address fields following the 'uc_address_fields_weight'-settings.
+ * @param array $form
+ * @param array $form_state
+ * @access private
+ */
+function uc_extra_fields_pane_form_uc_order_edit_form_alter(&$form, $form_state) {
+  module_load_include('inc', 'uc_extra_fields_pane', 'includes/weights');
+
+  // Apply weight for delivery fields (fieldnames are prefixed with 'delivery_')
+  _uc_extra_fields_pane_applyWeights($form['ship_to'], 'delivery_');
+
+  // Apply weight for billing fields (fieldnames are prefixed with 'billing_')
+  _uc_extra_fields_pane_applyWeights($form['bill_to'], 'billing_');
+}
+
+// -------------------------------------------------------------------
+// MULTILANGUAGE (i18n)
+// -------------------------------------------------------------------
+
+/**
+ * Implementation of hook_locale().
+ * @param string $op
+ * @return array
+ */
+function uc_extra_fields_pane_locale($op = 'groups') {
+  switch ($op) {
+    // define text group
+    case 'groups':
+      return array('ucxf' => t('Ubercart Extra Fields'));
+    case 'info': // i18n extension
+      $info['ucxf']['refresh callback'] = 'uc_extra_fields_pane_locale_refresh';
+      return $info;
+  }
+}
+
+/**
+ * Refresh all strings at once
+ * Callback for i18n.
+ * @return TRUE
+ */
+function uc_extra_fields_pane_locale_refresh() {
+  $fields = db_query("SELECT * FROM {uc_extra_fields}");
+  $updated = 0;
+  while ($field_data = db_fetch_array($fields)) {
+    $field = uc_extra_fields_pane_create_field($field_data);
+    uc_extra_fields_pane_ucxf_field($field, 'locale_refresh');
+    $updated++;
+  }
+  drupal_set_message(t('%num field strings updated', array('%num' => $updated)));
+  return TRUE;
+}
+
+/**
+ * Wrapper for i18nstrings() function
+ * @return string
+ */
+function uc_extra_fields_pane_tt($name, $string, $langcode = NULL) {
+  return function_exists('i18nstrings') ? i18nstrings('ucxf:' . $name, $string, $langcode) : $string;
+}
+
+/**
+ * Implementation of hook_ucxf_field().
+ * Update translation of field label and description
+ * Update also translation of option labels of select fields
+ * @param UCXF_Field $field
+ * @param string $op
+ * @return void
+ */
+function uc_extra_fields_pane_ucxf_field($field, $op) {
+  if (function_exists('i18nstrings_update')) {
+    i18nstrings_update('ucxf:field:' . $field->db_name . ':label', $field->label);
+    i18nstrings_update('ucxf:field:' . $field->db_name . ':description', $field->description);
+
+    switch ($field->value_type) {
+      // Make labels of options in select fields translatable
+      case UCXF_Field::UCXF_WIDGET_TYPE_SELECT:
+      case UCXF_Field::UCXF_WIDGET_TYPE_PHP_SELECT:
+        // Generate the options, but do not translate these.
+        $values = $field->generate_value(FALSE);
+        foreach ($values as $key => $label) {
+          i18nstrings_update('ucxf:field:' . $field->db_name . ':value:' . $key, $label);
+        }
+        break;
+      // Make default values translatable
+      case UCXF_Field::UCXF_WIDGET_TYPE_TEXTFIELD:
+      case UCXF_Field::UCXF_WIDGET_TYPE_PHP:
+      case UCXF_Field::UCXF_WIDGET_TYPE_CONSTANT:
+        // Generate the string, but do not translate it.
+        $value = $field->generate_value(FALSE);
+        if (!empty($value)) {
+          i18nstrings_update('ucxf:field:' . $field->db_name . ':value', $value);
+        }
+        break;
+    }
+  }
+}
+
+// -------------------------------------------------------------------
+// THEMING
+// -------------------------------------------------------------------
+
+/**
+ * Implementation of hook_theme().
+ * @return array
+ */
+function uc_extra_fields_pane_theme() {
+  return array(
+    'uc_extra_fields_pane_checkout_pane' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'includes/theme.inc',
+    ),
+    'uc_extra_fields_pane_order_pane' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'includes/theme.inc',
+    ),
+    'uc_extra_fields_pane_uc_store_address_fields' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'uc_extra_fields_pane.admin.inc',
+    ),
+    'uc_extra_fields_pane_customfields' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'uc_extra_fields_pane.admin.inc',
+    ),
+  );
+}
+
+// -------------------------------------------------------------------
+// UTIL
+// -------------------------------------------------------------------
+
+/**
+ * Autoloader
+ * @param string $class
+ *  The class file to be loaded
+ * @return boolean
+ */
+function uc_extra_fields_pane_load_class($class) {
+  if (strpos($class, 'UCXF') !== FALSE) {
+    if (strpos($class, 'Exception') !== FALSE) {
+      // Load the Exception classes
+      return module_load_include('inc', 'uc_extra_fields_pane', 'class/Exceptions');
+    }
+    else {
+      return module_load_include('class.php', 'uc_extra_fields_pane', 'class/' . $class);
+    }
+  }
+  return FALSE;
+}
+
+if (!function_exists('uc_addresses_version')) {
+  /**
+   * Returns enabled version of Ubercart Addresses
+   * @return int
+   */
+  function uc_addresses_version() {
+    if (module_exists('uc_addresses')) {
+      if (function_exists('uc_addresses_ctools_plugin_api')) {
+        $info = uc_addresses_ctools_plugin_api('uc_addresses', 'uc_addresses_fields');
+        return $info['version'];
+      }
+      return 1;
+    }
+    return 0;
+  }
+}

@@ -1,95 +1,74 @@
-/* $Id: uc_addresses.css,v 1.2 2008/05/29 15:52:49 freixas Exp $ */
-
-/* These classes should really be universal... pretty standard stuff. */
-
-.solid-border {
-  border: solid 1px #bbb;
-  padding: 5px;
-}
-
-.solid-border td {
-  padding: 5px;
-}
-
-.show-onload {
-  display: none;
-}
-
-.display-none {
-  display: none;
-}
-
-.list_address{
-width:20em;
-}
-.address-review-table {
-  width: auto;
-  margin: auto;
-  border: solid 1px #999;
-  font-size: .9em;
-  line-height: 1.4em;
-}
-
-.address-review-table td {
-  padding-top: 0.1em;
-  padding-bottom: 0.2em;
-}
-
-.address-review-table .pane-title-row {
-  padding: .5em 1em 0 1em;
-}
-
-.pane-title-row td{
-  padding-left:1em;
-  font-weight: bold;
-  border: solid 1px #999;
-  background-color: #CCCCCC;
-}
-
-.pane-title-row td a{
-  font-weight: normal;
-}
-
-.pane-data-row td { vertical-align: top }
-
-.address-review-table .title-col {
-  text-align: right;
-  font-weight: bold;
-  padding-left: 1em;
-  white-space: nowrap;
-}
-
-.address-review-table .data-col {
-  padding-right: .5em;
-  padding-left: .5em;
-  line-height: 1em;
-}
-
-.address-review-table .row-border-top {
-  border-top: solid 1px #999;
-}
-
-.address-review-table .row-border-bottom {
-  border-bottom: solid 1px #999;
-}
-
-.address-review-table .review-button-row {
-  text-align: right;
-  background-color: #ddd;
-  border: solid 1px #999;
-}
-
-.address-review-table .review-button-row form {
-  display: inline;
-}
-
-.addresses-default-address td { font-weight: bold; font-size: 110% }
-td.addresses-default-address-label { font-size: 120%; color: #999 }
-
 /**
- * CSS rules for the default address panes.
+ * @file
+ * Ubercart Addresses stylesheet
+ *
+ * This stylesheet styles:
+ * - The address book (user/%uid/addresses)
+ * - A single address
+ * - The address form
  */
 
+/* @group Address book */
+.address-book ol {
+  list-style-image: none;
+  list-style-position: outside;
+  list-style-type: none;
+  margin: 0px;
+  padding: 0px;
+}
+
+.address-book h3 {
+  margin-top: 0px;
+  padding: 0px;
+}
+
+.address-book li.address-item {
+  margin: 0 0 10px;
+}
+
+.address-book .default-addresses {
+  float: left;
+  width: 48.5%;
+}
+
+.address-book .default-addresses li.address-item {
+  background: #FFFFFF;
+  border: 1px solid #CCCCCC;
+  padding: 10px 13px;
+}
+
+.address-book .additional-addresses {
+  float: right;
+  width: 48.5%;
+}
+
+.address-book .additional-addresses li.address-item {
+  background: transparent none repeat scroll 0 0;
+  border: 0 none;
+  padding: 0;
+}
+
+.address-book .address-links,
+.list-address .address-links td {
+  clear: both;
+  padding-top: 1em;
+}
+/* @end */
+
+/* @group Single address */
+.list-address {
+  width: 20em;
+}
+
+.list-address .title-col {
+  vertical-align: top;
+}
+.list-address .data-row td {
+  vertical-align: top;
+}
+/* @end */
+
+/* @group Address form */
 .address-pane-table tbody {
   border-top: 0px;
 }
@@ -98,7 +77,7 @@ td.addresses-default-address-label { font-size: 120%; color: #999 }
   padding: 2px;
 }
 
-.field-label {
+.address-pane-table .field-label {
   text-align: right;
   font-weight: bold;
 }
@@ -111,3 +90,4 @@ td.addresses-default-address-label { font-size: 120%; color: #999 }
 .address-pane-table .form-item {
   display: inline;
 }
+/* @end */

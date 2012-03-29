@@ -12,7 +12,6 @@ stylesheets[all][] = design_packs/gray/gray.css
 
 scripts[] = js/jquery.corner.js
 scripts[] = js/acquia-prosper-script.js
-scripts[] = js/hide_user_block.js
 scripts[] = js/corner.js
 
 regions[sidebar_first] = sidebar first

@@ -63,7 +63,9 @@ function session_api_get_sid($create = TRUE) {
     else {
       $rec = new stdClass();
       $rec->session_id = $session_id;
+	  $error_reporting = error_reporting(E_NONE);
       drupal_write_record('session_api', $rec);
+	  error_reporting($error_reporting);
       $sid = $rec->sid;
 
       // Set cookie.

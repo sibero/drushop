@@ -1,0 +1,64 @@
+<?php
+
+/**
+ * @file
+ * Ubercart Rule integration
+ */
+
+
+/**
+ * Implementation of hook_order()
+ *
+ * This function triggers the order status update event in the rules engine.
+ * 
+ * @param $op Operation executed on the $order
+ * @param $order Ubercart Order
+ * @param $status New order status
+ * @return void
+ *
+ */
+function uc_rules_order($op, $order, $status) {
+  if($op == 'update') {
+    $old_status = $order->order_status;
+    $new_status = $status;
+    $order->order_status = $status;
+  
+    rules_invoke_event('uc_rules_order_state_update', $order, $old_status, $new_status);
+    
+    foreach ($order->products as $product) {
+      rules_invoke_event('uc_rules_order_state_update_line_item', $order, $product, $old_status, $new_status);
+    }
+  }
+}
+
+/**
+ * Implementation of hook_uc_checkout_complete()
+ *
+ * This function is used to trigger the checkout complete event in the rules engine.
+ *
+ * @param $order Ubercart Order completed
+ * @param $account Customer which adds the order
+ * @return void
+ *
+ */
+function uc_rules_uc_checkout_complete($order, $account) {
+  rules_invoke_event('uc_rules_order_checkout_complete', $order, $account);
+}
+
+/**
+ * Implementation of hook_uc_payment_entered()
+ *
+ * This function is used to trigger the payment entered event in the rules engine. 
+ *
+ * @param $order Ubercart Order
+ * @param $method Payment Method
+ * @param $amount Amount payed
+ * @param $account Customer
+ * @param $data Additional Data
+ * @param $comment Comment added to the order
+ * @return void
+ *
+ */
+function uc_rules_uc_payment_entered($order, $method, $amount, $account, $data, $comment) {
+  rules_invoke_event('uc_rules_payment_entered', $order, $account);
+}

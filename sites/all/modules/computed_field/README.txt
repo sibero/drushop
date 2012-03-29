@@ -42,10 +42,6 @@ as the following extra options:
 Computed Code -- This is the code that will assign a value to your computed
 field. It should be valid php without the <?php ?> tags.
 
-Display this field -- Check this box to have this field appear on your node
-view pages. You will usually want this unless you want your field to be a
-hidden value.
-
 Display Format -- This is also php code which should assign a string to the
 $display variable. It has '$node_field_item['value']' available, which is the
 value of the computed field. It also has '$field' available, and you can call
@@ -60,10 +56,19 @@ Database Storage Settings
 	know if you need any other storage types, or if you would like an 'other'
 	option :).
 
-	Data Length -- This value will simply be passed on to sql. For storing up
-	to 10 digit ints, enter 10. For storing currency as a float, use 10,2
-	(unless you'll store larger than 10 figure amounts!).  For storing
-	usernames or other short text with a varchar field, 64 may be appropriate.
+	Data Length (varchar/text) -- The length of the field in the database. For 
+	storing usernames or other short text with a varchar field, 32 may be 
+	appropriate. Only valid for varchar or text fields.
+	
+	Data Size (int/float) -- The size of the field stored in the database.
+	Only valid for int or float fields.
+	
+	Data Precision (decimal) -- The total number of digits to store in the 
+	database, including those to the right of the decimal. Only valid for 
+	decimal fields. 
+	
+	Data Scale (decimal) -- The number of digits to the right of the decimal.
+	Only valid for decimal fields. 
 
 	Default Value -- Leave this blank if you don't want the database to store
 	a default value if your computed field's value isn't set.
@@ -87,8 +92,6 @@ hold of the nid.
 In your computed field's configuration:
 
 - Computed Code:
-// ensure the node has an id by saving it if it is new.
-if (!$node->nid) node_save($node);
 // store the nid in our computed field
 $node_field[0]['value'] = $node->nid;
 
@@ -123,9 +126,11 @@ $display = '$' . $node_field_item['value'];
 
 - Check 'Store using the database settings below'
 
-- Data Type: float
+- Data Type: decimal
 
-- Data Length: 10,2
+- Decimal Precision: 10
+
+- Decimal Scale: 2
 
 - Default Value: 0.00
 
@@ -159,7 +164,7 @@ $display = $node_field_item['value'] . " hours";
 
 - Data Type:</b> float
 
-- Data Length:</b> 3,2
+- Data Size:</b> normal
 
 - Check 'Sortable'
 

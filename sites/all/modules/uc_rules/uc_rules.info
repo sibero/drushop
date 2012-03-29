@@ -1,0 +1,17 @@
+name = Ubercart Rule Integration
+description = Integrates the rules system with Ubercart
+dependencies[] = ca
+dependencies[] = rules
+package = Ubercart - extra
+core = 6.x
+php = 5.0
+
+version = "6.x-1.0"
+
+
+; Information added by drupal.org packaging script on 2011-04-26
+version = "6.x-1.0-rc1"
+core = "6.x"
+project = "uc_rules"
+datestamp = "1303821418"
+

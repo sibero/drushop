@@ -42,16 +42,7 @@ function uc_order_pane_ship_to($op, $arg1) {
       if (uc_address_field_enabled('company')) {
         $form['ship_to']['delivery_company'] = uc_textfield(uc_get_field_name('company'), $arg1->delivery_company, FALSE, NULL, 64);
       }
-      if (uc_address_field_enabled('street1')) {
-        $form['ship_to']['delivery_street1'] = uc_textfield(uc_get_field_name('street1'), $arg1->delivery_street1, FALSE, NULL, 64);
-      }
-      if (uc_address_field_enabled('street2')) {
-        $form['ship_to']['delivery_street2'] = uc_textfield(uc_get_field_name('street2'), $arg1->delivery_street2, FALSE, NULL, 64);
-      }
-      if (uc_address_field_enabled('city')) {
-        $form['ship_to']['delivery_city'] = uc_textfield(uc_get_field_name('city'), $arg1->delivery_city, FALSE);
-      }
-      if (uc_address_field_enabled('country')) {
+	  if (uc_address_field_enabled('country')) {
         $form['ship_to']['delivery_country'] = uc_country_select(uc_get_field_name('country'), $arg1->delivery_country);
       }
       if (uc_address_field_enabled('zone')) {
@@ -61,6 +52,16 @@ function uc_order_pane_ship_to($op, $arg1) {
         else {
           $country_id = $arg1->delivery_country;
         }
+		if (uc_address_field_enabled('city')) {
+        $form['ship_to']['delivery_city'] = uc_textfield(uc_get_field_name('city'), $arg1->delivery_city, FALSE);
+      }
+      if (uc_address_field_enabled('street1')) {
+        $form['ship_to']['delivery_street1'] = uc_textfield(uc_get_field_name('street1'), $arg1->delivery_street1, FALSE, NULL, 64);
+      }
+      if (uc_address_field_enabled('street2')) {
+        $form['ship_to']['delivery_street2'] = uc_textfield(uc_get_field_name('street2'), $arg1->delivery_street2, FALSE, NULL, 64);
+      }
+      
         $form['ship_to']['delivery_zone'] = uc_zone_select(uc_get_field_name('zone'), $arg1->delivery_zone, NULL, $country_id);
       }
       if (uc_address_field_enabled('postal_code')) {
@@ -140,9 +141,6 @@ function uc_order_pane_bill_to($op, $arg1) {
       if (uc_address_field_enabled('street2')) {
         $form['bill_to']['billing_street2'] = uc_textfield(uc_get_field_name('street2'), $arg1->billing_street2, FALSE, NULL, 64);
       }
-      if (uc_address_field_enabled('city')) {
-        $form['bill_to']['billing_city'] = uc_textfield(uc_get_field_name('city'), $arg1->billing_city, FALSE);
-      }
       if (uc_address_field_enabled('country')) {
         $form['bill_to']['billing_country'] = uc_country_select(uc_get_field_name('country'), $arg1->billing_country);
       }
@@ -153,6 +151,9 @@ function uc_order_pane_bill_to($op, $arg1) {
         else {
           $country_id = $arg1->billing_country;
         }
+		if (uc_address_field_enabled('city')) {
+        $form['bill_to']['billing_city'] = uc_textfield(uc_get_field_name('city'), $arg1->billing_city, FALSE);
+      }
         $form['bill_to']['billing_zone'] = uc_zone_select(uc_get_field_name('zone'), $arg1->billing_zone, NULL, $country_id);
       }
       if (uc_address_field_enabled('postal_code')) {

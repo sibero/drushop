@@ -1664,8 +1664,31 @@ function theme_uc_product_image($images, $teaser = 0, $page = 0) {
   $image_widget = uc_product_get_image_widget();
 
   $first = array_shift($images);
-
+if (module_exists('fancybox')) {
   $output = '<div class="product-image"><div class="main-product-image">';
+  $output .= '<a class="imagefield-fancybox" rel="imagefield-fancybox-20-field_image_cache" href="'. imagecache_create_url('product_full', $first['filepath']) .'" title="'. $first['data']['title'] .'"';
+  if ($image_widget) {
+    $image_widget_func = $image_widget['callback'];
+    $output .= $image_widget_func($rel_count);
+  }
+  $output .= '>';
+  $output .= theme('imagecache', 'product', $first['filepath'], $first['data']['alt'], $first['data']['title']);
+  $output .= '</a></div><div class="more-product-images">';
+  foreach ($images as $thumbnail) {
+    // Node preview adds extra values to $images that aren't files.
+    if (!is_array($thumbnail) || empty($thumbnail['filepath'])) {
+      continue;
+    }
+    $output .= '<a class="imagefield-fancybox" rel="imagefield-fancybox-20-field_image_cache" href="'. imagecache_create_url('product_full', $thumbnail['filepath']) .'" title="'. $thumbnail['data']['title'] .'"';
+    $output .= '>';
+    $output .= theme('imagecache', 'uc_thumbnail', $thumbnail['filepath'], $thumbnail['data']['alt'], $thumbnail['data']['title']);
+    $output .= '</a>';
+  }
+  $output .= '</div></div>';
+  
+}
+	else {
+	$output = '<div class="product-image"><div class="main-product-image">';
   $output .= '<a href="'. imagecache_create_url('product_full', $first['filepath']) .'" title="'. $first['data']['title'] .'"';
   if ($image_widget) {
     $image_widget_func = $image_widget['callback'];
@@ -1689,7 +1712,7 @@ function theme_uc_product_image($images, $teaser = 0, $page = 0) {
   }
   $output .= '</div></div>';
   $rel_count++;
-
+	}
   return $output;
 }
 

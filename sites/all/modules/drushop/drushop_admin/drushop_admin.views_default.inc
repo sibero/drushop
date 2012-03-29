@@ -184,7 +184,7 @@ function drushop_admin_views_default_views() {
   ));
   $handler->override_option('filters', array(
     'title' => array(
-      'operator' => 'contains',
+      'operator' => 'allwords',
       'value' => '',
       'group' => '0',
       'exposed' => TRUE,
@@ -192,7 +192,7 @@ function drushop_admin_views_default_views() {
         'use_operator' => 0,
         'operator' => 'title_op',
         'identifier' => 'title',
-        'label' => 'Title',
+        'label' => 'Заголовок',
         'bef_filter_description' => '',
         'remember' => 0,
       ),
@@ -201,7 +201,7 @@ function drushop_admin_views_default_views() {
       'table' => 'node',
       'field' => 'title',
       'override' => array(
-        'button' => 'Override',
+        'button' => 'Переопределить',
       ),
       'relationship' => 'none',
     ),
@@ -334,15 +334,15 @@ function drushop_admin_views_default_views() {
   $handler->override_option('title', 'Менеджер материалов');
   $handler->override_option('empty', 'Объекты, удовлетворяющие параметрам фильтра, не найдены. Попробуйте изменить их, чтобы получить результат.');
   $handler->override_option('empty_format', '1');
-  $handler->override_option('use_ajax', TRUE);
   $handler->override_option('items_per_page', 30);
   $handler->override_option('use_pager', '1');
   $handler->override_option('style_plugin', 'bulk');
   $handler->override_option('style_options', array(
     'grouping' => '',
-    'override' => 1,
+    'override' => 0,
     'sticky' => 1,
     'order' => 'desc',
+    'summary' => '',
     'columns' => array(
       'title' => 'title',
       'timestamp' => 'title',
@@ -386,56 +386,204 @@ function drushop_admin_views_default_views() {
     ),
     'default' => '-1',
     'execution_type' => '1',
+    'max_performance' => 0,
     'display_type' => '0',
-    'hide_select_all' => 0,
+    'hide_selector' => 0,
+    'preserve_selection' => 1,
     'display_result' => 1,
     'merge_single_action' => 0,
-    'views_bulk_operations_fields_action' => array(
-      'php_code' => 0,
-      'display_fields' => array(
-        '_all_' => '_all_',
-      ),
-    ),
     'operations' => array(
-      'views_bulk_operations_script_action' => array(
-        'selected' => TRUE,
+      'imagecache_generate_all_action' => array(
+        'selected' => 0,
         'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'imagecache_generate_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'imagecache_flush_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'uc_product_actions_update_cost_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'uc_product_actions_update_list_price_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'uc_product_actions_update_sell_price_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'uc_product_actions_update_weight_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'views_bulk_operations_argument_selector_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'flag_nodes-1980f2a3af0b5c3577850d4ba2600405' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'node_promote_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'views_bulk_operations_script_action' => array(
+        'selected' => 1,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'uc_views_bulk_operations_add_to_cart_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'node_mass_update-c4d3b28efb86fd703619a50b74d43794' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
       ),
       'node_make_sticky_action' => array(
-        'selected' => TRUE,
+        'selected' => 1,
         'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'views_bulk_operations_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
       ),
       'node_assign_owner_action' => array(
-        'selected' => TRUE,
+        'selected' => 1,
         'skip_confirmation' => 0,
+        'label' => '',
       ),
       'views_bulk_operations_taxonomy_action' => array(
-        'selected' => TRUE,
+        'selected' => 1,
         'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'views_bulk_operations_fields_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+        'settings' => array(
+          'php_code' => 0,
+          'show_tokens' => 0,
+          'display_fields' => array(
+            '_all_' => '_all_',
+          ),
+        ),
       ),
       'node_mass_update-8ce21b08bb8e773d10018b484fe4815e' => array(
-        'selected' => TRUE,
+        'selected' => 1,
         'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'node_mass_update-0ccad85c1ebe4c9ceada1aa64293b080' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
       ),
       'pathauto_node_update_alias_multiple-620e193b20ba9caa374fea9ca0ad38f0' => array(
-        'selected' => TRUE,
+        'selected' => 1,
         'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'node_mass_update-9c585624b9b3af0b4687d5f97f35e047' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
       ),
       'node_publish_action' => array(
-        'selected' => TRUE,
+        'selected' => 1,
         'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'node_unpromote_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'node_make_unsticky_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
       ),
       'node_unpublish_action' => array(
-        'selected' => TRUE,
+        'selected' => 1,
         'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'node_unpublish_by_keyword_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'system_send_email_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'system_goto_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'system_message_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'node_mass_update-14de7d028b4bffdf2b4a266562ca18ac' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'flag_node_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'node_save_action' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'node_mass_update-a27b9efabcd054685a549378b174ad11' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
+      ),
+      'flag_nodes-76e4c513dfadc798e2eb84ad0a677401' => array(
+        'selected' => 0,
+        'skip_confirmation' => 0,
+        'label' => '',
       ),
       'views_bulk_operations_delete_node_action' => array(
-        'selected' => TRUE,
+        'selected' => 1,
         'skip_confirmation' => 0,
+        'label' => '',
       ),
-      'nodewords_admin_mass_update-48d00920397f9d8f23f7088c88056286' => array(
-        'selected' => TRUE,
+      'nodewords_mass_update-48d00920397f9d8f23f7088c88056286' => array(
+        'selected' => 0,
         'skip_confirmation' => 0,
+        'label' => '',
       ),
     ),
   ));
@@ -445,7 +593,7 @@ function drushop_admin_views_default_views() {
     'type' => 'normal',
     'title' => 'Менеджер материалов',
     'description' => 'Просмотр, изменение и удаление материалов сайта.',
-    'weight' => '2',
+    'weight' => '-40',
     'name' => 'admin',
   ));
   $handler->override_option('tab_options', array(
@@ -1412,7 +1560,7 @@ function drushop_admin_views_default_views() {
       'relationship' => 'none',
     ),
     'php' => array(
-      'label' => 'Cost',
+      'label' => 'Закупочная стоймость',
       'alter' => array(
         'alter_text' => 0,
         'text' => '',
@@ -1436,12 +1584,14 @@ function drushop_admin_views_default_views() {
       'empty' => 'Не указана',
       'hide_empty' => 1,
       'empty_zero' => 1,
+      'hide_alter_empty' => 1,
       'use_php_setup' => 0,
       'php_setup' => '',
       'php_value' => '',
       'php_output' => '<?php if ($row->cost != 0) {
 print uc_currency_format($row->cost);
 }
+else { print t("не указана");}
 ?>',
       'use_php_click_sortable' => '0',
       'php_click_sortable' => '',
@@ -1574,7 +1724,7 @@ print uc_currency_format($row->cost);
       'relationship' => 'none',
     ),
     'title' => array(
-      'operator' => 'contains',
+      'operator' => 'allwords',
       'value' => '',
       'group' => '0',
       'exposed' => TRUE,
@@ -1582,7 +1732,7 @@ print uc_currency_format($row->cost);
         'use_operator' => 0,
         'operator' => 'title_op',
         'identifier' => 'title',
-        'label' => 'By name product:',
+        'label' => 'По названию:',
         'bef_filter_description' => '',
         'remember' => 0,
       ),
@@ -1766,9 +1916,11 @@ print uc_currency_format($row->cost);
   ));
   $handler->override_option('title', 'Менеджер товаров');
   $handler->override_option('css_class', 'grid-center');
+  $handler->override_option('header', '<a href="<?php print $GLOBALS[\'base_path\'].\'node/add/product\'; ?>">Добавить товар</a>');
+  $handler->override_option('header_format', '3');
+  $handler->override_option('header_empty', 0);
   $handler->override_option('empty', 'По запросу ничего не найдено.');
   $handler->override_option('empty_format', '2');
-  $handler->override_option('use_ajax', TRUE);
   $handler->override_option('items_per_page', 30);
   $handler->override_option('use_pager', '1');
   $handler->override_option('style_plugin', 'bulk');
@@ -2047,7 +2199,7 @@ print uc_currency_format($row->cost);
     'type' => 'normal',
     'title' => 'Товары',
     'description' => 'Просмотр, изменение и удаление товаров',
-    'weight' => '0',
+    'weight' => '-39',
     'name' => 'admin',
   ));
   $handler->override_option('tab_options', array(

@@ -1,16 +1,6 @@
 <div id="node-<?php print $node->nid; ?>" class="node clear-block <?php print $node_classes; ?>">
 
   <div class="inner">
-    <?php if ($page == 0): ?>
-    <h2 class="title"><a href="<?php print $node_url ?>" title="<?php print $title ?>"><?php print $title ?></a></h2>
-    <?php endif; ?>
-
-    <?php if ($submitted): ?>
-    <div class="meta">
-      <span class="submitted"><?php print $submitted ?></span>
-    </div>
-    <?php endif; ?>
-
     <?php if ($node_top && !$teaser): ?>
     <div id="node-top" class="node-top row nested">
       <div id="node-top-inner" class="node-top-inner inner">
@@ -34,7 +24,9 @@
           <div id="field-group">
 			<?php print $product_sku; ?>
             <?php print $product_weight; ?>
-            <?php print $product_dimensions; ?> 
+			<?php print $product_length ?>
+            <?php print $product_width; ?> 
+			<?php print $product_height; ?> 
 			<?php print $product_cost ?>
 			 
 			
@@ -53,13 +45,14 @@
           </div>
 
           <div id="price-group">
-		    <?php if ($product_list_price) {print $product_list_price."<br>";} ?>
+		    <?php print $product_list_price."<br>"; ?>
 			
             <?php print t("Sell price:").$product_display_price; ?>
 			<br>
 			
 			<?php if ($product_discounted_price) { 
 			print $product_discounted_price; } ?>
+			<?php print $product_total_price_discount; ?>
 			<br>
 			
 			<?php print $product_add_to_cart; ?>
@@ -70,7 +63,7 @@
 <?php print $product_fivestar_widget ?>  
         <?php if ($terms): ?>
         <div class="terms">
-      <IMG src="<?php echo $imgPath;?>tags.png"> <?php print t('Tags:'). "  ".  $catalog_tags; ?> <?php if($manufacurer_tags){print ", ".$manufacurer_tags;} ?>  <?php if ($other_tags) {print ", ".$other_tags;} ?> 
+      <IMG src="<?php echo $imgPath;?>tags.png"> <?php print t('Tags:'). "  ".$terms ?> 
 		  
         </div>
         <?php endif;?>

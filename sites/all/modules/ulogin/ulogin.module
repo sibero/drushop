@@ -1,6 +1,21 @@
 <?php
-function ulogin_button() {
-	return '<div><a href="#" id="uLogin"><img src="http://ulogin.ru/img/button.png" width=187 height=30 alt="МультиВход"/></a></div><script src="http://ulogin.ru/js/widget.js?display=window&fields=first_name,last_name,email&optional=nickname,photo_big&redirect_uri=' . urlencode(url('ulogin/token', array('absolute' => true))) . '"></script>';
+
+	function _ulogin_param_token_url($token_url = NULL, $destination = NULL) {
+  if (empty($destination)) {
+    $destination = drupal_get_destination();
+  }
+  else {
+    $destination = array('destination' => $destination);
+  }
+
+  if (empty($token_url)) $token_url = url('ulogin/token', array('absolute' => TRUE, 'query' => $destination));
+  $token_url = urlencode($token_url);
+  return $token_url;
+  }
+  
+	function ulogin_button() {
+	$path = drupal_get_path('module', 'ulogin');
+	return '<div><a href="#" id="uLogin"><img src="'.$path.'/img/button.png" width=187 height=30 alt="МультиВход"/></a></div><script src="http://ulogin.ru/js/widget.js?display=window&fields=first_name,last_name,email&optional=nickname,photo_big&redirect_uri='._ulogin_param_token_url().'"></script>';
 	
 	/* Доступны следующие поля: first_name - имя пользователя, last_name - фамилия, email - e-mail, nickname - псевдоним, bdate - дата рождения, sex - пол, photo - квадратная аватарка (до 100*100), photo_big - самая большая аватарка, которая выдаётся выбранной соц. сетью, city - город, country - страна.
 	
@@ -10,6 +25,9 @@ function ulogin_button() {
 	
 	Как сделать авторизацию без редиректа?
 	— Добавить в адрес скрипта uLogin параметр callback с названием функции, которая получит токен после авторизации. В качестве redirect_uri передайте адрес файла ulogin_xd.html на Вашем сервере.
+	
+	http://www.drupal.ru/node/70387
+	http://www.drupal.ru/node/70966
 	*/
 	
 	
@@ -44,6 +62,14 @@ function ulogin_token() {
 	if (isset($data['uid'])) {
 		$account = user_external_load('ulogin_' . $data['network'] . '_' . $data['uid']);
 		if (!$account || $account->uid == 0) {
+		$temp = db_query("SELECT uid FROM {users} WHERE mail = %s", $data['email']);
+	$temps = db_fetch_array($temp);
+	$t = print $temps['uid'];
+	if ($t) {
+          drupal_set_message ('Ваш email уже зарегистрирован на сайте', 'error'); 
+          drupal_set_message ('Если вы забыли свой пароль, используйте <a href="@url">форму восстановления пароля</a>.', array('@url' => 'user/password'), 'error');
+		  drupal_goto();
+	}
 			try {
 				$account = user_save(drupal_anonymous_user(), array('authname_ulogin' => 'ulogin_' . $data['network'] . '_' . $data['uid'], 'init' => 'ulogin_' . $data['network'] . '_' . $data['uid'], 'status' => 1, 'mail' => $data['email'], 'name' => $data['first_name'] . ' ' . $data['last_name'], 'pass' => user_password()));
 				if (!$account) throw new Exception('');
@@ -60,6 +86,8 @@ function ulogin_token() {
 				}					
 			}
 			user_set_authmaps($account, array("authname_ulogin" => 'ulogin_' . $data['network'] . '_' . $data['uid']));
+			
+		
 		}
 		$user = $account;
 		$form_state['uid'] = $account->uid;

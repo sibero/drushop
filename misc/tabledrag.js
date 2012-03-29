@@ -1,5 +1,4 @@
-// $Id: tabledrag.js,v 1.13.2.5 2009/06/18 12:24:24 goba Exp $
-
+// $Id: tabledrag.js,v 1.1.2.1.2.3 2010/09/09 03:10:31 sun Exp $
 /**
  * Drag and drop table rows with field manipulation.
  *
@@ -172,12 +171,13 @@ Drupal.tableDrag.prototype.makeDraggable = function(item) {
   // Create the handle.
   var handle = $('<a href="#" class="tabledrag-handle"><div class="handle">&nbsp;</div></a>').attr('title', Drupal.t('Drag to re-order'));
   // Insert the handle after indentations (if any).
-  if ($('td:first .indentation:last', item).after(handle).size()) {
-    // Update the total width of indentation in this entire table.
-    self.indentCount = Math.max($('.indentation', item).size(), self.indentCount);
+  
+  if($('td:first .indentation:last', item).length && $('td:first .indentation:last', item).after(handle).size()){
+	// Update the total width of indentation in this entire table.
+	self.indentCount = Math.max($('.indentation', item).size(), self.indentCount);
   }
   else {
-    $('td:first', item).prepend(handle);
+	$('td:first', item).prepend(handle);
   }
 
   // Add hover action for the handle.
@@ -206,7 +206,7 @@ Drupal.tableDrag.prototype.makeDraggable = function(item) {
     self.rowObject = new self.row(item, 'mouse', self.indentEnabled, self.maxDepth, true);
 
     // Save the position of the table.
-    self.table.topY = self.getPosition(self.table).y;
+    self.table.topY = $(self.table).offset().top;
     self.table.bottomY = self.table.topY + self.table.offsetHeight;
 
     // Add classes to the handle and row.
@@ -484,31 +484,6 @@ Drupal.tableDrag.prototype.dropRow = function(event, self) {
 };
 
 /**
- * Get the position of an element by adding up parent offsets in the DOM tree.
- */
-Drupal.tableDrag.prototype.getPosition = function(element){
-  var left = 0;
-  var top  = 0;
-  // Because Safari doesn't report offsetHeight on table rows, but does on table
-  // cells, grab the firstChild of the row and use that instead.
-  // http://jacob.peargrove.com/blog/2006/technical/table-row-offsettop-bug-in-safari
-  if (element.offsetHeight == 0) {
-    element = element.firstChild; // a table cell
-  }
-
-  while (element.offsetParent){
-    left   += element.offsetLeft;
-    top    += element.offsetTop;
-    element = element.offsetParent;
-  }
-
-  left += element.offsetLeft;
-  top  += element.offsetTop;
-
-  return {x:left, y:top};
-};
-
-/**
  * Get the mouse coordinates from the event (allowing for browser differences).
  */
 Drupal.tableDrag.prototype.mouseCoords = function(event){
@@ -526,9 +501,9 @@ Drupal.tableDrag.prototype.mouseCoords = function(event){
  * element. To do this we need the element's position and the mouse position.
  */
 Drupal.tableDrag.prototype.getMouseOffset = function(target, event) {
-  var docPos   = this.getPosition(target);
+  var docPos   = $(target).offset();
   var mousePos = this.mouseCoords(event);
-  return {x:mousePos.x - docPos.x, y:mousePos.y - docPos.y};
+  return { x: mousePos.x - docPos.left, y: mousePos.y - docPos.top };
 };
 
 /**
@@ -545,14 +520,15 @@ Drupal.tableDrag.prototype.findDropTargetRow = function(x, y) {
   for (var n=0; n<rows.length; n++) {
     var row = rows[n];
     var indentDiff = 0;
-    // Safari fix see Drupal.tableDrag.prototype.getPosition()
+    var rowY = $(row).offset().top;
+    // Because Safari does not report offsetHeight on table rows, but does on table
+    // cells, grab the firstChild of the row and use that instead.
+    // http://jacob.peargrove.com/blog/2006/technical/table-row-offsettop-bug-in-safari
     if (row.offsetHeight == 0) {
-      var rowY = this.getPosition(row.firstChild).y;
       var rowHeight = parseInt(row.firstChild.offsetHeight)/2;
     }
     // Other browsers.
     else {
-      var rowY = this.getPosition(row).y;
       var rowHeight = parseInt(row.offsetHeight)/2;
     }
 
@@ -566,6 +542,13 @@ Drupal.tableDrag.prototype.findDropTargetRow = function(x, y) {
           }
         }
       }
+      else {
+        // Do not allow a row to be swapped with itself.
+        if (row == this.rowObject.element) {
+          return null;
+        }
+      }
+
       // Check that swapping with this row is allowed.
       if (!this.rowObject.isValidSwap(row)) {
         return null;
@@ -982,7 +965,6 @@ Drupal.tableDrag.prototype.row.prototype.indent = function(indentDiff) {
   indent = Math.max(indent, this.interval.min);
   indent = Math.min(indent, this.interval.max);
   indentDiff = indent - this.indents;
-
   for (var n = 1; n <= Math.abs(indentDiff); n++) {
     // Add or remove indentations.
     if (indentDiff < 0) {

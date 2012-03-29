@@ -4,7 +4,7 @@
  */
 function admin_tools_menu() {
   $items['admin/flush-cache/%'] = array(
-    'title' => t('Clear Cache'),
+    'title' => 'Очистить кэш',
     'page callback' => 'admin_tools_flush_cache',
     'access arguments' => array('administer site configuration'),
     'page arguments' => array(2),
@@ -102,17 +102,17 @@ function admin_tools_admin_content () {
   $destination = drupal_get_destination();
   $links = array(
     'all' => array( 
-      'title' => 'Clear All Caches', 
+      'title' => 'Очистить весь кэш', 
       'href' => 'admin/flush-cache/all',
       'query' => $destination,
     ),
     'views' => array( 
-      'title' => 'Views Cache', 
+      'title' => 'Views кэш', 
       'href' => 'admin/flush-cache/views',
       'query' => $destination,
     ),
     'menu' => array( 
-      'title' => 'Menu Cache', 
+      'title' => 'Меню кэш', 
       'href' => 'admin/flush-cache/menu',
       'query' => $destination,
     ),
@@ -122,22 +122,22 @@ function admin_tools_admin_content () {
       'query' => $destination,
     ),
     'requisites' => array( 
-      'title' => 'CSS/JS Cache', 
+      'title' => 'CSS/JS кэш', 
       'href' => 'admin/flush-cache/requisites',
       'query' => $destination,
     ),
     'tables' => array( 
-      'title' => 'Cache Tables', 
+      'title' => 'Кэш таблиц', 
       'href' => 'admin/flush-cache/cache',
       'query' => $destination,
     ),
     'cron' => array( 
-      'title' => 'Run Cron', 
+      'title' => 'Запустить крон', 
       'href' => 'admin/reports/status/run-cron',
       'query' => $destination,
     ),
     'update' => array( 
-      'title' => 'Run Updates', 
+      'title' => 'Запустить обновление', 
       'href' => 'update.php',
     ),
   );

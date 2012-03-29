@@ -1,5 +1,4 @@
 <?php
-// $Id: computed_field.install,v 1.1.2.2 2010/10/12 23:34:00 moonshine Exp $
 
 /**
 * Implementation of hook_install().

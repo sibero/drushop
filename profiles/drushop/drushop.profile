@@ -107,7 +107,7 @@ function drushop_store_settings_form(&$form_state, $url) {
     '#type' => 'checkbox',
     '#title' => t('Include the store name in the from line of store e-mails.'),
     '#description' => t('May not be available on all server configurations. Turn off if this causes problems.'),
-    '#default_value' => TRUE,
+    '#default_value' => FALSE,
   );
 
   $form['uc_store_address'] = array(
@@ -185,6 +185,7 @@ function drushop_form_submit($form, &$form_state) {
   db_query("UPDATE {users} SET uid = 0 WHERE name = ''");
   db_query("UPDATE {contact} SET recipients = '%s' WHERE cid  = 2", $mail);
   user_authenticate(array('name' => $name, 'pass' => $pass));
+  
    
   /*
  * Установка своих переводов из po файла.
@@ -322,6 +323,7 @@ function list_tables() {
 // Устанавливаем русский по умолчанию
 function system_form_install_select_locale_form_alter(&$form, $form_state) {
   $form['locale']['ru']['#value'] = 'ru';
+  unset($form['locale']['en']);
 }
 
 // Убираем настройку параметров чистых ссылок и статуса обновлений при установке.

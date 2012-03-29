@@ -1,10 +1,11 @@
 <?php
 // $Id$
-
+// $_COOKIE['value'];
+// $_SESSION['name'];
 
 function drushop_version()
 {
-  return "2.0"; 
+  return "2.1"; 
 }
 
 function drushop_general_init() {
@@ -17,6 +18,49 @@ $path = drupal_get_path('module', 'drushop_general');
 function drushop_general_menu() {
 
 $items = array();
+
+	$items['toggle_themer_developer'] = array(
+    'title' => 'вкл./выкл. theme developer (отладчик)',
+    'page callback' => 'drushop_general_toggle_themer_developer',
+    'access arguments' => array('administer site configuration'),
+    'menu_name' => 'menu-developer',
+  );
+  
+  $items['toggle_devel'] = array(
+    'title' => 'вкл./выкл. devel (отладчик)',
+    'page callback' => 'drushop_general_toggle_devel',
+    'access arguments' => array('administer site configuration'),
+    'menu_name' => 'menu-developer',
+  );
+  
+  $items['toggle_drupal_firebug'] = array(
+    'title' => 'вкл./выкл. drupal firebug',
+    'page callback' => 'drushop_general_toggle_drupal_firebug',
+    'access arguments' => array('administer site configuration'),
+    'menu_name' => 'menu-developer',
+  );
+  
+  $items['toggle_l10n_client'] = array(
+    'title' => 'вкл./выкл. менеджер переводов',
+    'page callback' => 'drushop_general_toggle_l10n_client',
+    'access arguments' => array('administer site configuration'),
+    'menu_name' => 'menu-developer',
+  );
+  
+  $items['toggle_menu_update'] = array(
+    'title' => 'Обновить меню "каталог"',
+    'page callback' => 'drushop_general_toggle_menu_update',
+    'access arguments' => array('administer site configuration'),
+    'menu_name' => 'menu-developer',
+  );
+  
+  $items['toggle_menu_update2'] = array(
+    'title' => 'Обновить меню "производители"',
+    'page callback' => 'drushop_general_toggle_menu_update2',
+    'access arguments' => array('administer site configuration'),
+    'menu_name' => 'menu-developer',
+  );
+  
     $items['admin/settings/other'] = array(
         'title' => 'Other settings', 
         'description' => 'Дополнительные настройки',
@@ -100,24 +144,24 @@ function drushop_general_menu_alter(&$items) {
 	$items = array_merge($items, drushop_general_clone_items('admin/settings/comment_notify', 'admin/settings/other/comment_notify', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/settings/module_filter', 'admin/settings/other/module_filter', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/settings/clean-urls', 'admin/settings/other/clean-urls', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/lazy_image_loader', 'admin/settings/other/lazy_image_loader', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/blockcache_alter', 'admin/settings/other/blockcache_alter', $items));
 	
 	$items = array_merge($items, drushop_general_clone_items('admin/content/nodewords', 'admin/seo/nodewords', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/settings/page-title', 'admin/seo/page-title', $items));
-	$items = array_merge($items, drushop_general_clone_items('admin/store/reports/tax', 'admin/reports/tax', $items));
-	$items = array_merge($items, drushop_general_clone_items('admin/store/reports/stock', 'admin/reports/stock', $items));
-	$items = array_merge($items, drushop_general_clone_items('admin/store/reports/customers', 'admin/reports/customers', $items));
-	$items = array_merge($items, drushop_general_clone_items('admin/store/reports/sales', 'admin/reports/sales', $items));
-	$items = array_merge($items, drushop_general_clone_items('admin/store/reports/products', 'admin/reports/products', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/build/path', 'admin/seo/path', $items));
-	
-	
 	$items = array_merge($items, drushop_general_clone_items('admin/store/products/files', 'admin/store/files', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/store/products/classes', 'admin/store/settings/classes', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/store/products/power-tools', 'admin/store/settings/power-tools', $items));
 	
 	// type может принимать значения MENU_DEFAULT_LOCAL_TASK , MENU_NORMAL_ITEM , MENU_LOCAL_TASK , MENU_CALLBACK
     $items['admin/store/help']['type'] = MENU_CALLBACK;
+	$items['admin/store/help/tokens']['type'] = MENU_CALLBACK;
 	$items['admin/store/reports']['type'] = MENU_CALLBACK;
+	$items['admin/help']['type'] = MENU_CALLBACK;
+	$items['admin/advanced_help']['type'] = MENU_CALLBACK;
+	$items['admin/build/pages']['type'] = MENU_CALLBACK;
+	$items['admin/store/help/uc_extra_fields_pane']['type'] = MENU_CALLBACK;
 	$items['admin/build/block']['weight'] = -40;
 	$items['admin/build/menu']['weight'] = -39;
 	$items['admin/build/themes']['weight'] = -38;
@@ -175,7 +219,7 @@ function drushop_general_menu_alter(&$items) {
   unset($items['admin/build/cron']);
   unset($items['admin/build/contact']);
   unset($items['admin/build/path']);
-  
+
 	unset($items['admin/build/formdefaults']);
 	unset($items['admin/build/taxonomy_redirect']);
 	unset($items['admin/build/custom_breadcrumbs']);
@@ -204,17 +248,16 @@ function drushop_general_menu_alter(&$items) {
 	unset($items['admin/settings/language']);
     unset($items['admin/settings/language/add']);
     unset($items['admin/settings/image-toolkit']);
+	unset($items['admin/settings/lazy_image_loader']);
+	unset($items['admin/settings/blockcache_alter']);
+	unset($items['admin/settings/moduleinfo']);
+	
 	
 	unset($items['admin/user/user']);
 
 	
 	unset($items['admin/content/nodewords']);
 	unset($items['admin/settings/page-title']);
-	unset($items['admin/store/reports/tax']);
-	unset($items['admin/store/reports/stock']);
-	unset($items['admin/store/reports/customers']);
-	unset($items['admin/store/reports/sales']);
-	unset($items['admin/store/reports/products']);
 	
 	unset($items['admin/store/products/files']);
 	unset($items['admin/store/products/classes']);
@@ -227,6 +270,7 @@ function drushop_general_menu_alter(&$items) {
 	// переименовываем пункты меню
 	$include = array(
     'admin/content' => 'Content',
+	'admin/build/views' => 'Views (представления)',
 	'admin/settings/cron' => 'Cron',
 	'admin/store/settings' => 'Настройки магазина ',
 	'admin/content/comment' => 'Менеджер комментариев',
@@ -236,6 +280,8 @@ function drushop_general_menu_alter(&$items) {
 	'admin/settings/imce' => 'Файловый менеджер (imce)',
 	'admin/content/backup_migrate' => 'Резервное копирование базы данных',
 	'admin/build/flags' => 'Флаги (закладки)',
+	'admin/store/discount-total' => 'Накопительные скидки',
+	'admin/store/uc_discounts' => 'Cкидки и купоны',
   );
   
     foreach ($include as $path => $title) {
@@ -279,11 +325,43 @@ function drushop_general_preprocess_block_admin_display_form(&$vars) {
 	unset($vars['block_listing']['-1']['admin_theme']);
 	unset($vars['block_listing']['-1']['admin_create']);
 	unset($vars['block_listing']['-1']['menu_block_1']);
+	unset($vars['block_listing']['-1']['uc_cart_0']);
+	unset($vars['block_listing']['-1']['service_links_service_links_fisheye']);
+	unset($vars['block_listing']['-1']['admin_devel']);
+	unset($vars['block_listing']['-1']['devel_2']);
+	unset($vars['block_listing']['-1']['menu_menu-developer']);
+	unset($vars['block_listing']['-1']['devel_0']);
   }
+  
   }
   
   // удалить поле "Домашняя страница" из формы добавления комментария
   function drushop_general_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id != 'admin_block_devel_form') {
+  	// drupal_set_message("form_id: " . $form_id); 
+	// drupal_set_message(dpm($form));  
+	// drupal_set_message(dpm($form_state));
+	}
+	
+	if ($form_id == 'locale_languages_overview_form') {
+	$form['#redirect']  = 'admin/build/language';
+	}
+	if ($form_id == 'locale_languages_configure_form') {
+	$form['#redirect']  = 'admin/build/language/configure';
+	}
+	if ($form_id == 'l10n_update_admin_settings_form') {
+	$form['#redirect']  = 'admin/build/language/update';
+	}
+	if ($form_id == 'locale_languages_predefined_form') {
+	$form['#redirect']  = 'admin/build/language';
+	}
+	if ($form_id == 'locale_languages_custom_form') {
+	$form['#redirect']  = 'admin/build/language';
+	}
+	if ($form_id == 'pathauto_admin_settings') {
+	$form['#redirect']  = 'admin/seo/path/pathauto';
+	}
+
     if ($form_id == 'comment_form'){
         unset($form['homepage']);
     }
@@ -382,15 +460,18 @@ function drushop_general_preprocess_block_admin_display_form(&$vars) {
 }
 
 function drushop_general_preprocess_page(&$vars) {
+
 	// выводит url текущей страницы, то что после сайт.ru/
     $path = drupal_get_path_alias($_GET['q']);
 	$vars['path_now'] = $path;
 	
 	// убираем появление нежелательных таб на страницах категорий админки
-	if ($path == "admin/user" or $path =="admin/settings" or $path == "admin/build" or $path == "admin/content") {
+	if ($path == "admin/user" or $path =="admin/settings/" or $path == "admin/build" or $path == "admin/content" or $path == "admin/settings/language") {
 	unset($vars['tabs']); 
 	unset($vars['tabs2']);
 	}	
+	
+	$vars[base64_decode('Y2xvc3VyZQ==')] .= base64_decode('PGRpdiBhbGlnbj0icmlnaHQiIHBhZGRpbmctcmlnaHQ9IjdweCIgbWFyZ2luLXJpZ2h0PSI3cHgiPiA8cD48YSBocmVmPSJodHRwOi8vd3d3LmNvcHlyaWdodC5ydS9ydS9kb2N1bWVudHMvemFzaGl0YV9hdnRvcnNraWhfcHJhdi96bmFrX29ocmFuaV9hdnRvcnNraWhfaV9zbWVnbmloX3ByYXYvIiB0aXRsZT0i0JrQvtC/0LjRgNCw0LnRgiI+JmNvcHk7IDwvYT7QnNCw0LPQsNC30LjQvSDRgNCw0LHQvtGC0LDQtdGCINC90LAg0YHQuNGB0YLQtdC80LUgPGEgYWxpZ249InJpZ2h0IiBocmVmPSJodHRwOi8vZHJ1c2hvcC5ydSIgPmRydXNob3AuICAgICA8L2E+PC9wPjwvZGl2Pg==');
 	
 	/*Аргументы - это части урла, разделённые символом '/'. Небольшой пример: имеется ссылка мой_сайт.ru/node/186/edit. Здесь в роли аргументов выступают: node - 0й аргумент, 186 - 1й аргумент, edit - 2й аргумент.
 Программно можно вызывать эти аргументы функцией arg(). То есть написав с echo arg(0); находять на странице материала  - у тебя будет выведено слово 'node'.Написав  echo arg(1); ты получишь число, равное nid ноды на которой ты находишься.*/
@@ -403,6 +484,8 @@ function drushop_general_preprocess_page(&$vars) {
 	$vars['alias_arg'] = $alias_arg;
 	// Переменная с путем до изображений в текущей теме.
 	$vars['imgPath'] = base_path().path_to_theme().'/images/';
+	
+	/*
 	// переменные иноформации о магазине
     $vars['store_name'] = variable_get('uc_store_name', FALSE);
     $vars['store_owner'] = variable_get('uc_store_owner', FALSE);
@@ -415,8 +498,12 @@ function drushop_general_preprocess_page(&$vars) {
 	if(function_exists('uc_country_get_by_id')) {
     $vars['store_country'] = uc_country_get_by_id(variable_get('uc_store_country', FALSE));
 	}	
+	*/
 	$ver = drushop_version();
 	$vars['version_store'] = "Drushop версия ".$ver;
+	$vars['version_store_curent'] = "<div class = 'version_store_curent'>- Последняя версия "."<a href='http://drushop.ru/download'><img style='border: 0px solid ; width: 39px; height: 21px;' alt='' src='http://drushop.dn/ver_drushop_curent.png'></a> <br> </div>";
+	
+	
 	
 }
 drupal_set_html_head('<meta name="generator" content="drushop" />');
@@ -444,38 +531,100 @@ function _drushop_hide_module(&$form, $module){
 
 	function drushop_general_preprocess_node(&$vars) {
 	$vars['imgPath'] = base_path().path_to_theme().'/images/';
+	  if (module_exists('service_links')) {
 	$service_links = service_links_render($node, TRUE);
     $vars['service_links'] = '<div class="service_links">' . theme('links', $service_links) . '</div>';
+	}
+	
 	// Render Ubercart fields into separate variables for node-product.tpl.php
 	// uc_product_is_product($node) проверяет является ли нода товаром
   if (uc_product_is_product($vars)) {
     $node = node_build_content(node_load($vars['nid']));
     $vars['product_image'] = drupal_render($node->content['image']);
     $vars['product_body'] = drupal_render($node->content['body']);
-    $vars['product_display_price'] = drupal_render($node->content['display_price']);
-	$vars['product_sku'] = drupal_render($node->content['model']);	
+	
+	if ($node->display_price === 0 or $node->display_price === "") {
+	unset($node->content['display_price']);
+	unset($node->display_price);
+		}
+	else {
+	$vars['product_display_price'] = drupal_render($node->content['display_price']);
+		}
+	if ($node->model == 0 or $node->model == "") {
+	unset($node->content['model']);
+	unset($node->model);
+	}
+	else {
+	$vars['product_sku'] = drupal_render($node->content['model']);
+	}
+	
+	
 	$vars['product_discounted_price'] = drupal_render($node->content['field_discounted_price']);
+	
+	
+	if ($node->sell_price == 0 or $node->sell_price == "") {
+	unset($node->content['sell_price']);
+	unset($node->sell_price);
+	}
+	else {
+	$vars['product_sell_price'] = drupal_render($node->content['sell_price']);
+	}
+	
+	if ($node->cost == 0 or $node->cost == "") {
+	unset($node->content['cost']);
+	unset($node->cost);
+	}
+	else {
+	$vars['product_cost'] = drupal_render($node->content['cost']);
+	}
+	
+	if ($node->weight == 0 or $node->weight == "") {
+	unset($node->content['weight']);
+	unset($node->weight);
+	
+	}
+	else {
+	$vars['product_weight'] = drupal_render($node->content['weight']);
+	}
+	
+	if ($node->list_price == 0 or $node->list_price == "") {
+	unset($node->list_price);
+	unset($node->content['list_price']);
+	}
+	else {
+	$vars['product_list_price'] = drupal_render($node->content['list_price']);
+	}
+	
+	if ($node->new_price == $node->sell_price) {
+	unset($node->new_price);
+	unset($node->content['sell_price_new']);
+	}
+	else {
+	$vars['product_total_price_discount'] = drupal_render($node->content['sell_price_new']);
+	}
+	
+	$vars['product_dimension'] = drupal_render($node->content['dimensions']); 
 	$vars['field_stock'] = drupal_render($node->content['field_stock']);	
 	$vars['product_fivestar_widget'] = drupal_render($node->content['fivestar_widget']); 
-    $vars['product_sell_price'] = drupal_render($node->content['sell_price']);
-    $vars['product_cost'] = drupal_render($node->content['cost']);
-    $vars['product_weight'] = (!empty($node->weight)) ? drupal_render($node->content['weight']) : '';   // Hide weight if empty
-    if ($vars['product_weight'] == '') {
-      unset($node->content['weight']);
-    }
-    
+  
 	$vars['product_length_units'] = $node->length_units;
 	if ($vars['product_length_units'] == "cm") { $vars['product_length_units'] = "см.";}
 	if ($vars['product_length_units'] == "in") { $vars['product_length_units'] = "дм.";}
 	if ($vars['product_length_units'] == "ft") { $vars['product_length_units'] = "фт.";}
 	if ($vars['product_length_units'] == "mm") { $vars['product_length_units'] = "мм.";}
-    $vars['product_dimension'] = drupal_render($node->content['dimensions']); 
+    
 	$vars['product_length_format'] = $node->length;
+	if ($node->length != 0 and $node->length != "" ) {
 	$vars['product_length'] = t("Length").": ".$node->length." ".$vars['product_length_units'];
+	}
 	$vars['product_width_format'] = $node->width;
+	if ($node->width != 0 and $node->width != "") {
 	$vars['product_width'] = t("Width").": ".$node->width." ".$vars['product_length_units'];
+	}
 	$vars['product_height_format'] = $node->height;
+	if ($node->height != 0 and $node->height != "") {
 	$vars['product_height'] = t("Height").": ".$node->height." ".$vars['product_length_units'];	
+	}
 	$vars['product_weight_units'] = $node->weight_units;
 	$vars['product_shipping_type'] = $node->shipping_type;
 	$vars['product_pkg_qty'] = $node->pkg_qty;
@@ -492,13 +641,11 @@ function _drushop_hide_module(&$form, $module){
 	if ($vars['product_height_format'] == 0 or $vars['product_height_format'] == "") {unset($prod_height);}
 	
 	//создаем переменную "размеры"
+	if ($prod_length or $prod_width or $prod_height) {
     $vars['product_dimensions'] = t("Dimensions:")." ".$prod_length.$prod_width.$prod_height;
-
-    $list_price = !empty($node->list_price) && $node->list_price > 0;                                     // Hide list price if empty or zero
-    $vars['product_list_price'] = ($list_price) ? drupal_render($node->content['list_price']) : '';
-    if ($vars['product_list_price'] == '') {
-      unset($node->content['list_price']);
-    }
+	}
+                                        
+    
 	// проверяем, если установлено отслеживание количества на складе, то выводим его в переменную $stock. Если нет, то делаем в переменной положительное значение 100 
 	if (uc_stock_is_active($node->model) == 1) {
 	$stock = uc_stock_level($node->model);
@@ -515,7 +662,11 @@ function _drushop_hide_module(&$form, $module){
 	// используем функцию uc_stock_level, которая используя значения артикуля (sku) выводит количество на складе		
 	$vars['product_stock'] = uc_stock_level($node->model);
     $vars['product_additional'] = drupal_render($node->content);
+	  if (module_exists('flag')) {
 	$vars['product_bookmarks'] = flag_create_link('bookmarks', $node->nid);	
+	}
+	
+	/*
 		// получаем термины из словаря каталог
                       $terms = taxonomy_node_get_terms_by_vocabulary($node, 1);
 					  if (!empty($terms)) {
@@ -527,7 +678,8 @@ function _drushop_hide_module(&$form, $module){
 					   }
 					    $vars['catalog_tags'] = implode(', ', $items); 
 					   }
-                      
+	*/				   
+    /*                  
 	//получаем термины из словаря производители
 					  $terms = taxonomy_node_get_terms_by_vocabulary($node, 3);
 					  if (!empty($terms)) {
@@ -539,7 +691,8 @@ function _drushop_hide_module(&$form, $module){
 					   }
 					   $vars['manufacurer_tags'] = implode(', ', $items); 
 					   }
-                       
+	*/				   
+   /*                    
   //получаем термины из словаря теги
 					  $terms = taxonomy_node_get_terms_by_vocabulary($node, 8);
 					  if (!empty($terms)) {
@@ -551,6 +704,7 @@ function _drushop_hide_module(&$form, $module){
 					   }
 					   $vars['other_tags'] = implode(', ', $items); 
 					   }
+	*/				   
   }
 
 					     
@@ -578,12 +732,13 @@ function drushop_general_tapir_table_alter(&$table, $table_id) {
     if (empty($table[$key]['nid']['#value'])) continue;
      
       // Вообще, тут можно легко избежать "дорогого" в плане нагрузки вызова node_load, и обойтись sql селектом. Но, если у вас у пользователя обычно бывает 1-5 товаров в корзине, этим можно пренебречь.
-      $n = node_load($table[$key]['nid']['#value']);
-      $p = uc_price($n -> sell_price, array());
+      $total = $table[$key]['#total']; 
+	  $qty = $table[$key]['qty']['#default_value'];
+	  $sell = uc_price($total / $qty);
 
      
 // И добавляем в новую колонку данные.
-      $table[$key]['price_item'] = array('#value' => $p, '#cell_attributes' => array('class' => 'price-item'));
+      $table[$key]['price_item'] = array('#value' => $sell, '#cell_attributes' => array('class' => 'price-item'));
 
    }
 }
@@ -595,11 +750,173 @@ function drushop_general_form_uc_cart_checkout_form_alter(&$form, &$form_state) 
   $string = str_replace("\n", " ", $string);
   $form['cart_contents']['#value'] = $string;
 }
- 
-	
- 
 
 
+function drushop_general_toggle_themer_developer() {
+  if (module_exists('devel_themer')) {
+    module_disable(array('devel_themer'));
+	drupal_set_message("Theme developer выключен");
+  }
+  else {
+    include_once('./includes/install.inc');
+ 
+    if (!drupal_get_schema_versions('devel_themer')) {
+      drupal_install_modules(array('devel_themer'));
+	  drupal_set_message("Theme developer установлен");
+    }
+    else {
+      module_enable(array('devel_themer'));
+	  drupal_set_message("Theme developer включен");
+    }
+  }
+ 
+  drupal_rebuild_theme_registry();
+  // menu_rebuild();
+  drupal_goto();
+}
+
+
+
+function drushop_general_toggle_devel() {
+  if (module_exists('devel')) {
+    module_disable(array('devel'));
+	drupal_set_message("Модуль devel выключен");
+  }
+  else {
+    
+      module_enable(array('devel'));
+	  drupal_set_message("Модуль devel включен");
+    
+  }
+ 
+  $form = $form_state = array();
+      system_clear_cache_submit($form, $form_state);
+  // menu_rebuild();
+  drupal_goto();
+}
+
+function drushop_general_toggle_drupal_firebug() {
+  if (module_exists('drupalforfirebug_preprocess')) {
+    module_disable(array('drupalforfirebug'));
+    module_disable(array('drupalforfirebug_preprocess'));	 	
+	drupal_set_message("Модуль drupal for firebug выключен");
+  }
+  else {
+    
+      module_enable(array('drupalforfirebug_preprocess'));
+	  module_enable(array('drupalforfirebug'));
+	  drupal_set_message("Модуль drupal for firebug включен");
+    
+  }
+ 
+  drupal_rebuild_theme_registry();
+  // menu_rebuild();
+  drupal_goto();
+}
+
+ function drushop_general_toggle_l10n_client() {
+  if (module_exists('l10n_client')) {
+    module_disable(array('l10n_client'));
+	drupal_set_message("Модуль l10n_client выключен");
+  }
+  else {
+    if (module_exists('locale_cache')) {
+	module_disable(array('locale_cache'));
+	}
+      module_enable(array('l10n_client'));
+	  drupal_set_message("Модуль l10n_client включен");
+    
+  }
+ 
+  
+   module_load_include('inc', 'system', 'system.admin');
+      $form = $form_state = array();
+      system_clear_cache_submit($form, $form_state);
+  // menu_rebuild();
+  drupal_goto();
+}
+
+// обновление меню каталог
+ function drushop_general_toggle_menu_update() {
+
+ $form = array();
+ $form_state = array();
+ $form_state['values']['vid'] = 1;
+ $form_state['values']['taxonomy_menu']['options']['rebuild'] = 1;
+ $form_state['values']['taxonomy_menu']['vocab_parent'] = 'menu-catalog:0';
+ $form_state['values']['taxonomy_menu']['path'] = 'taxonomy_menu_path_default';
+ $form_state['values']['taxonomy_menu']['options']['sync'] = 1;
+ $form_state['values']['taxonomy_menu']['options']['display_num'] = 1;
+ $form_state['values']['taxonomy_menu']['options']['display_num_descendants'] = 1;
+ $form_state['values']['taxonomy_menu']['options']['expanded'] = 1;
+ $form_state['values']['redirect'] = 'admin/content/taxonomy';
+ $form_state['values']['process_input'] = 1;
+ $form_state['submitted'] = 1;
+ taxonomy_menu_vocab_submit($form, $form_state);
+ cache_clear_all();
+ }
+ 
+ // обновление меню производители
+  function drushop_general_toggle_menu_update2() {
+
+ $form = array();
+ $form_state = array();
+ $form_state['values']['vid'] = 3;
+ $form_state['values']['taxonomy_menu']['options']['rebuild'] = 1;
+ $form_state['values']['taxonomy_menu']['vocab_parent'] = 'menu-manufacturer:0';
+ $form_state['values']['taxonomy_menu']['path'] = 'taxonomy_menu_path_default';
+ $form_state['values']['taxonomy_menu']['options']['sync'] = 1;
+ $form_state['values']['taxonomy_menu']['options']['display_num'] = 1;
+ $form_state['values']['taxonomy_menu']['options']['display_num_descendants'] = 1;
+ $form_state['values']['taxonomy_menu']['options']['expanded'] = 1;
+ $form_state['values']['redirect'] = 'admin/content/taxonomy';
+ $form_state['values']['process_input'] = 1;
+ $form_state['submitted'] = 1;
+ taxonomy_menu_vocab_submit($form, $form_state); 
+ cache_clear_all();
+ }
+ 
+ 
+ function drushop_general_features_revert($modules) {
+ If (module_exists('features')) {
+  module_load_include('inc', 'features', 'features.export');
+  features_include();
+
+  foreach (
+$modules as $module) {
+    if (($feature = feature_load($module, TRUE)) && module_exists($module)) {
+      $components = array();
+      // Forcefully revert all components of a feature.
+      foreach (array_keys($feature->info['features']) as $component) {
+        if (features_hook($component, 'features_revert')) {
+          $components[] = $component;
+        }
+      }
+    }
+    foreach ($components as $component) {
+      features_revert(array($module => array($component)));
+    }
+  }
+  }
+}
+
+/*
+function drushop_general_feature_revert($feature_module) {
+$info = drupal_parse_info_file(drupal_get_path('module', $feature_module) . '/' . $feature_module . '.info');
+$revert = array(
+$feature_module => array_keys($info['features']),
+);
+watchdog('full_feature_revert', 'Reverting feature @feature on behalf of @function', array('@feature' => $feature_module, '@function' => _calling_function()));
+features_revert($revert);
+}
+
+
+function _calling_function() {
+$trace = debug_backtrace();
+return $trace[2]['function'];
+}
+
+*/
   
 
 

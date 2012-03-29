@@ -25,45 +25,45 @@ define('UC_REPORTS_MAX_RECORDS', PHP_INT_MAX);
 function uc_reports_help($path, $arg) {
   $output =  '';
 
-  if (strncmp($path, 'admin/store/reports/', 20) === 0) {
+  if (strncmp($path, 'admin/reports/', 20) === 0) {
     $include_statuses = $include_offset = FALSE;
 
     // Include order status info?
-    if (strpos($path, 'admin/store/reports/sales/year') === 0) {
+    if (strpos($path, 'admin/reports/sales/year') === 0) {
       $include_statuses = TRUE;
     }
     else {
       switch ($path) {
-        case 'admin/store/reports/customers':
-        case 'admin/store/reports/products':
-        case 'admin/store/reports/sales':
+        case 'admin/reports/customers':
+        case 'admin/reports/products':
+        case 'admin/reports/sales':
           $include_statuses = TRUE;
           break;
       }
     }
 
     // Include timezone offset info?
-    if (!strncmp($path, 'admin/store/reports/sales', 25)) {
+    if (!strncmp($path, 'admin/reports/sales', 25)) {
       $include_offset = TRUE;
     }
 
     // Generate message for the path we're at.
     $output .= '<p>';
     switch ($path) {
-      case 'admin/store/reports/customers':
+      case 'admin/reports/customers':
         $output .= t("The following are total orders, products, sales, and average order totals for each store customer. Clicking on the header links will toggle a descending or ascending order for that column. Clicking on a customer's name will take you to a detailed list of orders that customer has made. Clicking on a customers username will take you to their account page.");
         break;
-      case 'admin/store/reports/products':
+      case 'admin/reports/products':
         $output .= t('The table lists each product listed in the store, its amount sold, how many times it has been viewed, revenue it has produced, and gross profit it has generated. If you do not see the number of views you must enable the Statistics module on the <a href="!url">module administration page</a>.', array('!url' => url('admin/build/modules')));
         break;
-      case 'admin/store/reports/sales':
+      case 'admin/reports/sales':
         $output .= t('These are the sales for the last two days, average sales for the month, and the projected sales for the rest of the month. Further down the list you will see other sales statistics.');
         break;
-      case 'admin/store/reports/sales/custom':
+      case 'admin/reports/sales/custom':
         $output .= t('Expand the fieldset below to customize the date range of this report, the statuses of orders displayed, and product display options.');
         break;
     }
-    if (strpos($path, 'admin/store/reports/sales/year') === 0) {
+    if (strpos($path, 'admin/reports/sales/year') === 0) {
       $year = $arg[5] ? $arg[5] : format_date(time(), 'custom', "Y");
       $output .= t('This is the monthly break down of sales for the year @year. Clicking on each link will take you to a list of orders during that month.', array('@year' => $year));
     }
@@ -102,7 +102,7 @@ function uc_reports_menu() {
     'type' => MENU_NORMAL_ITEM,
     'file' => 'uc_reports.admin.inc',
   );
-  $items['admin/store/reports/customers'] = array(
+  $items['admin/reports/customers'] = array(
     'title' => 'Customer reports',
     'description' => 'View reports for store customers.',
     'page callback' => 'uc_reports_customers',
@@ -110,7 +110,7 @@ function uc_reports_menu() {
     'type' => MENU_NORMAL_ITEM,
     'file' => 'uc_reports.admin.inc',
   );
-  $items['admin/store/reports/products'] = array(
+  $items['admin/reports/products'] = array(
     'title' => 'Product reports',
     'description' => 'View reports for store products.',
     'page callback' => 'uc_reports_products',
@@ -118,14 +118,14 @@ function uc_reports_menu() {
     'type' => MENU_NORMAL_ITEM,
     'file' => 'uc_reports.admin.inc',
   );
-  $items['admin/store/reports/products/summary'] = array(
+  $items['admin/reports/products/summary'] = array(
     'title' => 'Product report',
     'access arguments' => array('view reports'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
     'file' => 'uc_reports.admin.inc',
   );
-  $items['admin/store/reports/products/custom'] = array(
+  $items['admin/reports/products/custom'] = array(
     'title' => 'Custom product report',
     'description' => 'View a customized product report',
     'page callback' => 'uc_reports_products_custom',
@@ -134,7 +134,7 @@ function uc_reports_menu() {
     'weight' => -5,
     'file' => 'uc_reports.admin.inc',
   );
-  $items['admin/store/reports/sales'] = array(
+  $items['admin/reports/sales'] = array(
     'title' => 'Sales reports',
     'description' => 'View reports for store sales.',
     'page callback' => 'uc_reports_sales_summary',
@@ -142,14 +142,14 @@ function uc_reports_menu() {
     'type' => MENU_NORMAL_ITEM,
     'file' => 'uc_reports.admin.inc',
   );
-  $items['admin/store/reports/sales/summary'] = array(
+  $items['admin/reports/sales/summary'] = array(
     'title' => 'Sales summary',
     'description' => 'View summary of all store sales',
     'access arguments' => array('view reports'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
   );
-  $items['admin/store/reports/sales/year'] = array(
+  $items['admin/reports/sales/year'] = array(
     'title' => 'Sales per year',
     'description' => 'View store sales for a particular year',
     'page callback' => 'uc_reports_sales_year',
@@ -158,7 +158,7 @@ function uc_reports_menu() {
     'weight' => -7,
     'file' => 'uc_reports.admin.inc',
   );
-  $items['admin/store/reports/sales/custom'] = array(
+  $items['admin/reports/sales/custom'] = array(
     'title' => 'Custom sales summary',
     'description' => 'View a customized sales summary',
     'page callback' => 'uc_reports_sales_custom',
@@ -167,7 +167,7 @@ function uc_reports_menu() {
     'weight' => -1,
     'file' => 'uc_reports.admin.inc',
   );
-  $items['admin/store/reports/getcsv/%/%'] = array(
+  $items['admin/reports/getcsv/%/%'] = array(
     'page callback' => '_uc_reports_get_csv',
     'page arguments' => array(4, 5),
     'access arguments' => array('view reports'),

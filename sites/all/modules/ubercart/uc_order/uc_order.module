@@ -29,23 +29,23 @@ class UcOrder {
   public $delivery_last_name = '';
   public $delivery_phone = '';
   public $delivery_company = '';
+  public $delivery_country = 0;
+  public $delivery_zone = 0;
+  public $delivery_city = '';
   public $delivery_street1 = '';
   public $delivery_street2 = '';
-  public $delivery_city = '';
-  public $delivery_zone = 0;
   public $delivery_postal_code = '';
-  public $delivery_country = 0;
 
   public $billing_first_name = '';
   public $billing_last_name = '';
   public $billing_phone = '';
   public $billing_company = '';
+  public $billing_country = 0;
+  public $billing_zone = 0;
+  public $billing_city = '';
   public $billing_street1 = '';
   public $billing_street2 = '';
-  public $billing_city = '';
-  public $billing_zone = 0;
   public $billing_postal_code = '';
-  public $billing_country = 0;
 
   public $products = array();
   public $line_items = array();
@@ -654,6 +654,7 @@ function uc_order_mail($key, &$message, $params) {
 /**
  * Implements hook_order_pane().
  */
+ // панель заказа
 function uc_order_order_pane() {
   $panes[] = array(
     'id' => 'ship_to',
@@ -1461,12 +1462,12 @@ function uc_order_address($order, $type) {
     $order->{$type .'_first_name'},
     $order->{$type .'_last_name'},
     $order->{$type .'_company'},
+	$order->{$type .'_country'},
+	$order->{$type .'_zone'},
+	$order->{$type .'_city'},
     $order->{$type .'_street1'},
     $order->{$type .'_street2'},
-    $order->{$type .'_city'},
-    $order->{$type .'_zone'},
-    $order->{$type .'_postal_code'},
-    $order->{$type .'_country'}
+    $order->{$type .'_postal_code'}
   );
 
   if (variable_get('uc_order_capitalize_addresses', TRUE)) {

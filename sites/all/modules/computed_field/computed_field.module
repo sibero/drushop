@@ -1,5 +1,4 @@
 <?php
-// $Id: computed_field.module,v 1.17.2.16 2011/02/22 08:19:39 moonshine Exp $
 
 /**
  * Implementation of cck hook_field_info()
@@ -65,15 +64,40 @@ function computed_field_field_settings($op, $field) {
         '#title' => t('Data Type'),
         '#description' => t('The SQL datatype to store this field in.'),
         '#default_value' => !empty($field['data_type']) ? $field['data_type'] : 'varchar',
-        '#options' => array('int' => 'int', 'float' => 'float', 'varchar' => 'varchar', 'text' => 'text', 'longtext' => 'longtext'),
+        '#options' => array('varchar' => 'varchar', 'text' => 'text', 'longtext' => 'longtext', 'int' => 'int', 'float' => 'float', 'numeric' => 'decimal'),
         '#required' => FALSE,
       );
       $form['database']['data_length'] = array(
         '#type' => 'textfield',
-        '#title' => t('Data Length'),
+        '#title' => t('Data Length (varchar/text only)'),
+        '#description' => t('<strong>Only</strong> valid for <strong>varchar</strong> or <strong>text</strong> fields. The length of the field stored in the database.'),
         '#default_value' => !empty($field['data_length']) ? $field['data_length'] : NULL,
         '#required' => FALSE,
       );
+      $form['database']['data_size'] = array(
+        '#type' => 'select',
+        '#title' => t('Data Size (int/float)'),
+        '#description' => t('<strong>Only</strong> valid for <strong>int</strong> or <strong>float</strong> fields. The size of the field stored in the database.'),
+        '#default_value' => !empty($field['data_size']) ? $field['data_size'] : 'normal',
+        '#options' => array('tiny' => 'tiny', 'small' => 'small', 'medium' => 'medium', 'normal' => 'normal', 'big' => 'big'),
+        '#required' => FALSE,
+      );
+      $form['database']['data_precision'] = array(
+        '#type' => 'select',
+        '#title' => t('Decimal Precision (decimal)'),
+        '#description' => t('<strong>Only</strong> valid for <strong>decimal</strong> fields. The total number of digits to store in the database, including those to the right of the decimal.'),
+        '#options' => drupal_map_assoc(range(10, 32)),
+        '#default_value' => !empty($field['data_precision']) ? $field['data_precision'] : 10,
+        '#required' => FALSE,
+      );
+      $form['database']['data_scale'] = array(
+        '#type' => 'select',
+        '#title' => t('Decimal Scale (decimal)'),
+        '#description' => t('<strong>Only</strong> valid for <strong>decimal</strong> fields. The number of digits to the right of the decimal. '),
+        '#options' => drupal_map_assoc(range(0, 10)),
+        '#default_value' => !empty($field['data_scale']) ? $field['data_scale'] : 2,
+        '#required' => FALSE,
+      );      
       $form['database']['data_default'] = array(
         '#type' => 'textfield',
         '#title' => t('Default Value'),
@@ -87,7 +111,7 @@ function computed_field_field_settings($op, $field) {
       );
       $form['database']['data_sortable'] = array(
         '#type' => 'checkbox',
-        '#title' => t('Sortable'),
+        '#title' => t('Sortable in Views'),
         '#default_value' => is_numeric($field['data_sortable']) ? $field['data_sortable'] : TRUE,
       );
       return $form;
@@ -96,15 +120,29 @@ function computed_field_field_settings($op, $field) {
         if (empty($field['data_type'])) {
           form_set_error('data_type', t('To store this field in the database, please specify a data type.'));
         }
-        if (!($field['data_type'] == 'text' || $field['data_type'] == 'longtext' || $field['data_type'] == 'float') && empty($field['data_length'])) {
+        if (($field['data_type'] == 'text' || $field['data_type'] == 'varchar') && empty($field['data_length'])) {
           form_set_error('data_length', t('To store this field in the database, please specify the data length.'));
         }
       }
       break;
     case 'save':
-      return array('code', 'display_format', 'store', 'data_type', 'data_length', 'data_not_NULL', 'data_default', 'data_sortable');
+      return array('code', 'display_format', 'store', 'data_type', 'data_length', 'data_size', 'data_precision', 'data_scale', 'data_not_NULL', 'data_default', 'data_sortable');
     case 'database columns':
-      if ($field['store']) {
+      if (!is_numeric($field['store'])) {
+        // Initial field creation! - CCK initially creates the field in the DB before the user is given a chance to configure it.
+        // Thus we don't know any of the field's data settings for this initial creation. Yet, if we don't set something, CCK will
+        // return SQL errors when trying to "migrate" the data column after configuration (in several senarios). So, we'll 
+        // give CCK our most basic "default" data column to work with.  After the user configures the field, it will be updated by
+        // CCK to match their chosen field data settings.
+        $columns = array(
+          'value' => array(
+            'type' => 'varchar',
+            'length' => '32',
+          ),
+        );
+      }
+      elseif ($field['store']) {
+        // User has decided to store values in the DB, so we'll gather up information on their chosen data type.
         $columns = array('value' => array());
         if ($field['data_type'] == 'longtext') {
           $columns['value']['type'] = 'text';
@@ -113,15 +151,39 @@ function computed_field_field_settings($op, $field) {
         else {
           $columns['value']['type'] = isset($field['data_type']) ? $field['data_type'] : 'varchar';
         }
-        // text and longtext should not have a length, so we ignore it
-        if (!($field['data_type'] == 'text' || $field['data_type'] == 'longtext' || $field['data_type'] == 'float')) {
+        // 'text' and 'varchar' fields get length settings
+        if ($field['data_type'] == 'text' || $field['data_type'] == 'varchar') {
           $columns['value']['length'] = isset($field['data_length']) ? $field['data_length'] : 32;
         }
-        $columns['value']['not NULL'] = isset($field['data_not_NULL']) ? $field['data_not_NULL'] : TRUE;
+        // 'int' and 'float' fields get size settings
+        if ($field['data_type'] == 'int' || $field['data_type'] == 'float') {
+          $columns['value']['size'] = isset($field['data_size']) ? $field['data_size'] : 'normal';
+        }
+        // 'decimal' fields get precision and scale settings
+        if ($field['data_type'] == 'numeric') {
+          $columns['value']['precision'] = isset($field['data_precision']) ? $field['data_precision'] : 10;
+          $columns['value']['scale'] = isset($field['data_scale']) ? $field['data_scale'] : 2;
+        }
+        // Add 'not null' settings
+        $columns['value']['not null'] = isset($field['data_not_NULL']) ? $field['data_not_NULL'] : TRUE;
+        // Allow Views sorting if set
         $columns['value']['sortable'] = isset($field['data_sortable']) ? $field['data_sortable'] : FALSE;
+        // Add default values if set
         if ($field['data_default'] != '')  {
           $columns['value']['default'] = $field['data_default'];
         }
+      }
+      else {
+      // User has chosen NOT to store values in the DB for their field, yet CCK is NOT comfortable having a field without a data
+      // column.  Without a column, SQL errors will pop up on multi-value fields and other field modification senarios. (Such as the 
+      // user later choosing to store the field in the DB.)  To avoid SQL errors we'll create a small dummy field for CCK that is 
+      // never populated with data.
+        $columns = array(
+          'value' => array(
+            'type' => 'int',
+            'size' => 'tiny',
+          ),
+        );
       }
       return $columns;
 
@@ -284,8 +346,9 @@ function computed_field_field_formatter_info() {
  * Theme function for 'default' text field formatter.
  */
 function theme_computed_field_formatter_default($element) {
+  // Make $node easily available
   $node = $element['#node'];
-
+  // Grab the field
   $field = content_fields($element['#field_name']);
   // For "some" backwards compatibility
   $node_field_item['value'] = $element['#item']['value'];
@@ -305,6 +368,9 @@ function theme_computed_field_formatter_default($element) {
  * Theme function for 'plain' text field formatter.
  */
 function theme_computed_field_formatter_plain($element) {
+  // Make $node easily available
+  $node = $element['#node'];
+  // Grab the field
   $field = content_fields($element['#field_name']);
   // For "some" backwards compatibility
   $node_field_item['value'] = $element['#item']['value'];
@@ -324,6 +390,9 @@ function theme_computed_field_formatter_plain($element) {
  * Theme function for 'markup' text field formatter.
  */
 function theme_computed_field_formatter_markup($element) {
+  // Make $node easily available
+  $node = $element['#node'];
+  // Grab the field
   $field = content_fields($element['#field_name']);
   // For "some" backwards compatibility
   $node_field_item['value'] = $element['#item']['value'];
