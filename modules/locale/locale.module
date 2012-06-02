@@ -327,10 +327,6 @@ function locale_node_type($op, $info) {
  *   Set to TRUE to reset the in-memory cache.
  */
 function locale($string = NULL, $langcode = NULL, $reset = FALSE) {
-  if (module_exists('locale_cache')) {
-    return locale_cache_fetch($string, $langcode, $reset);
-  }
- 
   global $language;
   static $locale_t;
 
