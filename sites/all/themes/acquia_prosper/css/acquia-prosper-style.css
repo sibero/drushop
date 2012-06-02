@@ -28,7 +28,9 @@ h1, h1.title {
     text-align: center;
     background: none repeat scroll 0pt 0pt #AEAEAE;
     color: white;
-    font-size: 200%;
+    padding-bottom: 7px;
+    font-family: Verdana;
+    font-size: 1.6em;
 }
 
 h2 {
@@ -1402,8 +1404,8 @@ ul.uc-categories a:link, ul.uc-categories a:visited {
     background: none repeat scroll 0pt 0pt #AEAEAE;
     color: #FFFFFF;
     text-align: center;
-    font-size: 150%;
     padding: 5px;
+    font-size: 1.6em;
 }
 
 #sidebar-first .block .content {
@@ -1418,9 +1420,9 @@ ul.uc-categories a:link, ul.uc-categories a:visited {
 #sidebar-last .block-title {
     background: none repeat scroll 0pt 0pt #AEAEAE;
     text-align: center;
-    font-size: 150%;
     padding: 5px;
     color: #FFFFFF;
+    font-size: 1.6em;
 }
 
 #sidebar-last .block .content {
@@ -1441,6 +1443,10 @@ h2.pane-title {
     color: #FFFFFF;
     text-align: center;
     font-size: 170%;
+}
+
+div.feed-icon {
+    text-align: left;
 }
 
 #content-region .block .content {
@@ -1658,6 +1664,7 @@ div.content-content {
     border-bottom: 2px solid #BFBFBF;
     background: none repeat scroll 0pt 0pt #FFFFFF;
     padding-top: 1px;
+    padding-left: 10px;
 }
 
 .pane-content {

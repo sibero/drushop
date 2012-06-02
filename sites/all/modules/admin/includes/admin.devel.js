@@ -1,4 +1,3 @@
-// $Id: admin.devel.js,v 1.1.2.1 2009/11/20 02:44:32 yhahn Exp $
 
 Drupal.behaviors.adminDevel = function(context) {
   $('#block-admin-devel:not(.admin-processed)').each(function() {

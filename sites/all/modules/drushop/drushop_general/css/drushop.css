@@ -25,13 +25,13 @@
 }
 
 .grid-tovar div.views-field-title {
-    font-size: 20px;
     padding-bottom: 10px;
+    font-size: 16px;
 }
 
 .grid-tovar span.uc-price-sell_price {
-    font-size: 20px;
     font-weight: bold;
+    font-size: 16px;
 }
 
 .grid-tovar td {
@@ -39,6 +39,10 @@
     width: 33%;
     height: auto;
     vertical-align: top;
+}
+
+div.views-field-buyitnowbutton {
+    padding-top: 5px;
 }
 
 .view-news-products {

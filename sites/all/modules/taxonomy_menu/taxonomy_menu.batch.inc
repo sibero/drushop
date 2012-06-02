@@ -81,7 +81,6 @@ function _taxonomy_menu_insert_link_items_process($terms, $menu_name, &$context)
 function _taxonomy_menu_insert_link_items_success() {
   //TODO state menu name here
   drupal_set_message('The Taxonomy Menu has been updated.');
-  drupal_goto();
 }
 
 /*

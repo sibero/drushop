@@ -804,8 +804,7 @@ function _taxonomy_menu_item($item) {
     //if display number is selected and $num > 0 then change the title
     if (variable_get('taxonomy_menu_display_num_'. $item['vid'], FALSE)) {
       //if number > 0 and display decendants, then count all of the children
-      if (variable_get('taxonomy_menu_display_descendants_'. $item['vid'], FALSE) || 
-          variable_get('taxonomy_menu_display_num_descendants_'. $item['vid'], FALSE)) {
+      if (variable_get('taxonomy_menu_display_descendants_'. $item['vid'], FALSE)) {
         $num = taxonomy_term_count_nodes($item['tid']);
       }
       $item['name'] .= " ($num)";
@@ -930,13 +929,6 @@ function taxonomy_menu_taxonomy_menu_options() {
     '#description' => t('Hide terms with no items attached to them.'),
     'default' => FALSE,
   );
-  
-  $options['display_num_descendants'] = array(
-    '#title' => t('Display number of items for descendants'),
-    '#description' => t('Display the number of items per taxonomy terms and their descendants. Will not show up for vocabulary menu items.'),
-    'default' => FALSE,
-  );
-
 
   $options['voc_item'] = array(
     '#title' => t('Add item for vocabulary'),
@@ -959,7 +951,7 @@ function taxonomy_menu_taxonomy_menu_options() {
 
 
   $options['display_descendants'] = array(
-    '#title' => t('Alter path to include descendants'),
+    '#title' => t('Display descendants'),
     '#description' => t('Changes the default path to taxonomy/term/tid+tid+tid for all terms thave have child terms.'),
     'default' => FALSE,
   );
@@ -973,7 +965,7 @@ function taxonomy_menu_taxonomy_menu_options() {
   $options['end_all'] = array(
     '#title' => t("Use 'all' at the end of URL"),
     'default' => FALSE,
-    '#description' => t('This changes tid+tid+tid to "All" in term when <em>Alter path to include descendants</em> has been selected.<br />Only used if <em>Menu path type</em> is "Default path".<br />Works with default taxonomy page.'),
+    '#description' => t('This changes tid+tid+tid to "All" in term when <em>Display descendants</em> has been selected.<br />Only used if <em>Menu path type</em> is "Default path".<br />Works with default taxonomy page.'),
   );
 
   return $options;
@@ -1009,8 +1001,7 @@ function taxonomy_menu_translated_menu_link_alter(&$item, $map) {
         // if display number is selected and $num > 0 then change the title
         else if (variable_get('taxonomy_menu_display_num_'. $t['vid'], FALSE)) {
           // if number > 0 and display decendants, then count all of the children
-          if (variable_get('taxonomy_menu_display_descendants_'. $t['vid'], FALSE) || 
-              variable_get('taxonomy_menu_display_num_descendants_'. $t['vid'], FALSE)) {
+          if (variable_get('taxonomy_menu_display_descendants_'. $t['vid'], FALSE)) {
             $num = taxonomy_term_count_nodes($t['tid']);
           }
           $display_num = " ($num)";

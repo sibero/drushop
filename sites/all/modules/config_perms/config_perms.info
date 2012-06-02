@@ -1,0 +1,10 @@
+; $Id: config_perms.info,v 1.1.4.3 2010/12/11 16:12:41 docc Exp $
+name = Site Configuration Permissions
+description = Allows additional permissions to be created and managed through a administration form.
+core = 6.x
+; Information added by drupal.org packaging script on 2011-01-15
+version = "6.x-2.0"
+core = "6.x"
+project = "config_perms"
+datestamp = "1295109692"
+

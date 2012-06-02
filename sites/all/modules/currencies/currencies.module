@@ -38,7 +38,7 @@ function currencies_menu() {
     case 'list':
       $blocks[0] = array(
         'info'       => t('Currencies block'),
-        'region' => 'left',
+        'region' => 'sidebar_first',
         'status' => 1,
         'weight' => 10,
       );

@@ -2,7 +2,6 @@
 form.fivestar-widget {
   clear: both;
   display: block;
-  
 }
 form.fivestar-widget select,
 form.fivestar-widget input {
@@ -12,7 +11,7 @@ form.fivestar-widget input {
 /* Combo Static and Rate Widget */
 .fivestar-combo-stars .fivestar-static-form-item {
   float: left; /* RTL */
-
+  margin-right: 40px; /* RTL */
 }
 .fivestar-combo-stars .fivestar-form-item {
   float: left; /* RTL */
@@ -22,7 +21,6 @@ form.fivestar-widget input {
 .fivestar-static-form-item .form-item,
 .fivestar-form-item .form-item {
   margin: 0;
-  float: left;
 }
 
 /* Static View-only Star Version */

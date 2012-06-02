@@ -49,7 +49,7 @@ function comment_bonus_api_node_page_view($node, $cid = NULL) {
 /**
  * Implements hook_theme_registry_alter().
  */
-function comment_bonus_api_theme_registry_alter($items) {
+function comment_bonus_api_theme_registry_alter(&$items) {
   if (isset($items['comment_wrapper']['template']) && $items['comment_wrapper']['template'] == 'modules/comment/comment-wrapper') {
     $items['comment_wrapper']['theme path'] = drupal_get_path('module', 'comment_bonus_api');
     $items['comment_wrapper']['template'] = $items['comment_wrapper']['theme path'] .'/comment-wrapper';

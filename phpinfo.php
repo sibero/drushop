@@ -1,7 +1,13 @@
 <?php
-
-// Показать всю информацию, по умолчанию INFO_ALL
+ require_once './includes/bootstrap.inc';
+ drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+GLOBAL $user;
+if ($user->uid == 1) {
 phpinfo();
+}
+else {
+echo "Для доступа к этой информации, вам нужно авторизоватся на сайте, под учетной записью администратора";
+}
 
 /*
 INFO_GENERAL	1	Строка конфигурации, размещение php.ini, дата построения/build, Web-сервер, система и т.д.

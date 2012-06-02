@@ -15,7 +15,7 @@
   
 	function ulogin_button() {
 	$path = drupal_get_path('module', 'ulogin');
-	return '<div><a href="#" id="uLogin"><img src="'.$path.'/img/button.png" width=187 height=30 alt="МультиВход"/></a></div><script src="http://ulogin.ru/js/widget.js?display=window&fields=first_name,last_name,email&optional=nickname,photo_big&redirect_uri='._ulogin_param_token_url().'"></script>';
+	return '<div><a href="#" id="uLogin"><img src="'.base_path().$path.'/img/button.png" width=187 height=30 alt="МультиВход"/></a></div><script src="http://ulogin.ru/js/widget.js?display=window&fields=first_name,last_name,email&optional=nickname,photo_big&redirect_uri='._ulogin_param_token_url().'"></script>';
 	
 	/* Доступны следующие поля: first_name - имя пользователя, last_name - фамилия, email - e-mail, nickname - псевдоним, bdate - дата рождения, sex - пол, photo - квадратная аватарка (до 100*100), photo_big - самая большая аватарка, которая выдаётся выбранной соц. сетью, city - город, country - страна.
 	

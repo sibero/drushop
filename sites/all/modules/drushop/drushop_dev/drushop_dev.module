@@ -6,8 +6,9 @@
 	 
   // выводит id формы
    drupal_set_message("form_id: " . $form_id); 
+   if (function_exists('dpm')) {
    drupal_set_message(dpm($form));  
    drupal_set_message(dpm($form_state));
-   
+   }
   
   }

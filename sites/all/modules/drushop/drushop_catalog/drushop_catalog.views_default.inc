@@ -1099,6 +1099,56 @@ print "<div class=\'old_price\'>".t("Old price").":".uc_currency_format($row->li
       'field' => 'discounted_price',
       'relationship' => 'none',
     ),
+    'php_1' => array(
+      'label' => 'Цена со скидкой',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'absolute' => 0,
+        'link_class' => '',
+        'alt' => '',
+        'rel' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 1,
+      'empty_zero' => 1,
+      'hide_alter_empty' => 1,
+      'use_php_setup' => 0,
+      'php_setup' => '',
+      'php_value' => '',
+      'php_output' => '<?php 
+ If (module_exists(\'uc_discount_total\')) {
+$temp_sell_price = eregi_replace("([^0-9])", "", $row->sell_price);
+$temp_discount_total = uc_discount_total_calc($temp_sell_price) / 100;
+$temp_discount_total2 = uc_discount_total_calc($temp_sell_price);
+if ($temp_sell_price != $temp_discount_total2) {
+print uc_currency_format($temp_discount_total);
+}
+}
+?>',
+      'use_php_click_sortable' => '0',
+      'php_click_sortable' => '',
+      'exclude' => 0,
+      'id' => 'php_1',
+      'table' => 'views',
+      'field' => 'php',
+      'override' => array(
+        'button' => 'Использовать установки по умолчанию',
+      ),
+      'relationship' => 'none',
+    ),
     'field_stock_value' => array(
       'label' => '',
       'alter' => array(
@@ -1561,6 +1611,7 @@ print "<div class=\'old_price\'>".t("Old price").":".uc_currency_format($row->li
       'reduce_duplicates' => 0,
     ),
   ));
+  $handler->override_option('items_per_page', 12);
   $handler->override_option('path', 'catalog/%');
   $handler->override_option('menu', array(
     'type' => 'none',

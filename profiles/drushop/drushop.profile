@@ -30,12 +30,11 @@ function drushop_profile_modules() {
     // Ubercart dependencies:
     'ca',
     'token',
-
+	'xmlsitemap',
     // Ubercart modules:
     'uc_store',
     'uc_product',
     'uc_order',
-    'uc_catalog',
     'uc_cart',
   );
 }
@@ -107,7 +106,7 @@ function drushop_store_settings_form(&$form_state, $url) {
     '#type' => 'checkbox',
     '#title' => t('Include the store name in the from line of store e-mails.'),
     '#description' => t('May not be available on all server configurations. Turn off if this causes problems.'),
-    '#default_value' => FALSE,
+    '#default_value' => TRUE,
   );
 
   $form['uc_store_address'] = array(
@@ -127,14 +126,39 @@ function drushop_store_settings_form(&$form_state, $url) {
     '#type' => 'submit',
     '#value' => t('Save and continue'),
   );
-
+  
+  /*// добавляем адрес по умолчанию.
+   $uc_quote_store_default_address = array(
+    'first_name' => '',
+    'last_name' => '',
+    'company' => $form['uc_store_contact_info']['uc_store_owner'],
+	'phone' => $form['uc_store_contact_info']['uc_store_phone'],
+	'street1' => $form['uc_store_address']['uc_store_street1'],
+	'street2' => '',
+	'city' => $form['uc_store_address']['uc_store_city'],
+	'zone' => $form['uc_store_address']['uc_store_zone'],
+	'postal_code' => $form['uc_store_address']['uc_store_postal_code'],
+	'country' => $form['uc_store_address']['uc_store_country'],	
+	);
+	variable_set('uc_quote_store_default_address', $uc_quote_store_default_address);
+	*/
   return $form;
+  
 }
-// Сохраняем настройки магазина. Последний шаг.
+// Сохраняем настройки. Последний шаг.
 function drushop_store_settings_form_submit() {
   $form_state = array('values' => $_POST);
   system_settings_form_submit(array(), $form_state);
-  elysia_cron_run();
+  // статистика
+	module_load_include('inc', 'drushop_general', 'drushop_general.client');
+	/*
+  // генерируем xml карту сайта
+	module_load_include('inc', 'xmlsitemap', 'xmlsitemap.admin');  
+	$form = array();
+	$form_state = array();
+	xmlsitemap_sitemap_edit_form_submit($form, &$form_state); 
+	*/
+  drupal_cron_run();
   drupal_set_message('Drushop успешно установлен');
   drupal_goto('<front>');
 
@@ -166,7 +190,7 @@ function drushop_form_submit($form, &$form_state) {
   if (!$success) {
     return;
   }
-
+  GLOBAL $base_url;
   // Now re-set the values they filled in during the previous step.
   variable_set('site_name', $form_state['values']['site_name']);
   variable_set('site_mail', $form_state['values']['site_mail']);
@@ -185,7 +209,20 @@ function drushop_form_submit($form, &$form_state) {
   db_query("UPDATE {users} SET uid = 0 WHERE name = ''");
   db_query("UPDATE {contact} SET recipients = '%s' WHERE cid  = 2", $mail);
   user_authenticate(array('name' => $name, 'pass' => $pass));
-  
+  // обновляем переменные
+  variable_set('purl_base_domain', $base_url);
+  $success = $base_url.'/uc_roboxchange/success';
+  variable_set('success', $success);
+  $result = $base_url.'/uc_roboxchange/done';
+  variable_set('result', $result);
+  variable_set('install_profile', 'drushop');
+  variable_set('install_task', 'done');
+  $fail = $base_url.'/uc_roboxchange/fail';
+  variable_set('fail', $fail);
+  variable_set('xmlsitemap_base_url', $base_url);
+  $uc_url_api = $base_url.'/uc_onpay/done';
+  variable_set('uc_url_api', $uc_url_api);
+
    
   /*
  * Установка своих переводов из po файла.

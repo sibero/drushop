@@ -1,5 +1,4 @@
 <?php
-// $Id: admin.theme.inc,v 1.1.2.1 2010/02/22 16:02:42 yhahn Exp $
 
 /**
  * Theme switcher admin block.

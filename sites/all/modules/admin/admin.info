@@ -1,12 +1,13 @@
-; $Id: admin.info,v 1.1.2.2.2.1 2009/11/20 02:44:31 yhahn Exp $
 name = "Admin"
 description = "UI helpers for Drupal admins and managers."
 package = "Administration"
 core = 6.x
+; array_diff_key() requires php 5.1+
+php = 5.1.0
 
-; Information added by drupal.org packaging script on 2010-08-19
-version = "6.x-2.0"
+; Information added by drupal.org packaging script on 2011-05-18
+version = "6.x-2.x-dev"
 core = "6.x"
 project = "admin"
-datestamp = "1282226188"
+datestamp = "1305720134"
 

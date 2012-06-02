@@ -1,11 +1,11 @@
 <?php
 // $Id$
 // $_COOKIE['value'];
-// $_SESSION['name'];
+// $_SESSION['value'];
 
 function drushop_version()
 {
-  return "2.1"; 
+  return "2.2"; 
 }
 
 function drushop_general_init() {
@@ -14,50 +14,55 @@ $path = drupal_get_path('module', 'drushop_general');
 	drupal_add_js($path .'/js/drushop.js');
 }
 
+function drushop_general_perm() {
+  return array('developer menu');
+}
+
 // добавляем пункты меню
 function drushop_general_menu() {
 
 $items = array();
-
+	/*
 	$items['toggle_themer_developer'] = array(
     'title' => 'вкл./выкл. theme developer (отладчик)',
     'page callback' => 'drushop_general_toggle_themer_developer',
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('developer menu'),
     'menu_name' => 'menu-developer',
   );
+  */
   
   $items['toggle_devel'] = array(
     'title' => 'вкл./выкл. devel (отладчик)',
     'page callback' => 'drushop_general_toggle_devel',
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('developer menu'),
     'menu_name' => 'menu-developer',
   );
   
   $items['toggle_drupal_firebug'] = array(
     'title' => 'вкл./выкл. drupal firebug',
     'page callback' => 'drushop_general_toggle_drupal_firebug',
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('developer menu'),
     'menu_name' => 'menu-developer',
   );
   
   $items['toggle_l10n_client'] = array(
     'title' => 'вкл./выкл. менеджер переводов',
     'page callback' => 'drushop_general_toggle_l10n_client',
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('developer menu'),
     'menu_name' => 'menu-developer',
   );
   
   $items['toggle_menu_update'] = array(
     'title' => 'Обновить меню "каталог"',
     'page callback' => 'drushop_general_toggle_menu_update',
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('developer menu'),
     'menu_name' => 'menu-developer',
   );
   
   $items['toggle_menu_update2'] = array(
     'title' => 'Обновить меню "производители"',
     'page callback' => 'drushop_general_toggle_menu_update2',
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('developer menu'),
     'menu_name' => 'menu-developer',
   );
   
@@ -153,6 +158,13 @@ function drushop_general_menu_alter(&$items) {
 	$items = array_merge($items, drushop_general_clone_items('admin/store/products/files', 'admin/store/files', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/store/products/classes', 'admin/store/settings/classes', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/store/products/power-tools', 'admin/store/settings/power-tools', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/googleanalytics', 'admin/seo/googleanalytics', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/xmlsitemap', 'admin/seo/xmlsitemap', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/yandex_metrics', 'admin/seo/yandex_metrics', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/views_calc', 'admin/settings/other/views_calc', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/chart', 'admin/settings/other/chart', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/config_perms', 'admin/user/config_perms', $items));
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/logging/dblog', 'admin/settings/other/dblog', $items));
 	
 	// type может принимать значения MENU_DEFAULT_LOCAL_TASK , MENU_NORMAL_ITEM , MENU_LOCAL_TASK , MENU_CALLBACK
     $items['admin/store/help']['type'] = MENU_CALLBACK;
@@ -201,6 +213,12 @@ function drushop_general_menu_alter(&$items) {
 	$items['admin/reports/status']['weight'] = -40;
 	$items['admin/reports/sales']['weight'] = -39;
 	$items['admin/reports/products']['weight'] = -38;
+	$items['admin/reports/stock']['weight'] = -37;
+	$items['admin/reports/customers']['weight'] = -36;
+	$items['admin/reports/dblog']['weight'] = 38;
+	$items['admin/reports/access-denied']['weight'] = 39;
+	$items['admin/reports/page-not-found']['weight'] = 40;
+	
 		
 	$items['admin/settings/cron']['weight'] = -40;
 	$items['admin/settings/site-information']['weight'] = -39;
@@ -212,56 +230,72 @@ function drushop_general_menu_alter(&$items) {
 	$items['admin/settings/admin']['weight'] = 39;
 	$items['admin/settings/other']['weight'] = 40;
 	
+	
+	
 	$items['admin/seo/nodewords']['weight'] = -40;
+	$items['admin/seo/googleanalytics']['weight'] = 39;
+	$items['admin/seo/yandex_metrics']['weight'] = 40;
+	
+	$items['admin/user/captcha']['weight'] = 37;
+	$items['admin/user/permissions']['weight'] = 38;
+	$items['admin/user/config_perms']['weight'] = 39;
 	$items['admin/user/logintoboggan']['weight'] = 40;
 
+
 	// удаляем ненужные пункты меню
-  unset($items['admin/build/cron']);
-  unset($items['admin/build/contact']);
-  unset($items['admin/build/path']);
+  $items['admin/build/cron']['type'] = MENU_CALLBACK;
+  $items['admin/build/contact']['type'] = MENU_CALLBACK;
+  $items['admin/build/path']['type'] = MENU_CALLBACK;
 
-	unset($items['admin/build/formdefaults']);
-	unset($items['admin/build/taxonomy_redirect']);
-	unset($items['admin/build/custom_breadcrumbs']);
-	unset($items['admin/settings/filters']);
-	unset($items['admin/settings/ajax_comments']);
-	unset($items['admin/settings/votingapi']);
-	unset($items['admin/settings/custom-breadcrumbs']);
-	unset($items['admin/settings/imageapi']);
-	unset($items['admin/settings/jquery_update']);
-	unset($items['admin/settings/preserve_language']);
-	unset($items['admin/settings/session-api']);
-	unset($items['admin/settings/strongarm']);
-	unset($items['admin/settings/tabtamer']);
-	unset($items['admin/settings/taxonomy-menu-trails']);
-	unset($items['admin/settings/admin-links']);
-	unset($items['admin/settings/vertical-tabs']);
-	unset($items['admin/settings/actions']);
-	unset($items['admin/settings/logging']);
-	unset($items['admin/settings/uploads']);
-	unset($items['admin/settings/menu_block']);
-	unset($items['admin/settings/date_popup']);
-	unset($items['admin/settings/error-reporting']);
-	unset($items['admin/settings/comment_notify']);
-	unset($items['admin/settings/module_filter']);
-	unset($items['admin/settings/clean-urls']);
-	unset($items['admin/settings/language']);
-    unset($items['admin/settings/language/add']);
-    unset($items['admin/settings/image-toolkit']);
-	unset($items['admin/settings/lazy_image_loader']);
-	unset($items['admin/settings/blockcache_alter']);
-	unset($items['admin/settings/moduleinfo']);
+	$items['admin/build/formdefaults']['type'] = MENU_CALLBACK;
+	$items['admin/build/taxonomy_redirect']['type'] = MENU_CALLBACK;
+	$items['admin/build/custom_breadcrumbs']['type'] = MENU_CALLBACK;
+	$items['admin/settings/filters']['type'] = MENU_CALLBACK;
+	$items['admin/settings/ajax_comments']['type'] = MENU_CALLBACK;
+	$items['admin/settings/votingapi']['type'] = MENU_CALLBACK;
+	$items['admin/settings/custom-breadcrumbs']['type'] = MENU_CALLBACK;
+	$items['admin/settings/imageapi']['type'] = MENU_CALLBACK;
+	$items['admin/settings/jquery_update']['type'] = MENU_CALLBACK;
+	$items['admin/settings/preserve_language']['type'] = MENU_CALLBACK;
+	$items['admin/settings/session-api']['type'] = MENU_CALLBACK;
+	$items['admin/settings/strongarm']['type'] = MENU_CALLBACK;
+	$items['admin/settings/tabtamer']['type'] = MENU_CALLBACK;
+	$items['admin/settings/taxonomy-menu-trails']['type'] = MENU_CALLBACK;
+	$items['admin/settings/admin-links']['type'] = MENU_CALLBACK;
+	$items['admin/settings/vertical-tabs']['type'] = MENU_CALLBACK;
+	$items['admin/settings/actions']['type'] = MENU_CALLBACK;
+	$items['admin/settings/logging']['type'] = MENU_CALLBACK;
+	$items['admin/settings/uploads']['type'] = MENU_CALLBACK;
+	$items['admin/settings/menu_block']['type'] = MENU_CALLBACK;
+	$items['admin/settings/date_popup']['type'] = MENU_CALLBACK;
+	$items['admin/settings/error-reporting']['type'] = MENU_CALLBACK;
+	$items['admin/settings/comment_notify']['type'] = MENU_CALLBACK;
+	$items['admin/settings/module_filter']['type'] = MENU_CALLBACK;
+	$items['admin/settings/clean-urls']['type'] = MENU_CALLBACK;
+	$items['admin/settings/language']['type'] = MENU_CALLBACK;
+    $items['admin/settings/language/add']['type'] = MENU_CALLBACK;
+    $items['admin/settings/image-toolkit']['type'] = MENU_CALLBACK;
+	$items['admin/settings/lazy_image_loader']['type'] = MENU_CALLBACK;
+	$items['admin/settings/blockcache_alter']['type'] = MENU_CALLBACK;
+	$items['admin/settings/moduleinfo']['type'] = MENU_CALLBACK;
+	$items['admin/settings/googleanalytics']['type'] = MENU_CALLBACK;
+	$items['admin/settings/xmlsitemap']['type'] = MENU_CALLBACK;
+	$items['admin/settings/yandex_metrics']['type'] = MENU_CALLBACK;
+	$items['admin/settings/views_calc']['type'] = MENU_CALLBACK;
+	$items['admin/settings/chart']['type'] = MENU_CALLBACK;
+	$items['admin/settings/config_perms']['type'] = MENU_CALLBACK;
+	$items['admin/settings/logging/dblog']['type'] = MENU_CALLBACK;
 	
 	
-	unset($items['admin/user/user']);
+	$items['admin/user/user']['type'] = MENU_CALLBACK;
 
 	
-	unset($items['admin/content/nodewords']);
-	unset($items['admin/settings/page-title']);
+	$items['admin/content/nodewords']['type'] = MENU_CALLBACK;
+	$items['admin/settings/page-title']['type'] = MENU_CALLBACK;
 	
-	unset($items['admin/store/products/files']);
-	unset($items['admin/store/products/classes']);
-	unset($items['admin/store/products/power-tools']);
+	$items['admin/store/products/files']['type'] = MENU_CALLBACK;
+	$items['admin/store/products/classes']['type'] = MENU_CALLBACK;
+	$items['admin/store/products/power-tools']['type'] = MENU_CALLBACK;
 	
 	
 	global $language;
@@ -331,6 +365,8 @@ function drushop_general_preprocess_block_admin_display_form(&$vars) {
 	unset($vars['block_listing']['-1']['devel_2']);
 	unset($vars['block_listing']['-1']['menu_menu-developer']);
 	unset($vars['block_listing']['-1']['devel_0']);
+	unset($vars['block_listing']['-1']['diff_inline']);
+	
   }
   
   }
@@ -501,7 +537,7 @@ function drushop_general_preprocess_page(&$vars) {
 	*/
 	$ver = drushop_version();
 	$vars['version_store'] = "Drushop версия ".$ver;
-	$vars['version_store_curent'] = "<div class = 'version_store_curent'>- Последняя версия "."<a href='http://drushop.ru/download'><img style='border: 0px solid ; width: 39px; height: 21px;' alt='' src='http://drushop.dn/ver_drushop_curent.png'></a> <br> </div>";
+	$vars['version_store_curent'] = "<div class = 'version_store_curent'>- Последняя версия "."<a href='http://drushop.ru/download'><img style='border: 0px solid;' alt='' src='http://drushop.ru/ver_drushop_curent.png'></a> <br> </div>";
 	
 	
 	
@@ -751,7 +787,7 @@ function drushop_general_form_uc_cart_checkout_form_alter(&$form, &$form_state) 
   $form['cart_contents']['#value'] = $string;
 }
 
-
+/*
 function drushop_general_toggle_themer_developer() {
   if (module_exists('devel_themer')) {
     module_disable(array('devel_themer'));
@@ -774,24 +810,26 @@ function drushop_general_toggle_themer_developer() {
   // menu_rebuild();
   drupal_goto();
 }
-
+*/
 
 
 function drushop_general_toggle_devel() {
   if (module_exists('devel')) {
-    module_disable(array('devel'));
-	drupal_set_message("Модуль devel выключен");
+   db_query("UPDATE {system} SET status=0 WHERE name='devel'");
+   db_query("UPDATE {system} SET bootstrap=0 WHERE name='devel'");
+	drupal_set_message("Модуль devel(отладчик) выключен");
   }
   else {
-    
-      module_enable(array('devel'));
-	  drupal_set_message("Модуль devel включен");
+	// variable_set('dev_timer','1');
+	// variable_set('dev_mem','1');
+	db_query("UPDATE {system} SET status=1 WHERE name='devel'");
+	db_query("UPDATE {system} SET bootstrap=1 WHERE name='devel'");
+	drupal_set_message("Модуль devel включен");
     
   }
- 
-  $form = $form_state = array();
+	module_load_include('inc', 'system', 'system.admin');
+      $form = $form_state = array();
       system_clear_cache_submit($form, $form_state);
-  // menu_rebuild();
   drupal_goto();
 }
 

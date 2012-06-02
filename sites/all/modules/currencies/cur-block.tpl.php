@@ -7,7 +7,7 @@
     }
     else if($v["diff"] < 0) $color = "#f00";
     else if($v["diff"] == 0) $color = "#00f";
-    print "<li>" . $v["nominal"] . " " . $v["name"] . " = " . $v["value"]. " рублей". "</li>";
+    print "<li>" . $v["nominal"] . " " . $v["name"] . " = " . (int)$v["value"]. " рублей". "</li>";
   }
 ?>  
 </ul>

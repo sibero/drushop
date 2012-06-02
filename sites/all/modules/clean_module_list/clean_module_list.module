@@ -19,6 +19,7 @@ function clean_module_list_form_system_modules_alter(&$form, &$form_state) {
     $form['clean_module_list'] = array(
       '#type' => 'fieldset',
       '#title' => t('Show/Hide Module Dependency Information'),
+      '#description' => t('The module dependency information lists the other modules that a given module depends on as well as the other modules that require it.'),
       '#attributes' => array('id' => 'edit-clean-module-list'),
       '#weight' => 0,
     );

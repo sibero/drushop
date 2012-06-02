@@ -1,4 +1,3 @@
-// $Id: jquery.drilldown.js,v 1.1.2.10 2010/08/06 15:31:44 yhahn Exp $
 
 /**
  * Generic menu drilldown plugin for standard Drupal menu tree markup.
@@ -122,9 +121,9 @@
           // Set initial active menu state.
           var activeLink;
           $('ul.menu a', menu).removeClass('active');
-          if (settings.activePath && $('ul.menu a[href='+settings.activePath+']', menu).size() > 0) {
+          if (settings.activePath && $('ul.menu a[href="'+settings.activePath+'"]', menu).size() > 0) {
             this.activePath = settings.activePath;
-            activeLink = $('ul.menu a[href='+settings.activePath+']', menu).addClass('active');
+            activeLink = $('ul.menu a[href="'+settings.activePath+'"]', menu).addClass('active');
           }
           if (!activeLink) {
             activeLink = $('ul.menu a.active', menu).size() ? $('ul.menu a.active', menu) : $('ul.menu > li > a', menu);
@@ -145,7 +144,7 @@
               }
               else {
                 var url = $(this).children('a').attr('href');
-                var activeLink = $('ul.menu a[href='+url+']', menu);
+                var activeLink = $('ul.menu a[href="'+url+'"]', menu);
                 menu.drilldown('setActive', {
                   activeLink: activeLink,
                   trail: settings.trail,

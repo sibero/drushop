@@ -4,7 +4,7 @@ function drushop_general_views_query_alter(&$view, &$query) {
 		// dpm($query);
 		// unset($query->where[0]['clauses']['3']);
 		// unset($query->where[0]['args']['3']);
-		dpm($view);
+		// dpm($view);
 		if (!$_GET["orderby"]) $query->orderby[0]='uc_products_ordering ASC';
 		if ($_GET["orderby"] == 'sell_price_asc') $query->orderby[0]='uc_products_sell_price ASC';
 		if ($_GET["orderby"] == 'sell_price_desc') $query->orderby[0]='uc_products_sell_price DESC';
@@ -52,9 +52,9 @@ function drushop_general_views_pre_render(&$view) {
 	$extra_pager .= '<div class="items_per_page">';
 	$extra_pager .= '. ';
 	$extra_pager .= t('Товаров на странице:');
-	$extra_pager .= '<a href="'.$path.'?items_per_page=15"> 15</a>, '; 
-	$extra_pager .= '<a href="'.$path.'?items_per_page=30">30</a>, '; 
-	$extra_pager .= '<a href="'.$path.'?items_per_page=60">60</a>'; 
+	$extra_pager .= '<a href="'.$path.'?items_per_page=12"> 12</a>, '; 
+	$extra_pager .= '<a href="'.$path.'?items_per_page=24">24</a>, '; 
+	$extra_pager .= '<a href="'.$path.'?items_per_page=58">58</a>'; 
 	$extra_pager .= '</div>';
 	
 	// добавляем js скрипт для автоматического перехода по ссылкам в сортировке

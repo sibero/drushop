@@ -1,4 +1,3 @@
-// $Id: admin.toolbar.js,v 1.1.2.9 2010/07/31 21:22:44 yhahn Exp $
 
 Drupal.behaviors.adminToolbar = function(context) {
   $('#admin-toolbar:not(.processed)').each(function() {
@@ -132,7 +131,7 @@ Drupal.adminToolbar.toggle = function (toolbar) {
         $(document.body).animate({marginLeft:'260px'}, 'fast', function() { $(this).toggleClass('admin-expanded'); });
       }
       else {
-        $(document.body).animate({marginRight:'1px'}, 'fast', function() { $(this).toggleClass('admin-expanded'); });
+        $(document.body).animate({marginRight:'260px'}, 'fast', function() { $(this).toggleClass('admin-expanded'); });
       }
     }
     else {

@@ -1,4 +1,3 @@
-// $Id: admin.menu.js,v 1.1.2.9 2010/08/01 05:07:31 yhahn Exp $
 
 Drupal.behaviors.adminToolbarMenu = function(context) {
   if (jQuery().drilldown) {

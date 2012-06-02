@@ -423,17 +423,17 @@ function theme_views_bulk_operations_select_all($colspan, $selection, $view) {
   $select_label = t('Select all items:');
   $this_page = t('on this page only');
   $all_pages = t('across all pages');
-  $this_page_checked = $selection['selectall'] ? '' : ' checked';
-  $all_pages_checked = $selection['selectall'] ? ' checked' : '';
+  $this_page_checked = $selection['selectall'] ? '' : ' checked="checked"';
+  $all_pages_checked = $selection['selectall'] ? ' checked="checked"' : '';
   $selection_count = t('<span class="count">@count</span> items selected.', array('@count' => $selection['selected']));
   $output = <<<EOF
 $selection_count
 <span class="select">
 $select_label
-<input type="radio" name="select-all" id="select-this-page" value="0"$this_page_checked><label for="select-this-page">$this_page</label>
-<input type="radio" name="select-all" id="select-all-pages" value="1"$all_pages_checked><label for="select-all-pages">$all_pages</label>
+<input type="radio" name="select-all" id="select-this-page" value="0"$this_page_checked /><label for="select-this-page">$this_page</label>
+<input type="radio" name="select-all" id="select-all-pages" value="1"$all_pages_checked /><label for="select-all-pages">$all_pages</label>
 </span>
-<input type="button" id="clear-selection" value="$clear_selection">
+<input type="button" id="clear-selection" value="$clear_selection" />
 EOF;
   return array(array('data' => $output, 'class' => 'views-field views-field-select-all', 'colspan' => $colspan));
 }
@@ -2049,6 +2049,11 @@ function views_bulk_operations_ajax_data_alter(&$object, $type, $view) {
  * Helper function to calculate hash of an object or array, excluding embedded arrays and objects.
  */
 function _views_bulk_operations_hash_object($object) {
+  foreach ($object as $key => $value) {
+    if (is_array($value) || is_object($value)) {
+      unset($object->$key);
+    }
+  }
   return md5(serialize($object));
 }
 

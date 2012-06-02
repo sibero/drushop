@@ -1,5 +1,4 @@
 <?php
-// $Id: admin.module,v 1.1.2.23.2.26 2010/08/12 18:00:26 yhahn Exp $
 
 /**
  * Implementation of hook_init().
@@ -204,7 +203,7 @@ function admin_menu_alter(&$items) {
 function admin_landing_page_access($path) {
   static $paths;
   if (!isset($paths[$path])) {
-    $item = db_fetch_array(db_query("SELECT mlid, menu_name FROM {menu_links} ml WHERE ml.link_path = '%s' AND module = 'system'", $path));
+    $item = db_fetch_array(db_query("SELECT mlid, menu_name FROM {menu_links} ml WHERE ml.router_path = '%s' AND module = 'system'", $path));
     $result = db_query("
       SELECT m.load_functions, m.to_arg_functions, m.access_callback, m.access_arguments, m.page_callback, m.page_arguments, m.title, m.title_callback, m.title_arguments, m.type, m.description, ml.*
       FROM {menu_links} ml

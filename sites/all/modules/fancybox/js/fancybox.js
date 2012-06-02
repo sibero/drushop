@@ -8,7 +8,7 @@ Drupal.behaviors.initFancybox = function() {
   // Convert any JavaScript events to function calls.
   var events = ["onStart", "onComplete", "onClosed", "onCleanup", "onCancel"];
   for (var i in events) {
-    if (settings.options[events[i]].length && typeof(settings.options[events[i]]) == 'string') {
+    if (settings.options[events[i]] && settings.options[events[i]].length && typeof(settings.options[events[i]]) == 'string') {
       settings.options[events[i]] = eval("("+settings.options[events[i]]+")");
     }
   }

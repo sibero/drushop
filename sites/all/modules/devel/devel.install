@@ -64,45 +64,12 @@ function devel_install() {
  * Implementation of hook_uninstall().
  */
 function devel_uninstall() {
-  drupal_uninstall_schema('devel');
-  variable_del('dev_query');
-  variable_del('devel_old_smtp_library');
-  variable_del('devel_form_weights');
-  variable_del('devel_store_random');
-  variable_del('devel_execution');
-  variable_del('dev_timer');
-  variable_del('devel_query_display');
-  variable_del('devel_redirect_page');
-  variable_del('devel_api_url');
-  variable_del('dev_mem');
-  variable_del('devel_error_handler');
-  variable_del('devel_store_queries');
-  variable_del('devel_switch_user_list_size');
-  variable_del('devel_switch_user_show_form');
-  
-  db_query("DELETE FROM {menu_custom} WHERE menu_name = 'devel'");
-  db_query("DELETE FROM {menu_links} WHERE module = 'devel'");
 }
 
 /**
  * Implementation of hook_disable().
  */
 function devel_disable() {
-  // Query logging should probably not be set if devel.module is disabled.
-  if (variable_get('dev_query', 0)) {
-    variable_set('dev_query', 0);
-    drupal_set_message(t('Disabled query logging since devel module is disabled.'));
-  }
-  
-  // The SMTP server should also be restored.
-  variable_set('smtp_library', variable_get('devel_old_smtp_library', ''));
-  variable_del('devel_old_smtp_library');
-  
-  // Same for storing queries
-  variable_del('devel_store_queries');
-
-  // Disable Devel Block
-  db_query("UPDATE {blocks} SET status = %d WHERE module = '%s' AND delta = '%s'", 0, 'menu', 'devel');
 }
 
 /**

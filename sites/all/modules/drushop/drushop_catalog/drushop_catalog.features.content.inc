@@ -38,7 +38,7 @@ function drushop_catalog_content_default_fields() {
     'list_default' => 1,
     'description_field' => '0',
     'widget' => array(
-      'file_extensions' => 'gif jpg png',
+      'file_extensions' => 'gif jpg jpeg png',
       'file_path' => 'images',
       'progress_indicator' => 'bar',
       'max_filesize_per_file' => '',

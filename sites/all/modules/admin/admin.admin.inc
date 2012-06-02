@@ -1,5 +1,4 @@
 <?php
-// $Id: admin.admin.inc,v 1.1.2.3.2.7 2010/08/01 05:19:03 yhahn Exp $
 
 /**
  * System settings form for admin toolbar.

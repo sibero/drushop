@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2012, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -10,13 +10,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 CKEDITOR.editorConfig = function(config) {
   config.indentClasses = [ 'rteindent1', 'rteindent2', 'rteindent3', 'rteindent4' ];
 
-    // отключаем автозапуск scayt
-  config.scayt_autoStartup = false;
-  // отключаем встроенную проверку орфографии
-  config.disableNativeSpellChecker = false;
-	// отключаем изменение контекстного меню 
-	// config.removePlugins = 'contextmenu';
-	
   // [ Left, Center, Right, Justified ]
   config.justifyClasses = [ 'rteleft', 'rtecenter', 'rteright', 'rtejustify' ];
 
@@ -35,7 +28,7 @@ CKEDITOR.editorConfig = function(config) {
 
   /*
    * Append here extra CSS rules that should be applied into the editing area.
-   * Example: 
+   * Example:
    * config.extraCss = 'body {color:#FF0000;}';
    */
   config.extraCss = '';
@@ -80,7 +73,7 @@ Drupal.settings.cke_toolbar_DrupalBasic = [ [ 'Format', 'Bold', 'Italic', '-', '
 //Toolbar definition for Advanced buttons
 Drupal.settings.cke_toolbar_DrupalAdvanced = [
     ['Source'],
-    ['Cut','Copy','Paste','PasteText','PasteFromWord'],
+    ['Cut','Copy','Paste','PasteText','PasteFromWord','-','SpellChecker', 'Scayt'],
     ['Undo','Redo','Find','Replace','-','SelectAll','RemoveFormat'],
     ['Image','Flash','Table','HorizontalRule','Smiley','SpecialChar'],
     ['Maximize', 'ShowBlocks'],
@@ -96,12 +89,12 @@ Drupal.settings.cke_toolbar_DrupalAdvanced = [
 // Toolbar definiton for all buttons
 Drupal.settings.cke_toolbar_DrupalFull = [
     ['Source'],
-    ['Cut','Copy','Paste','PasteText','PasteFromWord'],
+    ['Cut','Copy','Paste','PasteText','PasteFromWord','-','SpellChecker', 'Scayt'],
     ['Undo','Redo','Find','Replace','-','SelectAll','RemoveFormat'],
-    ['Image','Flash','Table','HorizontalRule','Smiley','SpecialChar'],
+    ['Image','Flash','Table','HorizontalRule','Smiley','SpecialChar','Iframe'],
     '/',
     ['Bold','Italic','Underline','Strike','-','Subscript','Superscript'],
-    ['NumberedList','BulletedList','-','Outdent','Indent','Blockquote'],
+    ['NumberedList','BulletedList','-','Outdent','Indent','Blockquote','CreateDiv'],
     ['JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock','-','BidiRtl','BidiLtr'],
     ['Link','Unlink','Anchor','Linkit','LinkToNode', 'LinkToMenu'],
     '/',

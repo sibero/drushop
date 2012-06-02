@@ -6,7 +6,7 @@ function admin_tools_menu() {
   $items['admin/flush-cache/%'] = array(
     'title' => 'Очистить кэш',
     'page callback' => 'admin_tools_flush_cache',
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('use admin toolbar'),
     'page arguments' => array(2),
     'type' => MENU_CALLBACK,
   );
