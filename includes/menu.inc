@@ -656,7 +656,11 @@ function _menu_link_translate(&$item) {
     }
     // menu_tree_check_access() may set this ahead of time for links to nodes.
     if (!isset($item['access'])) {
-      if (!_menu_load_objects($item, $map)) {
+      // Loading a views object is expensive so we have a special case for it.
+      if (isset($item['access_callback']) && $item['access_callback'] == 'views_access' && $item['access_arguments'] == 'a:1:{i:0;b:1;}' && $item['title_callback'] == 't' && empty($item['title_arguments'])) {
+        $item['access'] = TRUE;
+      }
+      elseif (!_menu_load_objects($item, $map)) {
         // An error occurred loading an object.
         $item['access'] = FALSE;
         return FALSE;
