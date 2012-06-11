@@ -427,15 +427,56 @@ function module_hook($module, $hook) {
  * @return
  *   An array with the names of the modules which are implementing this hook.
  */
-function module_implements($hook, $sort = FALSE, $refresh = FALSE) {
+function module_implements($hook, $sort = FALSE, $reset = FALSE, $write_cache = FALSE) {
   static $implementations;
 
-  if ($refresh) {
+  static $verified;
+
+  // We maintain a persistent cache of hook implementations in addition to the
+  // static cache to avoid looping through every module and every hook on each
+  // request. Benchmarks show that the benefit of this caching outweighs the
+  // additional database hit even when using the default database caching
+  // backend and only a small number of modules are enabled. The cost of the
+  // cache_get() is more or less constant and reduced further when non-database
+  // caching backends are used, so there will be more significant gains when a
+  // large number of modules are installed or hooks invoked, since this can
+  // quickly lead to module_hook() being called several thousand times
+  // per request.
+  if ($reset) {
     $implementations = array();
+	$verified = array();
+    cache_set('module_implements', array());
+    return;
+  }
+if ($write_cache) {
+    // Check whether we should write the cache. We do not want to cache hooks
+    // which are only invoked on HTTP POST requests since these do not need to
+    // be optimized as tightly, and not doing so keeps the cache entry smaller.
+    if (isset($implementations['#write_cache']) && ($_SERVER['REQUEST_METHOD'] == 'GET' || $_SERVER['REQUEST_METHOD'] == 'HEAD')) {
+      unset($implementations['#write_cache']);
+      cache_set('module_implements', $implementations);
+    }
     return;
   }
 
+  // Fetch implementations from cache.
+  if (empty($implementations)) {
+    if (function_exists('cache_get')) {
+      $cache = cache_get('module_implements');
+    }
+    if (empty($cache)) {
+      $implementations = array();
+    }
+    else {
+      $implementations = $cache->data;
+    }
+  }
+  
+  
   if (!isset($implementations[$hook])) {
+  // The hook is not cached, so ensure that whether or not it has
+    // implementations, that the cache is updated at the end of the request.
+    $implementations['#write_cache'] = TRUE;
     $implementations[$hook] = array();
     $list = module_list(FALSE, TRUE, $sort);
     foreach ($list as $module) {
@@ -444,7 +485,21 @@ function module_implements($hook, $sort = FALSE, $refresh = FALSE) {
       }
     }
   }
-
+elseif (empty($verified[$hook])) {
+    foreach ($implementations[$hook] as $key => $module) {
+      // It is possible that a module removed a hook implementation without the
+      // implementations cache being rebuilt yet, so we check module_hook() on
+      // each request to avoid undefined function errors.
+      if (!module_hook($module, $hook)) {
+        // Clear out the stale implementation from the cache and force a cache
+        // refresh to forget about no longer existing hook implementations.
+        unset($implementations[$hook][$key]);
+        $implementations['#write_cache'] = TRUE;
+      }
+    }
+    $verified[$hook] = TRUE;
+  }
+  
   // The explicit cast forces a copy to be made. This is needed because
   // $implementations[$hook] is only a reference to an element of
   // $implementations and if there are nested foreaches (due to nested node
