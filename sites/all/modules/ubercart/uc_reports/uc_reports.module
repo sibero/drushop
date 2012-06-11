@@ -221,15 +221,16 @@ function uc_reports_perm() {
  *   of the report and the CSV data itself
  */
 function uc_reports_store_csv($report_id, $rows) {
-  global $user; 
+  global $user;
   // UTF-8 byte order mark
   $csv_output = chr(239) . chr(187) . chr(191);
+
   $user_id = (empty($user->uid)) ? session_id() : $user->uid;
   foreach ($rows as $row) {
     foreach ($row as $index => $column) {
       $row[$index] = '"'. str_replace('"', '""', $column) .'"';
     }
-    $csv_output .= implode(';', $row) ."\n";
+    $csv_output .= implode(',', $row) ."\n";
   }
   cache_set('uc_reports_'. $report_id .'_'. $user_id, $csv_output, 'cache', time() + 86400);
   return array('user' => $user_id, 'report' => $report_id, 'csv' => $csv_output);
@@ -277,8 +278,7 @@ function _uc_reports_get_csv($report_id, $user_id) {
 }
 
 /**
- * Given a timestamp and time period function returns sales that occurred in
- * that time period.
+ * Returns sales that occurred in a given time period.
  *
  * @param $time
  *   A UNIX time stamp representing the time in which to get sales data

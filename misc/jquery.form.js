@@ -1,5 +1,3 @@
-// $Id: jquery.form.js,v 1.2 2007/11/19 10:05:48 goba Exp $
-
 /*
  * jQuery Form Plugin
  * version: 2.01 (10/31/2007)

@@ -815,21 +815,24 @@ function drushop_general_toggle_themer_developer() {
 
 function drushop_general_toggle_devel() {
   if (module_exists('devel')) {
-   db_query("UPDATE {system} SET status=0 WHERE name='devel'");
-   db_query("UPDATE {system} SET bootstrap=0 WHERE name='devel'");
+  module_disable(array('devel'));
+   // db_query("UPDATE {system} SET status=0 WHERE name='devel'");
+   // db_query("UPDATE {system} SET bootstrap=0 WHERE name='devel'");
 	drupal_set_message("Модуль devel(отладчик) выключен");
   }
   else {
 	// variable_set('dev_timer','1');
 	// variable_set('dev_mem','1');
-	db_query("UPDATE {system} SET status=1 WHERE name='devel'");
-	db_query("UPDATE {system} SET bootstrap=1 WHERE name='devel'");
+	module_enable(array('devel'));
+	//db_query("UPDATE {system} SET status=1 WHERE name='devel'");
+	// db_query("UPDATE {system} SET bootstrap=1 WHERE name='devel'");
 	drupal_set_message("Модуль devel включен");
     
   }
 	module_load_include('inc', 'system', 'system.admin');
       $form = $form_state = array();
       system_clear_cache_submit($form, $form_state);
+	  drupal_rebuild_theme_registry();
   drupal_goto();
 }
 
@@ -892,6 +895,7 @@ function drushop_general_toggle_drupal_firebug() {
  $form_state['submitted'] = 1;
  taxonomy_menu_vocab_submit($form, $form_state);
  cache_clear_all();
+ drupal_goto();
  }
  
  // обновление меню производители
@@ -912,6 +916,7 @@ function drushop_general_toggle_drupal_firebug() {
  $form_state['submitted'] = 1;
  taxonomy_menu_vocab_submit($form, $form_state); 
  cache_clear_all();
+ drupal_goto();
  }
  
  

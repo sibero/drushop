@@ -24,7 +24,6 @@ class UcAjaxCart
 	
 	public function removeItemFromCart( $nid , $data )
 	{
-	error_reporting(0);
 		$content = $this->getCartContents();
 		$product = node_load($nid);
 		uc_product_load($product);

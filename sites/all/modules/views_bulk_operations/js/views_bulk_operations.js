@@ -51,7 +51,7 @@ Drupal.vbo.prepareSelectors = function() {
         },
         function(data) {
           var count = data.selectall ? Drupal.settings.vbo[form_id].total_rows - data.unselected : data.selected;
-          $('.views-field-select-all span.count', $form).text(count);
+          $('.views-field-select-all span.selected', $form).text(count);
 
           queueProcess = false;
           if (queue.length > 0) {
@@ -80,7 +80,7 @@ Drupal.vbo.prepareSelectors = function() {
           console.log('[vbo] Unknown value ' + selectall + ' when refreshing item count.');
           break;
       }
-      $('.views-field-select-all span.count', $form).text(count);
+      $('.views-field-select-all span.selected', $form).text(count);
     }
   }
 

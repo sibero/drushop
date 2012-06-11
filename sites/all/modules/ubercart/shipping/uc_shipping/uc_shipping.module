@@ -239,7 +239,6 @@ function template_preprocess_uc_packing_slip(&$variables) {
 /**
  * Implements hook_order_pane().
  */
- // Трэкинговый номер
 function uc_shipping_order_pane() {
   $panes[] = array(
     'id' => 'packages',

@@ -425,7 +425,7 @@ function theme_views_bulk_operations_select_all($colspan, $selection, $view) {
   $all_pages = t('across all pages');
   $this_page_checked = $selection['selectall'] ? '' : ' checked="checked"';
   $all_pages_checked = $selection['selectall'] ? ' checked="checked"' : '';
-  $selection_count = t('<span class="count">@count</span> items selected.', array('@count' => $selection['selected']));
+  $selection_count = t('<span class="selected">@selected</span> items selected.', array('@selected' => $selection['selected']));
   $output = <<<EOF
 $selection_count
 <span class="select">
@@ -798,7 +798,7 @@ function _views_bulk_operations_get_selection_full($plugin, $form_state) {
   // Get the objects from the view if selectall was chosen.
   $view = $plugin->view;
   if ($form_state['storage']['selectall']) {
-    $view_copy = $view->clone_view();
+    $view_copy = views_get_view($view->name);
     $view_copy->set_exposed_input($view->exposed_input);
     $view_copy->set_arguments($view->args);
     $view_copy->set_items_per_page(0);
