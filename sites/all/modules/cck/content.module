@@ -1307,20 +1307,37 @@ function _content_field_invoke_default($op, &$node, $teaser = NULL, $page = NULL
  * Do some type checking and set up empty arrays for missing
  * info to avoid foreach errors elsewhere in the code.
  */
-function content_types($type_name = NULL) {
+function content_types($type_name = NULL, $reset = FALSE) {
+  static $types;
+  global $language;
   // handle type name with either an underscore or a dash
   $type_name = !empty($type_name) ? str_replace('-', '_', $type_name) : NULL;
 
-  $info = _content_type_info();
-  if (isset($info['content types'])) {
-    if (!isset($type_name)) {
-      return $info['content types'];
+  if (isset($type_name)) {
+   if (!isset($types[$type_name]) || $reset) {
+     $cid = "content_type_info:$type_name:$language->language";
+      if (!$reset && $cached = cache_get($cid, content_cache_tablename())) {
+        $types[$type_name] = $cached->data;
+      }
+      else {
+        $info = _content_type_info();
+        if (isset($info['content types'][$type_name])) {
+          $types[$type_name] = $info['content types'][$type_name];
+          cache_set($cid, $info['content types'][$type_name], content_cache_tablename());
+        }
+      }
     }
-    if (isset($info['content types'][$type_name])) {
-      return $info['content types'][$type_name];
+
+    if (isset($types[$type_name])) {
+      return $types[$type_name];
+    }
+    else {
+      return array('tables' => array(), 'fields' => array(), 'extra' => array());
     }
   }
-  return array('tables' => array(), 'fields' => array(), 'extra' => array());
+  // No $type_name - return info about all content types.
+  $info = _content_type_info();
+  return $info['content types'];
 }
 
 /**
@@ -1336,19 +1353,32 @@ function content_types($type_name = NULL) {
  * content_type_name to avoid bad results when the value is set
  * but empty, as sometimes happens in the formatter.
  */
-function content_fields($field_name = NULL, $content_type_name = NULL) {
-  $info = _content_type_info();
-  if (isset($info['fields'])) {
-    if (empty($field_name)) {
-      return $info['fields'];
+function content_fields($field_name = NULL, $content_type_name = NULL, $reset = FALSE) {
+  global $language;
+  static $fields;
+
+  if (!empty($content_type_name)) {
+    $content_type_info = content_types($content_type_name);
+    if (isset($content_type_info['fields'][$field_name])) {
+      return $content_type_info['fields'][$field_name];
     }
-    if (isset($info['fields'][$field_name])) {
-      if (empty($content_type_name)) {
-        return $info['fields'][$field_name];
+    }
+  else {
+    if (!isset($fields) || $reset) {
+      if (!$reset && $cached = cache_get('content_field_info:fields:' . $language->language, content_cache_tablename())) {
+        $fields = $cached->data;
       }
-      if (isset($info['content types'][$content_type_name]['fields'][$field_name])) {
-        return $info['content types'][$content_type_name]['fields'][$field_name];
+      else {
+        $info = _content_type_info();
+        cache_set('content_field_info:fields:' . $language->language, $info['fields'], content_cache_tablename());
+        $fields = $info['fields'];
       }
+    }
+	if (empty($field_name)) {
+      return $fields;
+    }
+    else if (isset($fields[$field_name])) {
+      return $fields[$field_name];
     }
   }
 }
@@ -1356,17 +1386,41 @@ function content_fields($field_name = NULL, $content_type_name = NULL) {
 /**
  * Return a list of field types.
  */
-function _content_field_types() {
-  $info = _content_type_info();
-  return isset($info['field types']) ? $info['field types'] : array();
+function _content_field_types($reset = FALSE) {
+  static $field_types;
+  global $language;
+  if (!isset($field_types) || $reset) {
+    $cid = 'content_type_info:field_types' . $language->language;
+    if (!$reset && $cached = cache_get($cid, content_cache_tablename())) {
+      $field_types = $cached->data;
+    }
+    else {
+      $info = _content_type_info();
+      $field_types = isset($info['field types']) ? $info['field types'] : array();
+      cache_set($cid, $field_types, content_cache_tablename());
+    }
+  }
+  return $field_types;
 }
 
 /**
  * Return a list of widget types.
  */
-function _content_widget_types() {
-  $info = _content_type_info();
-  return isset($info['widget types']) ? $info['widget types'] : array();
+function _content_widget_types($reset = FALSE) {
+  static $widget_types;
+  global $language;
+  if (!isset($widget_types) || $reset) {
+    $cid = 'content_type_info:widget_types:' . $language->language;
+    if (!$reset && $cached = cache_get($cid, content_cache_tablename())) {
+      $widget_types = $cached->data;
+    }
+    else {
+      $info = _content_type_info();
+      $widget_types = isset($info['widget types']) ? $info['widget types'] : array();
+      cache_set($cid, $widget_types, content_cache_tablename());
+    }
+  }
+  return $widget_types;
 }
 
 /**
@@ -1548,7 +1602,10 @@ function content_node_type($op, $info) {
 function content_clear_type_cache($rebuild_schema = FALSE) {
   cache_clear_all('*', content_cache_tablename(), TRUE);
   _content_type_info(TRUE);
-
+	content_types(NULL, TRUE);
+  content_fields(NULL, NULL, TRUE);
+  _content_field_types(TRUE);
+  _content_widget_types(TRUE);
   // Refresh the schema to pick up new information.
   if ($rebuild_schema) {
     $schema = drupal_get_schema(NULL, TRUE);
