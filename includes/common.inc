@@ -1470,7 +1470,7 @@ global $base_url, $language;
     // On some web servers, such as IIS, we can't omit "index.php". So, we
     // generate "index.php?q=foo" instead of "?q=foo" on anything that is not
     // Apache.
-    $script = (strpos($_SERVER['SERVER_SOFTWARE'], 'Apache') === FALSE) ? 'index.php' : '';
+    $script = in_array($_SERVER['SERVER_SOFTWARE'], array('Nginx', 'Apache')) == FALSE ? 'index.php' : '';
   }
   if (!isset($language_url_rewrite_function)) {
     $language_url_rewrite_function = function_exists('language_url_rewrite');
@@ -2596,9 +2596,93 @@ function drupal_to_js($var) {
       return $var;
     case 'resource':
     case 'string':
-      return '"'. str_replace(array("\r", "\n", "<", ">", "&"),
-                              array('\r', '\n', '\x3c', '\x3e', '\x26'),
-                              addslashes($var)) .'"';
+ 
+// Always use Unicode escape sequences (\u0022) over JSON escape
+// sequences (\") to prevent browsers interpreting these as
+// special characters.
+ 
+// Pattern : 
+// array( 
+//  [UTF8 (hex)] => [C/C++/Java Source code] 
+// );
+// [updated] 10.06.2012 
+ 
+      $replace_pairs = array(
+        // ", \ and U+0000 - U+001F must be escaped according to RFC 4627.
+        "\x5c" => '\u005c',
+        "\x22" => '\u0022',
+        "\x00" => '\u0000',
+        "\x01" => '\u0001',
+        "\x02" => '\u0002',
+        "\x03" => '\u0003',
+        "\x04" => '\u0004',
+        "\x05" => '\u0005',
+        "\x06" => '\u0006',
+        "\x07" => '\u0007',
+        "\x08" => '\u0008',
+        "\x09" => '\u0009', //TAB
+        "\x0a" => '\u000a', //LF : Line Feed
+        "\x0b" => '\u000b',
+        "\x0c" => '\u000c',
+        "\x0d" => '\u000d',
+        "\x0e" => '\u000e',
+        "\x0f" => '\u000f',
+        "\x10" => '\u0010',
+        "\x11" => '\u0011',
+        "\x12" => '\u0012',
+        "\x13" => '\u0013',
+        "\x14" => '\u0014',
+        "\x15" => '\u0015',
+        "\x16" => '\u0016',
+        "\x17" => '\u0017',
+        "\x18" => '\u0018',
+        "\x19" => '\u0019',
+        "\x1a" => '\u001a',
+        "\x1b" => '\u001b',
+        "\x1c" => '\u001c',
+        "\x1d" => '\u001d',
+        "\x1e" => '\u001e',
+        "\x1f" => '\u001f',
+ 
+        // Prevent browsers from interpreting these as as special.
+ 
+        "\x27" => '\u0027',
+        "\x3c" => '\u003c',
+        "\x3e" => '\u003e',
+ 
+        "\x26" => '\u0026',
+        "\x24" => '\u0024',
+        "\x40" => '\u0040',
+ 
+        "\x21" => '\u0021',
+        "\x3a" => '\u003a',
+        "\x3b" => '\u003b',
+        "\x3f" => '\u003f',
+ 
+        "\x5e" => '\u005e',
+ 
+        "\x28" => '\u0028',
+        "\x29" => '\u0029',
+ 
+        "\x7c" => '\u007c',
+        "\x60" => '\u0060',
+        "\x7e" => '\u007e',
+ 
+        // Prevent browsers from interpreting the solidus as special and
+        // non-compliant JSON parsers from interpreting // as a comment.
+ 
+        "\x2f" => '\u002f', // slash
+ 
+        // While these are allowed unescaped according to ECMA-262, section
+        // 15.12.2, they cause problems in some JSON parser.
+        "\xe2\x80\xa8" => '\u2028', // U+2028, Line Separator.
+        "\xe2\x80\xa9" => '\u2029', // U+2029, Paragraph Separator.
+      );
+ 
+      //return '"'. strtr($var, $replace_pairs) .'"';
+ 
+      return '"' . unicode_replacer ( $var, $replace_pairs ) . '"';
+ 
     case 'array':
       // Arrays in JSON can't be associative. If the array is empty or if it
       // has sequential whole number keys starting with 0, it's not associative
@@ -2621,7 +2705,33 @@ function drupal_to_js($var) {
       return 'null';
   }
 }
-
+ 
+ 
+/*
+ Alternate for strtr( ) looks like more speedy
+*/ 
+ 
+function unicode_replacer ( $text, $replace ) {
+    $keys = array_keys($replace);
+    $length = array_combine($keys, array_map('strlen', $keys));
+    arsort($length);
+ 
+    $array[] = $text;
+    $count = 1;
+    reset($length);
+    while ($key = key($length)) {
+        if (strpos($text, $key) !== false) {
+            for ($i = 0; $i < $count; $i += 2) {
+                if (($pos = strpos($array[$i], $key)) === false) continue;
+                array_splice($array, $i, 1, array(substr($array[$i], 0, $pos), $replace[$key], substr($array[$i], $pos + strlen($key))));
+                $count += 2;
+            }
+        }
+        next($length);
+    }
+    return implode( $array );
+}
+ 
 /**
  * Return data in JSON format.
  *
@@ -2632,9 +2742,10 @@ function drupal_to_js($var) {
  *   (optional) If set, the variable will be converted to JSON and output.
  */
 function drupal_json($var = NULL) {
-  // We are returning JSON, so tell the browser.
-  drupal_set_header('Content-Type: application/json');
-
+  // We are returning JavaScript, so tell the browser.
+ 
+    drupal_set_header('Content-Type: application/json; charset=utf-8');
+ 
   if (isset($var)) {
     echo drupal_to_js($var);
   }
