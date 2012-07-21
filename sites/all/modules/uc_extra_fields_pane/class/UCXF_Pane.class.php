@@ -292,12 +292,19 @@ class UCXF_Pane {
         if ($field->enabled) {
           $generated_field = $field->generate();
           $order_field_name = $this->getFieldName($field);
-          $generated_field['#default_value'] = isset($this->order->$order_field_name) ? $this->order->$order_field_name : NULL;
+          $default = isset($this->order->$order_field_name) ? $this->order->$order_field_name : NULL;
+          if (!is_null($default) || !isset($generated_field['#default_value'])) {
+            $generated_field['#default_value'] = $default;
+          }
 
           // On the order edit form, a generated field shouldn't be a hidden field.
           // In this case the field will be set to a normal textfield, so it's editable.
           if ($generated_field['#type'] == 'hidden') {
             $generated_field['#type'] = 'textfield';
+            if (is_null($default)) {
+              // Set a default value if there is no saved value for.
+              $generated_field['#default_value'] = $generated_field['#value'];
+            }
             // Unset value, field already has an default value
             unset($generated_field['#value']);
             // Set title and size of field.
@@ -350,6 +357,7 @@ class UCXF_Pane {
   protected function order_edit_process() {
     $fields = $this->loadFields();
     $pane_name = $this->getPaneName();
+    $changes = array();
 
     if (count($fields)) {
       foreach ($fields as $field) {

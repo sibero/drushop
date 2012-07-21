@@ -35,6 +35,10 @@
  * - VIEWS HOOKS
  *   uc_extra_fields_pane_views_api(), other views hooks are in views/uc_extra_fields_pane.views.inc
  *
+ * - FEATURES HOOKS
+ *   uc_extra_fields_pane_features_api(), other features hooks are in
+ *   uc_extra_fields_pane.features.inc
+ *
  * - UCXF HOOKS
  *   Adds display options
  *
@@ -271,7 +275,6 @@ function uc_extra_fields_pane_user($op, &$edit, &$account, $category = NULL) {
     switch ($op) {
       case 'insert':
         // Load field definitions
-        //$fields = uc_extra_fields_pane_load_fields_from_db('extra_address');
         $fields = $fields = UCXF_FieldList::getAllAddressFields();
 
         // Load address id
@@ -471,6 +474,15 @@ function uc_extra_fields_pane_order($op, &$order, $arg2) {
           $order_field_name = $data['prefix'] . $oValue->db_name;
           $order->$order_field_name = $oValue->getValue();
         }
+        // Set a default value for fields with no value to prevent E_NOTICE errors
+        // (and thus failing tests).
+        $fields = UCXF_FieldList::getFieldsFromPane($data['pane_type']);
+        foreach ($fields as $field) {
+          $order_field_name = $data['prefix'] . $field->db_name;
+          if (!isset($order->$order_field_name)) {
+            $order->$order_field_name = NULL;
+          }
+        }
       }
 
       // Ubercart Addresses 6.x-2.x integration
@@ -482,6 +494,7 @@ function uc_extra_fields_pane_order($op, &$order, $arg2) {
           foreach ($value_list as $oValue) {
             $order->uc_addresses['shipping']->setField($oValue->db_name, $oValue->value);
           }
+          $order->uc_addresses['shipping']->ucxf_pane_type = 'extra_delivery';
         }
 
         // Billing fields
@@ -490,6 +503,7 @@ function uc_extra_fields_pane_order($op, &$order, $arg2) {
           foreach ($value_list as $oValue) {
             $order->uc_addresses['billing']->setField($oValue->db_name, $oValue->value);
           }
+          $order->uc_addresses['billing']->ucxf_pane_type = 'extra_billing';
         }
       }
       break;
@@ -756,6 +770,34 @@ function uc_extra_fields_pane_uc_addresses_address_delete($address) {
 }
 
 /**
+ * Implementation of hook_uc_addresses_preprocess_address_alter().
+ *
+ * Don't display address fields in panes if is set they shouldn't
+ * appear in that pane. (UCXF_AddressField->pane_types setting)
+ *
+ * @param array $fields
+ *   An array containing the field data.
+ * @param UcAddressesAddress $address
+ *   The address object.
+ * @param string $context
+ *   The context in which the fields will be displayed.
+ *
+ * @return void
+ */
+function uc_extra_fields_pane_uc_addresses_preprocess_address_alter(&$fields, $address, $context) {
+  if (!empty($address->ucxf_pane_type)) {
+    // Check which fields may be displayed in one pane only.
+    // Remove fields that may not be shown in the active pane.
+    $ucxf_fields = UCXF_FieldList::getAllAddressFields();
+    foreach ($ucxf_fields as $ucxf_field) {
+      if (isset($fields[$ucxf_field->db_name]) && !$ucxf_field->in_pane($address->ucxf_pane_type)) {
+        unset($fields[$ucxf_field->db_name]);
+      }
+    }
+  }
+}
+
+/**
  * Implementation of hook_uc_addresses_select_addresses().
  *
  * Provide addresses from previous orders combined with extra address fields.
@@ -893,7 +935,7 @@ function uc_extra_fields_pane_token_values($type, $object = NULL) {
 
             default:
               $token_name = 'extra-' . $field->pane_type . '-' . $db_name;
-              $order_field_name = $field->db_name;
+              $order_field_name = str_ireplace('extra_', '', $field->pane_type) . '_' . $field->db_name;
               break;
           }
 
@@ -924,6 +966,25 @@ function uc_extra_fields_pane_views_api() {
   return array(
     'api' => '2.0',
     'path' => drupal_get_path('module', 'uc_extra_fields_pane') . '/views',
+  );
+}
+
+// -------------------------------------------------------------------
+// FEATURES HOOKS
+// -------------------------------------------------------------------
+
+/**
+ * Implementation of hook_features_api().
+ */
+function uc_extra_fields_pane_features_api() {
+  return array(
+    'uc_extra_fields_pane_field' => array(
+      'name' => t('Extra Fields Pane field'),
+      'feature_source' => TRUE,
+      'default_hook' => 'uc_extra_fields_pane_default_fields',
+      'default_file' => FEATURES_DEFAULTS_INCLUDED,
+      'file' => drupal_get_path('module', 'uc_extra_fields_pane') . '/uc_extra_fields_pane.features.inc',
+    ),
   );
 }
 
@@ -1218,10 +1279,9 @@ function uc_extra_fields_pane_locale($op = 'groups') {
  * @return TRUE
  */
 function uc_extra_fields_pane_locale_refresh() {
-  $fields = db_query("SELECT * FROM {uc_extra_fields}");
   $updated = 0;
-  while ($field_data = db_fetch_array($fields)) {
-    $field = uc_extra_fields_pane_create_field($field_data);
+  $fields = UCXF_FieldList::getAllFields();
+  foreach ($fields as $field) {
     uc_extra_fields_pane_ucxf_field($field, 'locale_refresh');
     $updated++;
   }
@@ -1247,27 +1307,33 @@ function uc_extra_fields_pane_tt($name, $string, $langcode = NULL) {
  */
 function uc_extra_fields_pane_ucxf_field($field, $op) {
   if (function_exists('i18nstrings_update')) {
-    i18nstrings_update('ucxf:field:' . $field->db_name . ':label', $field->label);
-    i18nstrings_update('ucxf:field:' . $field->db_name . ':description', $field->description);
+    switch ($op) {
+      case 'insert':
+      case 'update':
+      case 'locale_refresh':
+        i18nstrings_update('ucxf:field:' . $field->db_name . ':label', $field->label);
+        i18nstrings_update('ucxf:field:' . $field->db_name . ':description', $field->description);
 
-    switch ($field->value_type) {
-      // Make labels of options in select fields translatable
-      case UCXF_Field::UCXF_WIDGET_TYPE_SELECT:
-      case UCXF_Field::UCXF_WIDGET_TYPE_PHP_SELECT:
-        // Generate the options, but do not translate these.
-        $values = $field->generate_value(FALSE);
-        foreach ($values as $key => $label) {
-          i18nstrings_update('ucxf:field:' . $field->db_name . ':value:' . $key, $label);
-        }
-        break;
-      // Make default values translatable
-      case UCXF_Field::UCXF_WIDGET_TYPE_TEXTFIELD:
-      case UCXF_Field::UCXF_WIDGET_TYPE_PHP:
-      case UCXF_Field::UCXF_WIDGET_TYPE_CONSTANT:
-        // Generate the string, but do not translate it.
-        $value = $field->generate_value(FALSE);
-        if (!empty($value)) {
-          i18nstrings_update('ucxf:field:' . $field->db_name . ':value', $value);
+        switch ($field->value_type) {
+          // Make labels of options in select fields translatable
+          case UCXF_Field::UCXF_WIDGET_TYPE_SELECT:
+          case UCXF_Field::UCXF_WIDGET_TYPE_PHP_SELECT:
+            // Generate the options, but do not translate these.
+            $values = $field->generate_value(FALSE);
+            foreach ($values as $key => $label) {
+              i18nstrings_update('ucxf:field:' . $field->db_name . ':value:' . $key, $label);
+            }
+            break;
+          // Make default values translatable
+          case UCXF_Field::UCXF_WIDGET_TYPE_TEXTFIELD:
+          case UCXF_Field::UCXF_WIDGET_TYPE_PHP:
+          case UCXF_Field::UCXF_WIDGET_TYPE_CONSTANT:
+            // Generate the string, but do not translate it.
+            $value = $field->generate_value(FALSE);
+            if (!empty($value)) {
+              i18nstrings_update('ucxf:field:' . $field->db_name . ':value', $value);
+            }
+            break;
         }
         break;
     }

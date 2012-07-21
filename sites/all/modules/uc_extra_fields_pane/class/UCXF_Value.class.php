@@ -242,12 +242,12 @@ class UCXF_Value {
       ucxf_values.element_type,
       ucxf_values.field_id,
       ucxf_values.value,
-      UCXF_Fields.db_name
+      ucxf_fields.db_name
     FROM {uc_extra_fields_values} AS ucxf_values
-    INNER JOIN {uc_extra_fields} AS UCXF_Fields USING(field_id)
-    WHERE element_id=%d
-    AND element_type=%d
-    AND field_id=%d
+    INNER JOIN {uc_extra_fields} AS ucxf_fields USING(field_id)
+    WHERE ucxf_values.element_id=%d
+    AND ucxf_values.element_type=%d
+    AND ucxf_values.field_id=%d
     ";
     $result = db_query($query, $element_id, $element_type, $field_id);
     if ($result) {
@@ -294,8 +294,8 @@ class UCXF_Value {
       ucxf_fields.db_name
     FROM {uc_extra_fields_values} AS ucxf_values
     INNER JOIN {uc_extra_fields} AS ucxf_fields USING(field_id)
-    WHERE element_id=%d
-    AND element_type=%d
+    WHERE ucxf_values.element_id=%d
+    AND ucxf_values.element_type=%d
     ";
     $result = db_query($query, $element_id, $element_type);
     if ($result) {

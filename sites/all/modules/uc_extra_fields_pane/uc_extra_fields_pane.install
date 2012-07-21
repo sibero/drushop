@@ -79,7 +79,7 @@ function uc_extra_fields_pane_schema() {
         'not null' => FALSE,
       ),
       'weight' => array(
-        'description' => t('The list position of this field on the pane selected for this field.'),
+        'description' => t('The list position of this field on the pane selected for this field.') . ' ' . t('For address fields, this value is superseded by the uc_address_fields_weight variable.'),
         'type' => 'int',
         'not null' => FALSE,
       ),

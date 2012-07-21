@@ -80,7 +80,6 @@ function _uc_extra_field_pane_get_uc_addresses($uid, $type) {
  * @return array
  */
 function _uc_extra_field_pane_get_order_addresses($uid, $type) {
-  //$fields = uc_extra_fields_pane_load_fields_from_db('extra_' . $type);
   $fields = UCXF_FieldList::getFieldsFromPane('extra_' . $type);
   $element_type = ($type == 'delivery')? UCXF_VALUE_ORDER_DELIVERY:UCXF_VALUE_ORDER_BILLING;
 
@@ -140,11 +139,12 @@ function _uc_extra_field_pane_get_order_addresses($uid, $type) {
 function _uc_extra_field_pane_get_addresses_queryparts($fields, $table, $element_id, $element_type) {
   $select = array();
   $joins = array();
+  $table = '{' . $table . '}';
   foreach ($fields as $field) {
     $table_name = 'uc_extra_fields_pane_values_' . $field->db_name;
     $alias = $field->db_name;
     $select[] = "$table_name.value AS $alias";
-    $joins[] = "LEFT JOIN uc_extra_fields_values $table_name ON $table.$element_id = $table_name.element_id AND ($table_name.field_id = '" . $field->field_id . "' AND $table_name.element_type = '" . $element_type . "')";
+    $joins[] = "LEFT JOIN {uc_extra_fields_values} $table_name ON $table.$element_id = $table_name.element_id AND ($table_name.field_id = '" . $field->field_id . "' AND $table_name.element_type = '" . $element_type . "')";
   }
   return array(
     'select' => $select,

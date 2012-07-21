@@ -120,7 +120,7 @@ function uc_extra_fields_pane_views_get_fields() {
 
     foreach ($fields_by_pane as $pane_type => $fieldlist) {
       foreach ($fieldlist as $fieldname => $field) {
-        $fields[$pane_type][$fieldname] = $field;
+        $fields[$pane_type][$fieldname] = clone $field;
         switch ($pane_type) {
           case 'extra_delivery':
             $fields[$pane_type][$fieldname]->element_type = UCXF_VALUE_ORDER_DELIVERY;

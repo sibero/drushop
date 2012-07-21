@@ -141,6 +141,7 @@ class UCXF_FieldList {
       self::loadAllFromPane($pane_type);
       $fields = array_merge($fields, self::findByPane($pane_type));
     }
+    uasort($fields, array('UCXF_FieldList', 'sort'));
     return $fields;
   }
 
@@ -152,7 +153,9 @@ class UCXF_FieldList {
    */
   public static function getAllFields() {
     self::loadAll();
-    return self::$fields;
+    $fields = self::$fields;
+    uasort($fields, array('UCXF_FieldList', 'sort'));
+    return $fields;
   }
 
   /**
@@ -162,7 +165,9 @@ class UCXF_FieldList {
    * @return array
    */
   public static function getAllAddressFields() {
-    return self::getFieldsFromPane(array('extra_delivery', 'extra_billing'));
+    $fields = self::getFieldsFromPane(array('extra_delivery', 'extra_billing'));
+    uasort($fields, array('UCXF_FieldList', 'sort'));
+    return $fields;
   }
 
   /**
@@ -179,6 +184,7 @@ class UCXF_FieldList {
         $fields[$field->db_name] = $field;
       }
     }
+    uasort($fields, array('UCXF_FieldList', 'sort'));
     return $fields;
   }
 
@@ -287,8 +293,7 @@ class UCXF_FieldList {
       return;
     }
 
-    //$query = "SELECT * FROM {uc_extra_fields} WHERE pane_type LIKE '%|%s|%'";
-    $query = "SELECT * FROM {uc_extra_fields} WHERE pane_type LIKE '%%%s%%'";
+    $query = "SELECT * FROM {uc_extra_fields} WHERE pane_type LIKE '%%%s%%' ORDER BY weight";
     $result = db_query($query, $pane_type);
     if ($result === FALSE) {
       throw new UCXF_DbException(t('Failed to read from database table uc_extra_fields'));
@@ -313,7 +318,7 @@ class UCXF_FieldList {
       return;
     }
 
-    $query = "SELECT * FROM {uc_extra_fields}";
+    $query = "SELECT * FROM {uc_extra_fields} ORDER BY weight";
     $result = db_query($query);
     if ($result === FALSE) {
       throw new UCXF_DbException(t('Failed to read from database table uc_extra_fields'));
@@ -335,19 +340,25 @@ class UCXF_FieldList {
    * @return void
    */
   private static function dbResultToField($result) {
-    // Create each UCXF_Field object from the database record
+    $weights = variable_get('uc_address_fields_weight', array());
+    // Create each UCXF_Field object from the database record.
     while ($field_data = db_fetch_array($result)) {
-      // Skip fields that have already been loaded (and perhaps modified)
+      // Skip fields that have already been loaded (and perhaps modified).
       if (!isset(self::$fields[$field_data['field_id']])) {
         $field = self::createField($field_data['pane_type']);
 
-        // Populate field information
+        // Populate field information.
         $field->from_array($field_data);
 
-        // Add field to array
+        // Apply weight setting for address fields.
+        if ($field instanceof UCXF_AddressField && isset($weights[$field->db_name])) {
+          $field->weight = $weights[$field->db_name];
+        }
+
+        // Add field to array.
         self::$fields[$field->field_id] = $field;
 
-        // Give other modules to react on this
+        // Give other modules to react on this.
         module_invoke_all('ucxf_field', $field, 'load');
       }
     }
@@ -438,5 +449,34 @@ class UCXF_FieldList {
       }
     }
     return $fields;
+  }
+
+  // -----------------------------------------------------------------------------
+  // HELPERS
+  // -----------------------------------------------------------------------------
+
+  /**
+   * Sort fields by weight
+   *
+   * This function is used as callback function by uasort().
+   *
+   * This function is similar to element_sort().
+   *
+   * @param UCXF_Field $a
+   *   Instance of UCXF_Field
+   * @param UCXF_Field $b
+   *   Instance of UCXF_Field
+   *
+   * @access public
+   * @static
+   * @return int
+   */
+  public static function sort(UCXF_Field $a, UCXF_Field $b) {
+    $a_weight = (isset($a->weight)) ? $a->weight : 0;
+    $b_weight = (isset($b->weight)) ? $b->weight : 0;
+    if ($a_weight == $b_weight) {
+      return 0;
+    }
+    return ($a_weight < $b_weight) ? -1 : 1;
   }
 }

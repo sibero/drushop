@@ -48,7 +48,6 @@ function uc_extra_fields_pane_customfields() {
   $form['fields'] = array(
     '#tree' => TRUE,
   );
-  //$fields = uc_extra_fields_pane_load_fields_from_db();
   $fields = UCXF_FieldList::getAllCustomFields();
 
   $columns = array(
@@ -266,25 +265,20 @@ function theme_uc_extra_fields_pane_uc_store_address_fields($form) {
     // Add Edit/Delete link to fields that are editable.
     if (isset($form['fields'][$field]['field_id'])) {
       $row[] = drupal_render($form['fields'][$field]['action']);
-      /*
-      $field_id = $form['fields'][$field]['field_id']['#value'];
-      $row[] = array('data' => l(t('delete'), 'admin/store/settings/addressfields/' . $field_id . '/delete') . ' | ' .
-      l(t('edit'), 'admin/store/settings/addressfields/' . $field_id . '/edit')
-      );
-      */
     }
     else {
       $row[] = '';
     }
 
-    $rows[$form['fields'][$field]['#weight']] = array(
+    $rows[$field] = array(
       'data' => $row,
       'class' => 'draggable',
+      '#weight' => $form['fields'][$field]['#weight'],
     );
   }
 
-  // Make sure the rows are ordered by key
-  ksort($rows);
+  // Sort rows by weight.
+  uasort($rows, 'element_sort');
 
   drupal_add_tabledrag('uc-address-fields-table', 'order', 'sibling', 'uc-address-fields-table-ordering');
 

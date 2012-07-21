@@ -16,7 +16,7 @@ class UcAddressesUCXFHandler extends UcAddressesFieldHandler {
   // -----------------------------------------------------------------------------
 
   /**
-   * Extra Fields Pane field object
+   * Extra Fields Pane field object.
    *
    * @var UCXF_Field
    * @access private
@@ -28,8 +28,7 @@ class UcAddressesUCXFHandler extends UcAddressesFieldHandler {
   // -----------------------------------------------------------------------------
 
   /**
-   * Can be used by subclasses to do some initialization upon
-   * construction of the object
+   * Initialize.
    *
    * @access public
    * @return void
@@ -53,23 +52,60 @@ class UcAddressesUCXFHandler extends UcAddressesFieldHandler {
    * @return array
    */
   public function getFormField($form, $form_values) {
+    // Check if the field may be shown if it is a specific pane we are generating
+    // the field for.
+    if (
+      isset($form['#key_prefix'])
+        && ($form['#key_prefix'] == 'delivery' || $form['#key_prefix'] == 'billing')
+        && !$this->ucxf_field->in_pane('extra_' . $form['#key_prefix'])
+    ) {
+      // On the checkout and the order form, "#key_prefix" tells us for which pane
+      // the field must be generated ("delivery" or "billing").
+      // Extra Fields Pane has a setting to show the field in either the delivery
+      // or the billing pane or both.
+      // If the field may not be shown in one of these panes and that pane is the
+      // current pane to generate a field for then:
+      // - don't generate the field
+      // - empty the field's value
+      // - return an empty array instead.
+      $this->getAddress()->setField($this->getFieldName(), '');
+      return array();
+    }
+
     $fieldName = $this->getFieldName();
     $fieldValue = $this->getAddress()->getField($fieldName);
-    $default = (isset($form_values[$fieldName]))? $form_values[$fieldName]:$fieldValue;
+    $default = (isset($form_values[$fieldName])) ? $form_values[$fieldName] : $fieldValue;
 
     $field[$fieldName] = $this->ucxf_field->generate();
-    $field[$fieldName] += array(
-      '#default_value' => $default,
-    );
-    if ($field[$fieldName]['#type'] == 'hidden' && $this->ucxf_field->may_display('checkout')) {
+    if (!is_null($default) || !isset($field[$fieldName]['#default_value'])) {
+      $field[$fieldName]['#default_value'] = $default;
+    }
+
+    if ($form['#uc_addresses_required'] === FALSE || $this->isFieldRequired() === FALSE) {
+      $field[$fieldName]['#required'] = FALSE;
+    }
+
+    // On the order edit form, a generated field shouldn't be a hidden field.
+    // In this case the field will be set to a normal textfield, so it's editable.
+    if ($this->getContext() == 'order_form') {
+      if ($field[$fieldName]['#type'] == 'hidden') {
+        $field[$fieldName]['#type'] = 'textfield';
+        if (is_null($default)) {
+          $field[$fieldName]['#default_value'] = $field[$fieldName]['#value'];
+        }
+        // Unset value, field already has an default value.
+        unset($field[$fieldName]['#value']);
+        // Set title and size of field.
+        $field[$fieldName]['#title'] = $this->ucxf_field->output('label');
+        $field[$fieldName]['#size'] = 32;
+      }
+    }
+    elseif ($field[$fieldName]['#type'] == 'hidden' && $this->ucxf_field->may_display('checkout')) {
       $field[$fieldName . '_i'] = array(
         '#type' => 'item',
         '#title' => $this->ucxf_field->output('label'),
         '#value' => $field[$fieldName]['#value'],
       );
-    }
-    if ($form['#uc_addresses_required'] === FALSE || $this->isFieldRequired() === FALSE) {
-      $field[$fieldName]['#required'] = FALSE;
     }
 
     // In case of select fields, add default value as an option if it is not an available option yet.
@@ -106,6 +142,16 @@ class UcAddressesUCXFHandler extends UcAddressesFieldHandler {
       return FALSE;
     }
     return $this->ucxf_field->required;
+  }
+
+  /**
+   * Returns a default value for this field.
+   *
+   * @access public
+   * @return null
+   */
+  public function getDefaultValue() {
+    return NULL;
   }
 
   // -----------------------------------------------------------------------------

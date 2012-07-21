@@ -99,7 +99,7 @@ function uc_extra_fields_pane_address_fields_uc_store_address_fields_submit($for
     $address_fields = UCXF_FieldList::getFieldsFromPane(array('extra_delivery', 'extra_billing'));
     $fields = $form_state['values']['fields'];
     foreach ($address_fields as $fieldname => $field) {
-      db_query("UPDATE {uc_extra_fields} SET enabled=%d, required=%d WHERE field_id=%d", $fields[$fieldname]['enabled'], $fields[$fieldname]['required'], $fields[$fieldname]['field_id']);
+      db_query("UPDATE {uc_extra_fields} SET enabled=%d, required=%d, weight=%d WHERE field_id=%d", $fields[$fieldname]['enabled'], $fields[$fieldname]['required'], $fields[$fieldname]['weight'], $fields[$fieldname]['field_id']);
     }
   }
   catch (UCXF_Exception $e) {
@@ -127,7 +127,6 @@ function uc_extra_fields_pane_address_fields_uc_cart_checkout_form_alter(&$form,
 
   try {
     // Check if there are extra address fields
-    //$fields = uc_extra_fields_pane_load_fields_from_db('extra_address');
     $fields = UCXF_FieldList::getFieldsFromPane(array('extra_delivery', 'extra_billing'));
     if (count($fields) < 1) {
       // No address fields. No need to alter form
@@ -292,7 +291,6 @@ function uc_extra_fields_pane_address_fields_uc_cart_checkout_form_alter(&$form,
  * @see uc_extra_fields_pane_addressfields_uc_addresses_get_address_form_submit()
  */
 function uc_extra_fields_pane_addressfields_uc_addresses_get_address_form_alter(&$form, $form_state) {
-  //$fields = uc_extra_fields_pane_load_fields_from_db('extra_address');
   $fields = UCXF_FieldList::getFieldsFromPane(array('extra_delivery', 'extra_billing'));
 
   foreach ($fields as $fieldname => $field) {
@@ -321,7 +319,6 @@ function uc_extra_fields_pane_addressfields_uc_addresses_get_address_form_submit
   $address = $form_state['values']['panes']['address'];
 
   // Load field definitions
-  //$fields = uc_extra_fields_pane_load_fields_from_db('extra_address');
   $fields = UCXF_FieldList::getFieldsFromPane(array('extra_delivery', 'extra_billing'));
 
   // MegaChriz:
@@ -361,7 +358,6 @@ function uc_extra_fields_pane_addressfields_uc_addresses_get_address_form_submit
  * @see uc_extra_fields_pane_user()
  */
 function uc_extra_fields_pane_addressfields_user_register_form_alter(&$form, $form_state) {
-  //$fields = uc_extra_fields_pane_load_fields_from_db('extra_address');
   $fields = UCXF_FieldList::getFieldsFromPane(array('extra_delivery', 'extra_billing'));
 
   foreach ($fields as $fieldname => $field) {
