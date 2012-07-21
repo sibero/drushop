@@ -27,8 +27,8 @@
 <option title="<?php print t("Цене (от минимальной до максимальной)"); ?>" value="<?php print $path; ?>?orderby=sell_price_asc"><?php print t("Цене (убывание)"); ?></option>
 <option title="<?php print t("Цене (от максимальной до минимальной)"); ?>" value="<?php print $path; ?>?orderby=sell_price_desc"><?php print t("Цене (возрастание)"); ?></option>
 
-<option title="<?php print t("Названию"); ?>" value="<?php print $path; ?>?orderby=node_title_asc "><?php print t("Названию (от а до я)"); ?></option>
-<option title="<?php print t("Названию"); ?>" value="<?php print $path; ?>?orderby=node_title_desc "><?php print t("Названию (от я до а)"); ?></option>
+<option title="<?php print t("Названию"); ?>" value="<?php print $path; ?>?orderby=node_title_asc"><?php print t("Названию (от а до я)"); ?></option>
+<option title="<?php print t("Названию"); ?>" value="<?php print $path; ?>?orderby=node_title_desc"><?php print t("Названию (от я до а)"); ?></option>
 <option title="<?php print t("По рейтингу"); ?>" value="<?php print $path; ?>?orderby=voting_desc"><?php print t("Рейтингу"); ?></option>
 <option title="<?php print t("Новые поступления"); ?>" value="<?php print $path; ?>?orderby=node_created_desc"><?php print t("Новые поступления"); ?></option>
 <option title="<?php print t("Самые комментируемые"); ?>" value="<?php print $path; ?>?orderby=node_comment_desc"><?php print t("Самые коменнтируемые"); ?></option>
@@ -42,7 +42,6 @@
 <div id='my_div' class='div_container'> 
    <div class="view-filters">
    
-      <?php print $exposed; ?>
     </div>
    <input type='hidden'
          onclick="toggle_visibility('my_div')">

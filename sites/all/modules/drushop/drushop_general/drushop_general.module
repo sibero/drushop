@@ -52,16 +52,16 @@ $items = array();
     'menu_name' => 'menu-developer',
   );
   
-  $items['toggle_menu_update'] = array(
-    'title' => 'Обновить меню "каталог"',
-    'page callback' => 'drushop_general_toggle_menu_update',
+  $items['drushop_backup'] = array(
+    'title' => 'Резервное копирование',
+    'page callback' => 'drushop_backup_url',
     'access arguments' => array('developer menu'),
     'menu_name' => 'menu-developer',
   );
   
-  $items['toggle_menu_update2'] = array(
-    'title' => 'Обновить меню "производители"',
-    'page callback' => 'drushop_general_toggle_menu_update2',
+  $items['drushop_update'] = array(
+    'title' => 'Обновление',
+    'page callback' => 'drushop_update_url',
     'access arguments' => array('developer menu'),
     'menu_name' => 'menu-developer',
   );
@@ -496,7 +496,6 @@ function drushop_general_preprocess_block_admin_display_form(&$vars) {
 }
 
 function drushop_general_preprocess_page(&$vars) {
-
 	// выводит url текущей страницы, то что после сайт.ru/
     $path = drupal_get_path_alias($_GET['q']);
 	$vars['path_now'] = $path;
@@ -816,16 +815,16 @@ function drushop_general_toggle_themer_developer() {
 function drushop_general_toggle_devel() {
   if (module_exists('devel')) {
   module_disable(array('devel'));
-   // db_query("UPDATE {system} SET status=0 WHERE name='devel'");
-   // db_query("UPDATE {system} SET bootstrap=0 WHERE name='devel'");
+   db_query("UPDATE {system} SET status=0 WHERE name='devel'");
+   db_query("UPDATE {system} SET bootstrap=0 WHERE name='devel'");
 	drupal_set_message("Модуль devel(отладчик) выключен");
   }
   else {
-	// variable_set('dev_timer','1');
-	// variable_set('dev_mem','1');
 	module_enable(array('devel'));
-	//db_query("UPDATE {system} SET status=1 WHERE name='devel'");
-	// db_query("UPDATE {system} SET bootstrap=1 WHERE name='devel'");
+	db_query("UPDATE {system} SET status=1 WHERE name='devel'");
+	db_query("UPDATE {system} SET bootstrap=1 WHERE name='devel'");
+	variable_set('dev_timer','1');
+	variable_set('dev_mem','1');
 	drupal_set_message("Модуль devel включен");
     
   }
@@ -918,6 +917,14 @@ function drushop_general_toggle_drupal_firebug() {
  cache_clear_all();
  drupal_goto();
  }
+ 
+  function drushop_update_url() {
+  drupal_goto('update.php');
+  }
+  
+  function drushop_backup_url() {
+  drupal_goto('admin/content/backup_migrate');
+  }
  
  
  function drushop_general_features_revert($modules) {
