@@ -43,7 +43,7 @@ function flag_menu() {
     'title' => 'Import',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('flag_import_form'),
-    'access arguments' => array('administer flags'),
+    'access arguments' => array('use flag import'),
     'file' => 'includes/flag.export.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' => 2,
@@ -211,7 +211,7 @@ function flag_features_api() {
  * Implementation of hook_perm().
  */
 function flag_perm() {
-  return array('administer flags');
+  return array('administer flags', 'use flag import');
 }
 
 /**
@@ -335,37 +335,40 @@ function flag_content_extra_fields($type_name) {
 }
 
 /**
- * Implementation of hook_form_alter().
+ * Implements hook_form_FORM_ID_alter(): node_type_form.
  */
-function flag_form_alter(&$form, &$form_state, $form_id) {
-  global $user;
-
-  if ($form_id == 'node_type_form' && isset($form['identity']['type'])) {
-    $flags = flag_get_flags('node', $form['#node_type']->type, $user);
-    foreach ($flags as $flag) {
-      if ($flag->show_on_form) {
-        $var = 'flag_' . $flag->name . '_default';
-        $form['workflow']['flag'][$var] = array(
-          '#type' => 'checkbox',
-          '#title' => $flag->get_label('flag_short', $form['#node_type']->type),
-          '#default_value' => variable_get($var . '_' . $form['#node_type']->type, 0),
-          '#return_value' => 1,
-        );
-      }
-    }
-
-    if (isset($form['workflow']['flag'])) {
-      $form['workflow']['flag'] += array(
-        '#type' => 'item',
-        '#title' => t('Default flags'),
-        '#description' => t('Above are the <a href="@flag-url">flags</a> you elected to show on the node editing form. You may specify their initial state here.', array('@flag-url' => url('admin/build/flags'))),
-        // Make the spacing a bit more compact:
-        '#prefix' => '<div class="form-checkboxes">',
-        '#suffix' => '</div>',
+function flag_form_node_type_form_alter(&$form, &$form_state) {
+  $flags = flag_get_flags('node', $form['#node_type']->type, $user);
+  foreach ($flags as $flag) {
+    if ($flag->show_on_form) {
+      $var = 'flag_' . $flag->name . '_default';
+      $form['workflow']['flag'][$var] = array(
+        '#type' => 'checkbox',
+        '#title' => $flag->get_label('flag_short', $form['#node_type']->type),
+        '#default_value' => variable_get($var . '_' . $form['#node_type']->type, 0),
+        '#return_value' => 1,
       );
     }
   }
-  elseif (isset($form['type']) && isset($form['#node']) && ($form_id == $form['type']['#value'] . '_node_form')) {
+
+  if (isset($form['workflow']['flag'])) {
+    $form['workflow']['flag'] += array(
+      '#type' => 'item',
+      '#title' => t('Default flags'),
+      '#description' => t('Above are the <a href="@flag-url">flags</a> you elected to show on the node editing form. You may specify their initial state here.', array('@flag-url' => url('admin/build/flags'))),
+      // Make the spacing a bit more compact:
+      '#prefix' => '<div class="form-checkboxes">',
+      '#suffix' => '</div>',
+    );
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function flag_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['type']) && isset($form['#node']) && ($form_id == $form['type']['#value'] . '_node_form')) {
+    global $user;
     $nid = !empty($form['nid']['#value']) ? $form['nid']['#value'] : NULL;
     $flags = flag_get_flags('node', $form['type']['#value'], $user);
 
@@ -471,6 +474,14 @@ function flag_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
         if (!$flag->i18n || empty($node->tnid)) {
           db_query("DELETE FROM {flag_content} WHERE fid = %d AND content_id = %d", $flag->fid, $node->nid);
           db_query("DELETE FROM {flag_counts} WHERE fid = %d AND content_id = %d", $flag->fid, $node->nid);
+
+          // Delete comments.
+          db_query("DELETE FROM {flag_content}
+                     WHERE content_type = 'comment'
+                       AND content_id IN(
+                    SELECT cid
+                      FROM {comments}
+                     WHERE nid = %d)", $node->nid);
         }
       }
       break;
@@ -521,7 +532,13 @@ function flag_user($op, &$edit, &$account, $category = NULL) {
       $result = db_query("SELECT fc.fid, fc.content_id, c.count FROM {flag_content} fc LEFT JOIN {flag_counts} c ON fc.content_id = c.content_id AND fc.content_type = c.content_type WHERE fc.uid = %d", $account->uid);
       while ($flag_data = db_fetch_object($result)) {
         $flag_data->count--;
-        db_query("UPDATE {flag_counts} SET count = %d WHERE fid = %d AND content_id = %d", $flag_data->count, $flag_data->fid, $flag_data->content_id);
+        // Only decrement the flag count table if it's greater than 1.
+        if ($flag_data->count > 0) {
+          db_query("UPDATE {flag_counts} SET count = %d WHERE fid = %d AND content_id = %d", $flag_data->count, $flag_data->fid, $flag_data->content_id);
+        }
+        elseif ($flag_data->count == 0) {
+          db_query("DELETE FROM {flag_counts} WHERE fid = %d AND content_id = %d", $flag_data->fid, $flag_data->content_id);
+        }
       }
       db_query("DELETE FROM {flag_content} WHERE uid = %d", $account->uid);
 
@@ -976,6 +993,23 @@ function flag_users($users, $action, $flag_name) {
 }
 
 /**
+ * Implements hook_comment().
+ */
+function flag_comment(&$comment, $op) {
+  switch ($op) {
+    case 'delete':
+      db_query("DELETE FROM {flag_content}
+                 WHERE content_type = 'comment'
+                   AND content_id = %d", $comment->cid);
+
+      db_query("DELETE FROM {flag_counts}
+                 WHERE content_type = 'comment'
+                   AND content_id = %d", $comment->cid);
+      break;
+  }
+}
+
+/**
  * Implementation of hook_mail().
  */
 function flag_mail($key, &$message, $params) {
@@ -1224,9 +1258,12 @@ function flag_get_flag_counts($flag_name, $reset = FALSE) {
  * Load a single flag either by name or by flag ID.
  *
  * @param $name
- *   The the flag name.
+ *  (optional) The flag name.
  * @param $fid
- *   The the flag id.
+ *  (optional) The the flag id.
+ *
+ * @return
+ *  The flag object, or FALSE if no matching flag was found.
  */
 function flag_get_flag($name = NULL, $fid = NULL) {
   $flags = flag_get_flags();
@@ -1566,6 +1603,19 @@ function flag_create_link($flag_name, $content_id) {
 
 /**
  * Return an array of link types provided by modules.
+ *
+ * @param $reset
+ *  (Optional) Whether to reset the static cache.
+ *
+ * @return
+ *  An array of link types as defined by hook_flag_link_types(). These are keyed
+ *  by the type name, and each value is an array of properties. In addition to
+ *  those defined in hook_flag_link_types(), the following properties are set:
+ *  - 'module': The providing module.
+ *  - 'name': The machine name of the type.
+ *
+ * @see hook_flag_link_types()
+ * @see hook_flag_link_types_alter()
  */
 function flag_get_link_types($reset = FALSE) {
   static $link_types;

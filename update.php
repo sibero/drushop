@@ -170,6 +170,8 @@ function update_do_one($module, $number, &$context) {
   if (!isset($context['results'][$module][$number])) {
     $context['results'][$module][$number] = array();
   }
+  if (!is_array($ret))
+  $ret = array();
   $context['results'][$module][$number] = array_merge($context['results'][$module][$number], $ret);
 
   if (!empty($ret['#abort'])) {
@@ -330,6 +332,8 @@ function update_results_page() {
     $output .= '<h2>The following queries were executed</h2>';
     foreach ($_SESSION['update_results'] as $module => $updates) {
       $output .= '<h3>'. $module .' module</h3>';
+	  if (!is_array($updates))
+	continue;
       foreach ($updates as $number => $queries) {
         if ($number != '#abort') {
           $output .= '<h4>Update #'. $number .'</h4>';

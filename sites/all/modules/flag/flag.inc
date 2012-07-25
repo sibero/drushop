@@ -9,7 +9,7 @@
 /**
  * Implementation of hook_flag_definitions().
  *
- * Defines the flags this module implements.
+ * Defines the flag types this module implements.
  *
  * @return
  *   An "array of arrays", keyed by content-types. The 'handler' slot
@@ -182,13 +182,18 @@ class flag_flag {
    */
   function options() {
     $options = array(
+      // The text for the "flag this" link for this flag.
       'flag_short' => '',
+      // The description of the "flag this" link.
       'flag_long' => '',
+      // Message displayed after flagging content.
       'flag_message' => '',
+      // Likewise but for unflagged.
       'unflag_short' => '',
       'unflag_long' => '',
       'unflag_message' => '',
       'unflag_denied_text' => '',
+      // The link type used by the flag, as defined in hook_flag_link_types().
       'link_type' => 'toggle',
       'roles' => array(
         'flag' => array(DRUPAL_AUTHENTICATED_RID),
@@ -412,12 +417,12 @@ class flag_flag {
    *
    * @param $content_id
    *   The content ID to flag/unflag.
-   * @param $account
-   *   The user on whose behalf to test the flagging action. Leave NULL for the
-   *   current user.
    * @param $action
    *   The action to test. Either 'flag' or 'unflag'. Leave NULL to determine
    *   by flag status.
+   * @param $account
+   *   The user on whose behalf to test the flagging action. Leave NULL for the
+   *   current user.
    */
   function access($content_id, $action = NULL, $account = NULL) {
     if (!isset($account)) {

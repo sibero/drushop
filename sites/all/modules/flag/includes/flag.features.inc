@@ -75,11 +75,6 @@ function flag_features_revert($module = NULL) {
     }
     _flag_clear_cache();
   }
-  else {
-    drupal_set_message(t('Could not load default flag.'), 'error');
-    return FALSE;
-  }
-  return TRUE;
 }
 
 /**
