@@ -1,97 +1,737 @@
-/* $Id: content-module.css,v 1.1.2.6 2009/03/14 18:45:38 yched Exp $ */
+.field .field-label-inline, .field .field-label-inline-first {
+	display: inline;
+}
 
-/* Node display */
-.field .field-label,
-.field .field-label-inline,
-.field .field-label-inline-first {
-  font-weight:bold;
-}
-.field .field-label-inline,
-.field .field-label-inline-first {
-  display:inline;
-}
 .field .field-label-inline {
-  visibility:hidden;
+	visibility: hidden;
 }
 
-/* Node form display */
 .node-form .content-multiple-table td.content-multiple-drag {
-  width:30px;
-  padding-right:0;/*LTR*/
-}
-.node-form .content-multiple-table td.content-multiple-drag a.tabledrag-handle{
-  padding-right:.5em;/*LTR*/
+	width: 30px;
+	padding-right: 0;
 }
 
-.node-form .content-add-more .form-submit{
-  margin:0;
+.node-form .content-multiple-table td.content-multiple-drag a.tabledrag-handle {
+	padding-right: 0.5em;
+}
+
+.node-form .content-add-more .form-submit {
+	margin: 0;
 }
 
 .node-form .number {
-  display:inline;
-  width:auto;
-}
-.node-form .text {
-  width:auto;
+	display: inline;
+	width: auto;
 }
 
-/* CSS overrides for Views-based autocomplete results.
-  - #autocomplete uses "white-space:pre", which is no good with
-    Views' template-based rendering
-  - Field titles are rendered with <label> in default templates,
-    but we don't want the 'form' styling it gets under .form-item
-*/
+.node-form .text {
+	width: auto;
+}
+
 .form-item #autocomplete .reference-autocomplete {
-  white-space:normal;
+	white-space: normal;
 }
 
 .form-item #autocomplete .reference-autocomplete label {
-  display:inline;
-  font-weight:normal;
+	display: inline;
+	font-weight: normal;
 }
 
-/* 'Manage fields' overview */
-#content-field-overview-form .advanced-help-link,
-#content-display-overview-form .advanced-help-link {
-  margin: 4px 4px 0 0;/*LTR*/
+#content-field-overview-form .advanced-help-link, #content-display-overview-form .advanced-help-link {
+	margin: 4px 4px 0 0;
 }
-#content-field-overview-form .label-group,
-#content-display-overview-form .label-group,
-#content-copy-export-form .label-group {
-  font-weight: bold;
+
+#content-field-overview-form .label-group, #content-display-overview-form .label-group, #content-copy-export-form .label-group {
+	font-weight: bold;
 }
-table#content-field-overview .label-add-new-field,
-table#content-field-overview .label-add-existing-field,
-table#content-field-overview .label-add-new-group {
-  float: left;/*LTR*/
+
+table#content-field-overview .label-add-new-field, table#content-field-overview .label-add-existing-field, table#content-field-overview .label-add-new-group {
+	float: left;
 }
+
 table#content-field-overview tr.content-add-new .tabledrag-changed {
-  display: none;
-}
-table#content-field-overview tr.content-add-new .description {
-  margin-bottom: 0;
-}
-table#content-field-overview .content-new {
-  font-weight: bold;
-  padding-bottom: .5em;
+	display: none;
 }
 
-/* 'Advanced help' pages */
-.advanced-help-topic h3,
-.advanced-help-topic h4,
-.advanced-help-topic h5,
-.advanced-help-topic h6  {
-  margin:1em 0 .5em 0;
+table#content-field-overview tr.content-add-new .description {
+	margin-bottom: 0;
 }
+
+table#content-field-overview .content-new {
+	font-weight: bold;
+	padding-bottom: 0.5em;
+}
+
+.advanced-help-topic h3, .advanced-help-topic h4, .advanced-help-topic h5, .advanced-help-topic h6 {
+	margin: 1em 0 0.5em;
+}
+
 .advanced-help-topic dd {
-  margin-bottom: .5em;
+	margin-bottom: 0.5em;
 }
+
 .advanced-help-topic span.code {
-  background-color:#EDF1F3;
-  font-family:"Bitstream Vera Sans Mono",Monaco,"Lucida Console",monospace;
-  font-size:0.9em;
-  padding:1px;
+	background-color: #EDF1F3;
+	font-family: "Bitstream Vera Sans Mono",Monaco,"Lucida Console",monospace;
+	font-size: 0.9em;
+	padding: 1px;
 }
+
 .advanced-help-topic .content-border {
-  border:1px solid #AAA
+	border: 1px solid #AAAAAA;
 }
+
+.rteindent2 {
+	margin-left: 80px;
+}
+
+.rteindent3 {
+	margin-left: 120px;
+}
+
+.rteindent4 {
+	margin-left: 160px;
+}
+
+.rteleft {
+	text-align: left;
+}
+
+.rteright {
+	text-align: right;
+}
+
+.rtecenter {
+	text-align: center;
+}
+
+.rtejustify {
+	text-align: justify;
+}
+
+.ibimage_left {
+	float: left;
+}
+
+.ibimage_right {
+	float: right;
+}
+
+table.cke_editor fieldset {
+	padding: 0 !important;
+}
+
+.cke_editor {
+	display: table !important;
+}
+
+.cke_editor, #ie#bug {
+	display: inline-table !important;
+}
+
+.cke_panel_listItem {
+	background-image: none;
+	padding-left: 0;
+}
+
+tbody {
+	border: 0 none;
+}
+
+form#ckeditor-admin-profile-form textarea#edit-toolbar, form#ckeditor-admin-global-profile-form textarea#edit-toolbar {
+	display: none;
+}
+
+form#ckeditor-admin-profile-form #edit-toolbar   .grippie, form#ckeditor-admin-global-profile-form #edit-toolbar   .grippie {
+	display: none;
+}
+
+div.sortableList {
+	cursor: n-resize;
+}
+
+div.widthMarker {
+	height: 20px;
+	border-top: 1px dashed #CCCCCC;
+	margin: 10px 0 0 1px;
+	padding-left: 1px;
+	text-align: center;
+}
+
+div.sortableList.group {
+	margin: 20px 0 0;
+}
+
+div.sortableList div.sortableListDiv {
+	height: 30px;
+	margin-bottom: 3px;
+	width: 900px;
+}
+
+div.sortableList div.sortableListDiv span.sortableListSpan {
+	background-color: #F0F0EE;
+	height: 30px;
+	border-right: 1px dashed #CCCCCC;
+	display: block;
+}
+
+div.sortableList div.sortableListDiv span.sortableListSpan ul {
+	background: none repeat scroll 0 0 transparent;
+	width: 900px;
+	white-space: nowrap;
+	border: 1px solid #CCCCCC;
+	list-style: none outside none;
+	margin: 0;
+	padding: 0 0 0 1px;
+	height: 30px;
+}
+
+div.sortableList div.sortableListDiv span.sortableListSpan ul li {
+	background: none repeat scroll 0 0 transparent;
+	list-style: none outside none;
+	cursor: move;
+	height: 18px;
+	min-width: 18px;
+	padding: 2px;
+}
+
+div.sortableList div.sortableListDiv span.sortableListSpan ul li.group {
+	min-width: 5px;
+	padding-left: 2px;
+}
+
+div.sortableList div.sortableListDiv span.sortableListSpan ul li img {
+	border: 0 none;
+	padding: 0;
+	margin: 0;
+}
+
+li.sortableItem {
+	position: relative;
+	float: left;
+	margin: 3px 1px 1px 0;
+	border: 1px solid #CCCCCC;
+	background-color: #F0F0EE;
+	z-index: 99;
+}
+
+fieldset#edit-appearance div#groupLayout, div#allButtons {
+	border: 0 none;
+	padding: 0;
+	margin: 1em 0;
+	overflow: auto;
+}
+
+.cke_browser_ie .cke_panel_block {
+	overflow: hidden !important;
+}
+
+.ctools-owns-lock {
+	background: none repeat scroll 0 0 #FFFFDD;
+	border: 1px solid #F0C020;
+	padding: 1em;
+}
+
+a.ctools-ajaxing, input.ctools-ajaxing, button.ctools-ajaxing, select.ctools-ajaxing {
+	padding-right: 18px !important;
+	background: url("../images/status-active.gif") no-repeat scroll right center transparent;
+}
+
+div.ctools-ajaxing {
+	float: left;
+	width: 18px;
+	background: url("../images/status-active.gif") no-repeat scroll center center transparent;
+}
+
+.container-inline-date .form-item {
+	float: none;
+	padding: 0;
+	margin: 0;
+}
+
+.container-inline-date .form-item .form-item {
+	float: left;
+}
+
+.container-inline-date .form-item, .container-inline-date .form-item input {
+	width: auto;
+}
+
+.container-inline-date .description {
+	clear: both;
+}
+
+.container-inline-date .form-item input, .container-inline-date .form-item select, .container-inline-date .form-item option {
+	margin-right: 5px;
+}
+
+.container-inline-date .date-spacer {
+	margin-left: -5px;
+}
+
+.views-right-60 .container-inline-date div {
+	padding: 0;
+	margin: 0;
+}
+
+.container-inline-date .date-timezone .form-item {
+	float: none;
+	width: auto;
+	clear: both;
+}
+
+#calendar_div, #calendar_div td, #calendar_div th {
+	margin: 0;
+	padding: 0;
+}
+
+#calendar_div, .calendar_control, .calendar_links, .calendar_header, .calendar {
+	width: 185px;
+	border-collapse: separate;
+	margin: 0;
+}
+
+.calendar td {
+	padding: 0;
+}
+
+.date-repeat-input {
+	float: left;
+	width: auto;
+	margin-right: 5px;
+}
+
+.date-repeat-input select {
+	min-width: 7em;
+}
+
+.date-repeat fieldset {
+	clear: both;
+	float: none;
+}
+
+.date-views-filter-wrapper {
+	min-width: 250px;
+}
+
+.date-views-filter input {
+	float: left !important;
+	margin-right: 2px !important;
+	padding: 0 !important;
+	width: 12em;
+	min-width: 12em;
+}
+
+.date-nav {
+	width: 100%;
+}
+
+.date-nav div.date-prev {
+	text-align: left;
+	width: 24%;
+	float: left;
+}
+
+.date-nav div.date-next {
+	text-align: right;
+	width: 24%;
+	float: right;
+}
+
+.date-nav div.date-heading {
+	text-align: center;
+	width: 50%;
+	float: left;
+}
+
+.date-nav div.date-heading h3 {
+	margin: 0;
+	padding: 0;
+}
+
+.date-clear {
+	float: none;
+	clear: both;
+	display: block;
+}
+
+.date-clear-block {
+	float: none;
+	width: auto;
+	clear: both;
+}
+
+.date-clear-block:after {
+	content: " ";
+	display: block;
+	height: 0;
+	clear: both;
+	visibility: hidden;
+}
+
+.date-clear-block {
+	display: inline-block;
+}
+
+* html .date-clear-block {
+	height: 1%;
+}
+
+.date-clear-block {
+	display: block;
+}
+
+.date-container .date-format-delete {
+	margin-top: 1.8em;
+	margin-left: 1.5em;
+	float: left;
+}
+
+.date-container .date-format-name {
+	float: left;
+}
+
+.date-container .date-format-type {
+	float: left;
+	padding-left: 10px;
+}
+
+.date-container .select-container {
+	clear: left;
+	float: left;
+}
+
+div.date-calendar-day {
+	line-height: 1;
+	width: 40px;
+	float: left;
+	margin: 6px 10px 0 0;
+	background: none repeat scroll 0 0 #F3F3F3;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #EEEEEE #BBBBBB #BBBBBB #EEEEEE;
+	color: #999999;
+	text-align: center;
+	font-family: Georgia,Arial,Verdana,sans;
+}
+
+div.date-calendar-day span {
+	display: block;
+	text-align: center;
+}
+
+div.date-calendar-day span.month {
+	font-size: 0.9em;
+	background-color: #B5BEBE;
+	color: white;
+	padding: 2px;
+	text-transform: uppercase;
+}
+
+div.date-calendar-day span.day {
+	font-weight: bold;
+	font-size: 2em;
+}
+
+div.date-calendar-day span.year {
+	font-size: 0.9em;
+	padding: 2px;
+}
+
+* html .timeEntry_control {
+	margin-top: -4px;
+}
+
+li.start-collapsed ul {
+	display: none;
+}
+
+li.dhtml-menu {
+	position: relative;
+}
+
+li.dhtml-menu a.dhtmlMenuControl {
+	position: absolute;
+	left: -2em;
+	width: 1em;
+	height: 0;
+	padding: 19px 7px 1px;
+	overflow: hidden;
+	background: none repeat scroll 0 0 transparent;
+	text-decoration: none;
+}
+
+li.dhtml-menu a.dhtmlMenuControl, li.dhtml-menu a.dhtmlMenuControl:hover, li.dhtml-menu a.dhtmlMenuControl:active, li.dhtml-menu a.dhtmlMenuControl:visited {
+	text-decoration: none;
+	outline: medium none;
+}
+
+.div_container {
+	display: none;
+}
+
+.stock_out {
+	color: red;
+	font-size: 14px;
+}
+
+#edit-tid-wrapper {
+	width: 180px;
+}
+
+.grid-tovar div.views-field-list-price {
+	color: #AEAEAE;
+	text-decoration: line-through;
+}
+
+.grid-tovar div.views-field-title {
+	padding-bottom: 10px;
+	font-size: 16px;
+}
+
+.grid-tovar span.uc-price-sell_price {
+	font-weight: bold;
+	font-size: 16px;
+}
+
+.grid-tovar td {
+	background: none repeat scroll 0 0 #F3F3F3;
+	width: 33%;
+	height: auto;
+	vertical-align: top;
+}
+
+div.views-field-buyitnowbutton {
+	padding-top: 5px;
+}
+
+.view-news-products {
+	text-align: center;
+}
+
+div .corner {
+	border: 1px solid #AEAEAE;
+	padding: 5px;
+	background: none repeat scroll 0 0 white;
+	height: 300px;
+	text-align: center;
+	display: inline-block;
+	vertical-align: top;
+	margin: 5px;
+	width: 240px;
+}
+
+div .corner:hover {
+	border: 1px solid #AEAEAE;
+	padding: 5px;
+	background: none repeat scroll 0 0 #EDEDED;
+}
+
+.view-news td {
+	width: 50%;
+	border: 1px solid #AEAEAE;
+}
+
+.view-news {
+	background: none repeat scroll 0 0 #FFFFFF;
+	border-left: medium none;
+	border-right: medium none;
+	color: black;
+	margin: 10px;
+}
+
+.old_price {
+	text-decoration: line-through;
+	color: gray;
+}
+
+.field-type-discounted-price .field-label-inline, .field-type-discounted-price .field-label-inline-first {
+	font-weight: normal;
+}
+
+.field-type-discounted-price, td.views-field-discounted-price, .views-field-discounted-price .field-content {
+	color: black;
+	font-size: 16px;
+}
+
+.product-additional {
+	padding-top: 30px;
+}
+
+.views-field-discounted-price .field-content {
+	font-size: 20px;
+	font-weight: bold;
+}
+
+#product-group .content {
+	float: right;
+	width: 70%;
+}
+
+td.views-field-list-price {
+	text-decoration: line-through;
+}
+
+#filterby {
+	background: url("images/button-bg.png") repeat-x scroll 50% 0 #9E9E9E;
+	border: 3px solid #E9E9E9;
+	color: #FFFFFF;
+	padding: 3px;
+	margin-top: 13px;
+}
+
+#filterby:hover {
+	background-position: 50% 100%;
+	cursor: pointer;
+	opacity: 0.7;
+}
+
+div.pager-items {
+	float: left;
+}
+
+#block-user-0 div.content {
+	display: none;
+}
+
+div.views-submit-button {
+	clear: both;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+div.vote_result {
+	margin: auto;
+	width: 90px;
+}
+
+input#edit-sell-price-to {
+	width: 60px;
+}
+
+input#edit-sell-price-up {
+	width: 60px;
+}
+
+input#edit-sku {
+	width: 90px;
+}
+
+.sf-menu {
+	line-height: 1;
+}
+
+.sf-menu ul {
+	position: absolute;
+	top: -999em;
+	width: 10em;
+}
+
+.sf-menu ul li {
+	width: 100%;
+}
+
+.sf-menu li:hover {
+	visibility: inherit;
+}
+
+.sf-menu li {
+	float: left;
+	position: relative;
+}
+
+.sf-menu a {
+	display: block;
+	position: relative;
+}
+
+.sf-menu li:hover ul, .sf-menu li.sfHover ul {
+	left: 0;
+	top: 2.5em;
+	z-index: 99;
+}
+
+ul.sf-menu li:hover li ul, ul.sf-menu li.sfHover li ul {
+	top: -999em;
+}
+
+ul.sf-menu li li:hover ul, ul.sf-menu li li.sfHover ul {
+	left: 10em;
+	top: 0;
+}
+
+ul.sf-menu li li:hover li ul, ul.sf-menu li li.sfHover li ul {
+	top: -999em;
+}
+
+ul.sf-menu li li li:hover ul, ul.sf-menu li li li.sfHover ul {
+	left: 10em;
+	top: 0;
+}
+
+.sf-menu {
+	float: left;
+	margin-bottom: 1em;
+}
+
+.sf-menu a {
+	padding: 0.75em 1em;
+	text-decoration: none;
+}
+
+.sf-menu li:hover, .sf-menu li.sfHover, .sf-menu a:focus, .sf-menu a:hover, .sf-menu a:active {
+	outline: 0 none;
+}
+
+.sf-menu a.sf-with-ul {
+	padding-right: 2.25em;
+	min-width: 1px;
+}
+
+.sf-sub-indicator {
+	position: absolute;
+	display: block;
+	right: 0.75em;
+	top: 1.05em;
+	width: 10px;
+	height: 10px;
+	text-indent: -999em;
+	overflow: hidden;
+	background: url("../images/arrows-ffffff.png") no-repeat scroll -10px -100px transparent;
+}
+
+a > .sf-sub-indicator {
+	top: 0.8em;
+	background-position: 0 -100px;
+}
+
+a:focus > .sf-sub-indicator, a:hover > .sf-sub-indicator, a:active > .sf-sub-indicator, li:hover > a > .sf-sub-indicator, li.sfHover > a > .sf-sub-indicator {
+	background-position: -10px -100px;
+}
+
+.sf-menu ul .sf-sub-indicator {
+	background-position: -10px 0;
+}
+
+.sf-menu ul a > .sf-sub-indicator {
+	background-position: 0 0;
+}
+
+.sf-menu ul a:focus > .sf-sub-indicator, .sf-menu ul a:hover > .sf-sub-indicator, .sf-menu ul a:active > .sf-sub-indicator, .sf-menu ul li:hover > a > .sf-sub-indicator, .sf-menu ul li.sfHover > a > .sf-sub-indicator {
+	background-position: -10px 0;
+}
+
+.sf-shadow ul {
+	background: url("../images/shadow.png") no-repeat scroll right bottom transparent;
+	padding: 0 8px 9px 0;
+	-moz-border-radius-bottomleft: 17px;
+	-moz-border-radius-topright: 17px;
+}
+
+.sf-shadow ul.sf-shadow-off {
+	background: none repeat scroll 0 0 transparent;
+}
+

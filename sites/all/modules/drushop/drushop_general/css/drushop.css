@@ -1,167 +1,167 @@
-
-
 .sortby {
-    float: right;
-    width: 200px;
-    text-align: right;
+	float: right;
+	width: 200px;
+	text-align: right;
+	margin-right: 1em;
 }
 
 .div_container {
-    display: none;
+	display: none;
 }
 
 .stock_out {
-    color: red;
-    font-size: 14px;
+	color: red;
+	font-size: 14px;
 }
 
 #edit-tid-wrapper {
-    width: 180px;
+	width: 180px;
 }
 
 .grid-tovar div.views-field-list-price {
-    color: #AEAEAE;
-    text-decoration: line-through;
+	color: #AEAEAE;
+	text-decoration: line-through;
 }
 
 .grid-tovar div.views-field-title {
-    padding-bottom: 10px;
-    font-size: 16px;
+	padding-bottom: 10px;
+	font-size: 16px;
 }
 
 .grid-tovar span.uc-price-sell_price {
-    font-weight: bold;
-    font-size: 16px;
+	font-weight: bold;
+	font-size: 16px;
 }
 
 .grid-tovar td {
-    background: none repeat scroll 0% 0% #F3F3F3;
-    width: 33%;
-    height: auto;
-    vertical-align: top;
+	background: none repeat scroll 0 0 #F3F3F3;
+	width: 33%;
+	height: auto;
+	vertical-align: top;
 }
 
 div.views-field-buyitnowbutton {
-    padding-top: 5px;
+	padding-top: 5px;
 }
 
 .view-news-products {
-    text-align: center;
+	text-align: center;
 }
 
 div .corner {
-    border: 1px solid #AEAEAE;
-    padding: 5px;
-    border-radius: 15px 15px 15px 15px;
-    background: none repeat scroll 0% 0% white;
-    height: 300px;
-    text-align: center;
-    display: inline-block;
-    vertical-align: top;
-    margin: 5px;
-    width: 240px;
+	border: 1px solid #AEAEAE;
+	border-radius: 15px 15px 15px 15px;
+	padding: 5px;
+	background: none repeat scroll 0 0 white;
+	height: 300px;
+	text-align: center;
+	display: inline-block;
+	vertical-align: top;
+	margin: 5px;
+	width: 240px;
 }
 
 div .corner:hover {
-    border: 1px solid #AEAEAE;
-    padding: 5px;
-    border-radius: 15px 15px 15px 15px;
-    background: none repeat scroll 0% 0% #EDEDED;
+	border: 1px solid #AEAEAE;
+	padding: 5px;
+	background: none repeat scroll 0 0 #EDEDED;
 }
 
 .view-news td {
-    width: 50%;
-    border: 1px solid #AEAEAE;
+	width: 50%;
+	border: 1px solid #AEAEAE;
 }
 
 .view-news {
-    background: none repeat scroll 0% 0% #FFFFFF;
-    border-left: medium none;
-    border-right: medium none;
-    color: black;
-    margin: 10px;
+	background: none repeat scroll 0 0 #FFFFFF;
+	border-left: medium none;
+	border-right: medium none;
+	color: black;
+	margin: 10px;
 }
 
 .old_price {
-    text-decoration: line-through;
-    color: gray;
+	text-decoration: line-through;
+	color: gray;
 }
 
 .field-type-discounted-price .field-label-inline, .field-type-discounted-price .field-label-inline-first {
-    font-weight: normal;
+	font-weight: normal;
 }
 
 .field-type-discounted-price, td.views-field-discounted-price, .views-field-discounted-price .field-content {
-    color: black;
-    font-size: 16px;
+	color: black;
+	font-size: 16px;
 }
 
 .product-additional {
-    padding-top: 30px;
+	padding-top: 30px;
 }
 
 .views-field-discounted-price .field-content {
-    font-size: 20px;
-    font-weight: bold;
+	font-size: 20px;
+	font-weight: bold;
 }
 
 #product-group .content {
-    float: right;
-    width: 70%;
+	float: right;
+	width: 70%;
 }
 
 td.views-field-list-price {
-    text-decoration: line-through;
+	text-decoration: line-through;
 }
 
 #filterby {
-    background: url("images/button-bg.png") repeat-x scroll 50% 0pt #9E9E9E;
-    border: 3px solid #E9E9E9;
-    color: #FFFFFF;
-    padding: 3px;
-    margin-top: 13px;
+	background: url("images/button-bg.png") repeat-x scroll 50% 0 #9E9E9E;
+	border: 3px solid #E9E9E9;
+	color: #FFFFFF;
+	margin-left: 9px;
+	padding: 3px;
+	margin-top: 1em;
 }
 
 #filterby:hover {
-    background-position: 50% 100%;
-    cursor: pointer;
-    opacity: 0.7;
+	background-position: 50% 100%;
+	cursor: pointer;
+	opacity: 0.7;
 }
 
 div.pager-items {
-    float: left;
+	float: left;
 }
 
 div.attachment-before {
-    margin-top: 5px;
+	padding: 0.2em 1em;
 }
 
 #block-user-0 div.content {
-    display: none;
+	display: none;
 }
 
 div.views-submit-button {
-    clear: both;
+	clear: both;
 }
 
 table {
-    border-collapse: collapse;
-    width: 100%;
+	border-collapse: collapse;
+	width: 100%;
 }
 
 div.vote_result {
-    margin: auto;
-    width: 90px;
+	margin: auto;
+	width: 90px;
 }
 
 input#edit-sell-price-to {
-    width: 60px;
+	width: 60px;
 }
 
 input#edit-sell-price-up {
-    width: 60px;
+	width: 60px;
 }
 
 input#edit-sku {
-    width: 90px;
+	width: 90px;
 }
+

@@ -1,4 +1,6 @@
 <?php
+ini_set('max_execution_time', '360');
+set_time_limit(360);
 // $Id$
 
 /**
@@ -39,11 +41,7 @@ function drushop_profile_modules() {
   );
 }
 
-function drushop_profile_task_list() {
-  return array(
-    'config' => st('Конфигурация магазина'),
-  );
-}
+
 
 /**
  * Perform installation tasks for this installation profile.
@@ -51,19 +49,22 @@ function drushop_profile_task_list() {
 function drushop_profile_tasks(&$task, $url) {
   switch ($task) {
       case 'profile':
-    // Set $task to next task so the UI will be correct.
-      $task = 'config';
-      drupal_set_title(t('Конфигурация магазина'));
-      return drupal_get_form('drushop_store_settings_form', $url); 
-	  
-    // Perform tasks when the store configuration form has been submitted.
-    case 'config':
-      // Save the values from the store configuration form.
-      drushop_store_settings_form_submit();
+  
 	  
 	// Move to the completion task.
       $task = 'profile-finished';
-      break;
+       // статистика
+	module_load_include('inc', 'drushop_general', 'drushop_general.client');
+	/*
+  // генерируем xml карту сайта
+	module_load_include('inc', 'xmlsitemap', 'xmlsitemap.admin');  
+	$form = array();
+	$form_state = array();
+	xmlsitemap_sitemap_edit_form_submit($form, &$form_state); 
+	*/
+  drupal_cron_run();
+  drupal_set_message('Drushop успешно установлен');
+  drupal_goto('<front>');
   }
 }
 
@@ -149,18 +150,7 @@ function drushop_store_settings_form(&$form_state, $url) {
 function drushop_store_settings_form_submit() {
   $form_state = array('values' => $_POST);
   system_settings_form_submit(array(), $form_state);
-  // статистика
-	module_load_include('inc', 'drushop_general', 'drushop_general.client');
-	/*
-  // генерируем xml карту сайта
-	module_load_include('inc', 'xmlsitemap', 'xmlsitemap.admin');  
-	$form = array();
-	$form_state = array();
-	xmlsitemap_sitemap_edit_form_submit($form, &$form_state); 
-	*/
-  drupal_cron_run();
-  drupal_set_message('Drushop успешно установлен');
-  drupal_goto('<front>');
+ 
 
   
 }

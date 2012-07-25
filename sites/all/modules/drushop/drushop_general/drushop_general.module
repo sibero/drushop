@@ -483,15 +483,6 @@ function drushop_general_preprocess_block_admin_display_form(&$vars) {
   		});  				
     });', 'inline');
   }
-	
-	
-	if ($form_id == 'system_modules'){
-      $hidden_modules = module_invoke_all('drushop_hide');
-      foreach($hidden_modules as $module){
-        _drushop_hide_module($form, $module);
-      }
-      
-  }
   
 }
 
@@ -541,23 +532,7 @@ function drushop_general_preprocess_page(&$vars) {
 	
 	
 }
-drupal_set_html_head('<meta name="generator" content="drushop" />');
-
-function _drushop_hide_module(&$form, $module){
-  unset(
-    $form['validation_modules']['#value'][$module],
-    $form['name'][$module],
-    $form['version'][$module],
-    $form['description'][$module],
-    $form['throttle'][$module],
-    $form['throttle']['#options'][$module],
-    $form['status']['#options'][$module]
-  );
-}
-
-	function drushop_general_drushop_hide() {
-  return array('drushop_general');
-}
+	drupal_set_html_head('<meta name="generator" content="drushop" />');
 
 	//Убираем "Войдите или зарегистрируйтесь, чтобы получить возможность отправлять комментарии"
 	function drushop_general_link_alter(&$links, $node) {

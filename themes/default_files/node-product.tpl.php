@@ -52,6 +52,7 @@
 			
 			<?php if ($product_discounted_price) { 
 			print $product_discounted_price; } ?>
+			<?php print $product_total_price_discount; ?>
 			<br>
 			
 			<?php print $product_add_to_cart; ?>

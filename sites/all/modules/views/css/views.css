@@ -1,98 +1,88 @@
 .views-exposed-form .views-exposed-widget {
-  float: left; /* LTR */
-  padding: .5em 1em 0 0; /* LTR */
+	float: left;
+	padding: 0.5em 1em 0;
 }
 
 .views-exposed-form .views-exposed-widget .form-submit {
-  margin-top: 1.6em;
+	margin-top: 1.6em;
 }
 
-.views-exposed-form .form-item,
-.views-exposed-form .form-submit {
-  margin-top: 0;
-  margin-bottom: 0;
+.views-exposed-form .form-item, .views-exposed-form .form-submit {
+	margin-top: 0;
+	margin-bottom: 0;
 }
 
 .views-exposed-form label {
-  font-weight: bold;
+	font-weight: bold;
 }
 
 .views-exposed-widgets {
-  margin-bottom: .5em;
+	margin-bottom: 0.5em;
 }
 
-html.js a.views-throbbing,
-html.js span.views-throbbing {
-  background:url(../images/status-active.gif) no-repeat right center;
-  padding-right:18px;
+html.js a.views-throbbing, html.js span.views-throbbing {
+	background: url("../images/status-active.gif") no-repeat scroll right center transparent;
+	padding-right: 18px;
 }
-
-/* administrative hover links */
 
 div.view div.views-admin-links {
-  font-size: xx-small;
-  margin-right: 1em;
-  margin-top: 1em;
-/*  width: 95%; */
+	font-size: xx-small;
+	margin-right: 1em;
+	margin-top: 1em;
 }
 
 .block div.view div.views-admin-links {
-  margin-top: 0;
+	margin-top: 0;
 }
 
 div.view div.views-admin-links ul {
-  margin: 0;
-  padding: 0;
+	margin: 0;
+	padding: 0;
 }
 
 div.view div.views-admin-links li {
-  margin: 0;
-  padding: 0 0 2px 0;
-  z-index: 201;
+	margin: 0;
+	padding: 0 0 2px;
+	z-index: 201;
 }
 
 div.view div.views-admin-links li a {
-  padding: 0;
-  margin: 0;
-  color: #ccc;
+	padding: 0;
+	margin: 0;
+	color: #CCCCCC;
 }
 
 div.view div.views-admin-links li a:before {
-  content: "[";
+	content: "[";
 }
+
 div.view div.views-admin-links li a:after {
-  content: "]";
+	content: "]";
 }
 
-div.view div.views-admin-links-hover a,
-div.view div.views-admin-links:hover a {
-  color: #000;
+div.view div.views-admin-links-hover a, div.view div.views-admin-links:hover a {
+	color: #000000;
 }
 
-div.view div.views-admin-links-hover,
-div.view div.views-admin-links:hover {
-  background: transparent;
+div.view div.views-admin-links-hover, div.view div.views-admin-links:hover {
+	background: none repeat scroll 0 0 transparent;
 }
 
 div.view div.views-hide {
-  display: none;
+	display: none;
 }
 
-/** For IE we add the class via js; for other browsers we rely on :hover **/
-div.view div.views-hide-hover,
+div.view div.views-hide-hover, div.view:hover div.views-hide {
+	display: block;
+	position: absolute;
+	z-index: 200;
+}
+
 div.view:hover div.views-hide {
-  display: block;
-  position: absolute;
-  z-index: 200;
+	margin-top: -1.5em;
 }
 
-/* don't do this one in IE */
-div.view:hover div.views-hide {
-  margin-top: -1.5em;
-}
-
-/* Remove the border on tbody that system puts in */
 .views-view-grid tbody {
-  border-top: none;
+	border-top: medium none;
 }
 

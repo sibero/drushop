@@ -41,7 +41,7 @@ function taxonomy_menu_trails_init() {
     && !empty($enabled_types[$node->type]) //Processing for this node type was enabled
     && (
       !variable_get('taxonomy_menu_trails_only_without_menu', TRUE) //"Only if node doesn't have menu item" option is disabled
-      || db_result(db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = "%s" AND hidden = 0', $item['href'])) == 0 //OR node doesn't have menu item
+      || db_result(db_query('SELECT mlid FROM {menu_links} WHERE link_path = "%s" AND hidden = 0 LIMIT 1', $item['href'])) == 0 //OR node doesn't have menu item
     )
   ) {
     module_load_include('inc', 'taxonomy_menu_trails');
@@ -56,6 +56,7 @@ function taxonomy_menu_trails_menu() {
   $items = array(
     'admin/settings/taxonomy-menu-trails' => array(
       'title' => 'Taxonomy menu trails',
+      'description' => 'Settings for taxonomy-based active trail on the node page.',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('taxonomy_menu_trails_settings'),
       'access arguments' => array('administer taxonomy menu trails'),

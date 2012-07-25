@@ -41,7 +41,7 @@
         onclick="toggle_visibility('my_div')">
 <div id='my_div' class='div_container'> 
    <div class="view-filters">
-   
+   <?php print $exposed; ?>
     </div>
    <input type='hidden'
          onclick="toggle_visibility('my_div')">
