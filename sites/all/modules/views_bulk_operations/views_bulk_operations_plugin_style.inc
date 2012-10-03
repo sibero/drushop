@@ -220,7 +220,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     // Populate hashed results for selection.
     $this->result = array();
     foreach ($this->view->result as $row) {
-      $this->result[_views_bulk_operations_hash_object($row)] = $row;
+      $this->result[_views_bulk_operations_hash_object($row, $this->view)] = $row;
     }
     if ($this->options['preserve_selection']) {
       $view_id = _views_bulk_operations_view_id($this->view);

@@ -145,20 +145,20 @@ function views_bulk_operations_add_actions($vid, $actions) {
 
     if (empty($ignored)) {
       watchdog('vbo', 'View %vid was successfully modified. The following actions were added: %added.', array(
-        '%vid' => $vid, 
+        '%vid' => $vid,
         '%added' => implode(', ', $added)
       ), WATCHDOG_INFO);
     } else {
       watchdog('vbo', 'View %vid was modified. The following actions were added: %added. The following actions were ignored: %ignored.', array(
-        '%vid' => $vid, 
-        '%added' => implode(', ', $added), 
+        '%vid' => $vid,
+        '%added' => implode(', ', $added),
         '%ignored' => implode(', ', $ignored)
       ), WATCHDOG_WARNING);
     }
   }
   else {
     watchdog('vbo', 'View %vid was NOT modified. The following actions were ignored: %ignored.', array(
-      '%vid' => $vid, 
+      '%vid' => $vid,
       '%ignored' => implode(', ', $ignored)
     ), WATCHDOG_ERROR);
   }
@@ -277,7 +277,7 @@ function views_bulk_operations_theme() {
       'pattern' => 'views_bulk_operations_table__',
     ),
   );
-  
+
   // Load action theme files.
   foreach (_views_bulk_operations_load_actions() as $file) {
     $action_theme_fn = 'views_bulk_operations_'. $file .'_action_theme';
@@ -384,7 +384,7 @@ function theme_views_node_selector($element) {
     // Add checkboxes to the header and the rows.
     $rows = array();
     if (empty($view->style_plugin->options['hide_selector'])) {
-      $headers[] = theme('table_select_header_cell');
+      $headers[] = array('class' => 'vbo-select-all');
 
       // Add extra status row if needed.
       $items_per_page = method_exists($view, 'get_items_per_page') ? $view->get_items_per_page() : (isset($view->pager) ? $view->pager['items_per_page'] : 0);
@@ -401,7 +401,7 @@ function theme_views_node_selector($element) {
     }
     foreach ($records as $num => $object) {
       $row = array('class' => 'rowclick', 'data' => array());
-      $row['data'][] =  theme('checkbox', $element['selection'][_views_bulk_operations_hash_object($object)]);
+      $row['data'][] =  theme('checkbox', $element['selection'][_views_bulk_operations_hash_object($object, $view)]);
       foreach ($vars['rows'][$num] as $field => $content) {
         $row['data'][] = array('data' => $content, 'class' => "views-field views-field-{$vars['fields'][$field]}");
       }
@@ -448,7 +448,7 @@ function views_bulk_operations_form($form_state, $form_id, $plugin) {
   }
 
   // Force browser to reload the page if Back is hit.
-  if (preg_match('/msie/i', $_SERVER['HTTP_USER_AGENT'])) {
+  if (!empty($_SERVER['HTTP_USER_AGENT']) && preg_match('/msie/i', $_SERVER['HTTP_USER_AGENT'])) {
     drupal_set_header("Cache-Control: no-cache"); // works for IE6+
   }
   else {
@@ -806,7 +806,7 @@ function _views_bulk_operations_get_selection_full($plugin, $form_state) {
     $view_copy->render($view->current_display);
     $objects = array();
     foreach ($view_copy->result as $row) {
-      $objects[_views_bulk_operations_hash_object($row)] = $row;
+      $objects[_views_bulk_operations_hash_object($row, $view_copy)] = $row;
     }
     $view_copy->destroy();
     $objects = array_diff_key($objects, $form_state['storage']['selection']);
@@ -1862,7 +1862,7 @@ function _views_bulk_operations_action_permission($operation, $account = NULL) {
     if (!user_access($perm, $account)) {
       global $user;
       watchdog('vbo', 'An attempt by user %user to !perm was blocked due to insufficient permissions.', array(
-        '!perm' => $perm, 
+        '!perm' => $perm,
         '%user' => isset($account) ? $account->name : $user->name
       ), WATCHDOG_ALERT);
       drupal_access_denied();
@@ -1875,7 +1875,7 @@ function _views_bulk_operations_action_permission($operation, $account = NULL) {
     if (!user_access($perm, $account)) {
       global $user;
       watchdog('vbo', 'An attempt by user %user to !perm was blocked due to insufficient permissions.', array(
-        '!perm' => $perm, 
+        '!perm' => $perm,
         '%user' => isset($account) ? $account->name : $user->name
       ), WATCHDOG_ALERT);
       drupal_access_denied();
@@ -2046,15 +2046,18 @@ function views_bulk_operations_ajax_data_alter(&$object, $type, $view) {
 }
 
 /**
- * Helper function to calculate hash of an object or array, excluding embedded arrays and objects.
+ * Helper function to calculate hash of an object.
+ *
+ * The default "hashing" is to use the object's primary/unique id. This would fail for VBOs that return many rows with
+ * the same primary key (e.g. a *node* view returning all node *comments*).  Because we don't know in advance what kind of
+ * hashing is needed, we allow for a module to implement its own hashing via
+ *
+ * hook_views_bulk_operations_object_hash_alter(&$hash, $object, $view).
  */
-function _views_bulk_operations_hash_object($object) {
-  foreach ($object as $key => $value) {
-    if (is_array($value) || is_object($value)) {
-      unset($object->$key);
-    }
-  }
-  return md5(serialize($object));
+function _views_bulk_operations_hash_object($object, $view) {
+  $hash = $object->{$view->base_field};
+  drupal_alter('views_bulk_operations_object_hash', $hash, $object, $view);
+  return $hash;
 }
 
 /**

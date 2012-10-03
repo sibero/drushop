@@ -21,6 +21,20 @@ Drupal.vbo.prepareSelectors = function() {
   var $table = $('table.views-table', $form);
   var queue = new Array();
   var queueProcess = false;
+  var strings = { 'selectAll': Drupal.t('Select all items in this table'), 'selectNone': Drupal.t('Deselect all items in this table') }; 
+  var lastChecked, rowShiftKey;
+
+  // Do not add a "Select all" checkbox if there are no rows with checkboxes in the table
+  if ($('td input:checkbox', $table).size() == 0) {
+    return;
+  }
+
+  var updateSelectAll = function(state) {
+    $('th.vbo-select-all input:checkbox', $table).each(function() {
+      $(this).attr('title', state ? strings.selectNone : strings.selectAll);
+      this.checked = state;
+    });
+  };
 
   // Adjust selection and update server.
   var updateSelection = function(selectall, selection) {
@@ -32,7 +46,7 @@ Drupal.vbo.prepareSelectors = function() {
 
     // Adjust UI.
     $('.views-field-select-all input:radio#' + (selectall > 0 ? 'select-all-pages' : 'select-this-page'), $form).attr('checked', 'checked');
-    $('.views-field-select-all span.select', $form)[$('th.select-all input:checkbox', $table).is(':checked') ? 'show' : 'hide']();
+    $('.views-field-select-all span.select', $form)[$('th.vbo-select-all input:checkbox', $table).is(':checked') ? 'show' : 'hide']();
     
     // Update selection on server.
     if (Drupal.settings.vbo[form_id].options.preserve_selection) {
@@ -85,15 +99,22 @@ Drupal.vbo.prepareSelectors = function() {
   }
 
   // Handle select-all checkbox.
-  $('th.select-all', $table).click(function() {
-    var selection = {};
-    var checked = $('input:checkbox', this).attr('checked');
-    $('input:checkbox.select', $form).each(function() {
-      selection[this.value] = checked;
-    });
-    setTimeout(function() {
-      updateSelection(false, selection);
-    }, 1);
+  $('th.vbo-select-all', $table).prepend($('<input type="checkbox" class="form-checkbox" />').attr('title', strings.selectAll)).click(function(e) {
+    if ($(e.target).is('input:checkbox')) {
+      var selection = {};
+      // Loop through all checkboxes and set their state to the select all checkbox' state.
+      $checkboxes.each(function() {
+        this.checked = e.target.checked;
+        // Either add or remove the selected class based on the state of the check all checkbox.
+        $(this).parents('tr:first')[ this.checked ? 'addClass' : 'removeClass' ]('selected');
+        selection[this.value] = this.checked;
+      });
+      // Update the title and the state of the check all box.
+      updateSelectAll(e.target.checked);
+      setTimeout(function() {
+        updateSelection(false, selection);
+      }, 1);
+    }
   });
 
   // Handle select-all-pages button.
@@ -103,8 +124,8 @@ Drupal.vbo.prepareSelectors = function() {
 
   // Handle clear-selection button.
   $('.views-field-select-all input#clear-selection', $form).click(function() {
-    $('th.select-all input:checkbox', $table).attr('checked', false);
-    $('input:checkbox.select', $form).attr('checked', false).each(function() {
+    updateSelectAll(false);
+    $checkboxes.attr('checked', false).each(function() {
       $(this).parents('tr:first').removeClass('selected');
     });
     updateSelection(-1); // reset selection
@@ -125,8 +146,24 @@ Drupal.vbo.prepareSelectors = function() {
   });
 
   // Save the selected items.
-  var $checkboxes = $('input:checkbox.select', $form).click(function() {
+  var $checkboxes = $('input:checkbox.select', $form).click(function(e) {
+    // Either add or remove the selected class based on the state of the check all checkbox.
     $(this).parents('tr:first')[ this.checked ? 'addClass' : 'removeClass' ]('selected');
+
+    // If this is a shift click, we need to highlight everything in the range.
+    // Also make sure that we are actually checking checkboxes over a range and
+    // that a checkbox has been checked or unchecked before.
+    if ((e.shiftKey || (typeof(e.shiftKey) == 'undefined' && rowShiftKey)) && lastChecked && lastChecked != e.target) {
+      // We use the checkbox's parent TR to do our range searching.
+      tableSelectRange($(e.target).parents('tr')[0], $(lastChecked).parents('tr')[0], e.target.checked);
+    }
+
+    // If all checkboxes are checked, make sure the select-all one is checked too, otherwise keep unchecked.
+    updateSelectAll(($checkboxes.length == $checkboxes.filter(':checked').length));
+
+    // Keep track of the last checked checkbox.
+    lastChecked = e.target;
+
     var selection = {};
     selection[this.value] = this.checked;
     setTimeout(function() { // setTimeout is used to ensure that whatever events are queued to be executed will get executed before this code.
@@ -137,9 +174,10 @@ Drupal.vbo.prepareSelectors = function() {
   });
 
   // Set up the ability to click anywhere on the row to select it.
-  $('tr.rowclick', $form).click(function(event) {
-    if (event.target.nodeName.toLowerCase() != 'input' && event.target.nodeName.toLowerCase() != 'a') {
-      $('input:checkbox.select', this).each(function() {
+  $('tr.rowclick', $form).click(function(e) {
+    if (e.target.nodeName.toLowerCase() != 'input' && e.target.nodeName.toLowerCase() != 'a') {
+      rowShiftKey = e.shiftKey;
+      $('input:checkbox.select', this).each(function () {
         var checked = this.checked;
         // trigger() toggles the checkmark *after* the event is set,
         // whereas manually clicking the checkbox toggles it *beforehand*.
@@ -153,10 +191,47 @@ Drupal.vbo.prepareSelectors = function() {
     }
   });
 
+  var tableSelectRange = function(from, to, state) {
+    // We determine the looping mode based on the the order of from and to.
+    var mode = from.rowIndex > to.rowIndex ? 'previousSibling' : 'nextSibling';
+
+    // Traverse through the sibling nodes.
+    var selection = {};
+    for (var i = from[mode]; i; i = i[mode]) {
+      // Make sure that we're only dealing with elements.
+      if (i.nodeType != 1) {
+        continue;
+      }
+
+      // Either add or remove the selected class based on the state of the target checkbox.
+      $(i)[ state ? 'addClass' : 'removeClass' ]('selected');
+      $('input:checkbox', i).each(function() {
+        this.checked = state;
+        selection[this.value] = this.checked;
+      });
+
+      if (to.nodeType) {
+        // If we are at the end of the range, stop.
+        if (i == to) {
+          break;
+        }
+      }
+      // A faster alternative to doing $(i).filter(to).length.
+      else if (jQuery.filter(to, [i]).r.length) {
+        break;
+      }
+    }
+
+    setTimeout(function() { // setTimeout is used to ensure that whatever events are queued to be executed will get executed before this code.
+      updateSelection($('input#edit-objects-selectall', $form).val(), selection);
+    }, 1);
+  };
+
+
   // Set up UI based on initial values.
   setTimeout(function() { // setTimeout is used to ensure that whatever events are queued to be executed will get executed before this code.
     if ($checkboxes.length == $checkboxes.filter(':checked').length) {
-      $('th.select-all input:checkbox', $table).attr('checked', true);
+      updateSelectAll(true);  
       $('.views-field-select-all span.select', $form).show();
     }
   }, 1);
@@ -211,3 +286,4 @@ Drupal.vbo.ajaxViewResponse = function(target, response) {
 
 // END jQuery
 })(jQuery);
+

@@ -222,9 +222,8 @@ function uc_reports_perm() {
  */
 function uc_reports_store_csv($report_id, $rows) {
   global $user;
-  // UTF-8 byte order mark
+    // UTF-8 byte order mark
   $csv_output = chr(239) . chr(187) . chr(191);
-
   $user_id = (empty($user->uid)) ? session_id() : $user->uid;
   foreach ($rows as $row) {
     foreach ($row as $index => $column) {
