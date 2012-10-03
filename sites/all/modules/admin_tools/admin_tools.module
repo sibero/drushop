@@ -136,10 +136,6 @@ function admin_tools_admin_content () {
       'href' => 'admin/reports/status/run-cron',
       'query' => $destination,
     ),
-    'update' => array( 
-      'title' => 'Запустить обновление', 
-      'href' => 'update.php',
-    ),
   );
   $content = theme('links', $links, array('class' => 'menu'));
   return $content;

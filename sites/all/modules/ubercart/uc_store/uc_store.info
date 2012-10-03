@@ -1,6 +1,7 @@
 name = Store
 description = REQUIRED. Handles store settings and management of your Ubercart site.
 package = Ubercart - core
+dependencies[] = "drushop_general"
 core = 6.x
 php = 5.0
 

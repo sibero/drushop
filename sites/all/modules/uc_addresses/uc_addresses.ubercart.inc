@@ -217,6 +217,7 @@ function uc_addresses_order_pane_bill_to($op, $order, $values = array()) {
  * @return mixed
  */
 function uc_addresses_order_pane_ship_to($op, $order, $values = array()) {
+// uc_zone_get_by_id($order->delivery_zone);
   return uc_addresses_order_pane_address('shipping', $op, $order, $values);
 }
 
