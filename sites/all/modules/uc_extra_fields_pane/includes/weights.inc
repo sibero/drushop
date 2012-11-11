@@ -24,15 +24,36 @@
  * @see theme_uc_extra_fields_pane_weight_uc_store_address_fields()
  */
 function _uc_extra_fields_pane_weight_uc_store_address_fields_alter(&$form, $form_state) {
-  // Get weight settings
+  if (isset($form['uc_address_fields'])) {
+    // We're dealing with an Ubercart version dated July 18, 2012 or later.
+    // Some fields are structured differently.
+    $uc_version_20120718 = TRUE;
+    $form['uc_address_fields_weight']['#tree'] = TRUE;
+  }
+  else {
+    $uc_version_20120718 = FALSE;
+  }
+
+  // Get weight settings.
   $weights = variable_get('uc_address_fields_weight', _uc_extra_fields_pane_getDefaultAddressFieldsWeights($form['fields']));
 
-  // Merge weight settings with default weight settings in case extra fields were added
+  // Merge weight settings with default weight settings in case extra fields were added.
   $weights = array_merge(_uc_extra_fields_pane_getDefaultAddressFieldsWeights($form['fields']), $weights);
 
   foreach ($weights as $fieldname => $weight) {
-    if (isset($form['fields'][$fieldname])) {
-      // Add weight fields
+    if ($uc_version_20120718) {
+      $form['uc_address_fields_weight'][$fieldname] = array(
+        '#type' => 'weight',
+        '#delta' => 30,
+        '#default_value' => $weight,
+        '#attributes' => array('class' => 'uc-address-fields-table-ordering'),
+      );
+
+      // Apply weight settings on fields.
+      $form['fields'][$fieldname]['#weight'] = $weight;
+    }
+    elseif (isset($form['fields'][$fieldname])) {
+      // Add weight fields.
       $form['fields'][$fieldname]['weight'] = array(
         '#type' => 'weight',
         '#delta' => 30,
@@ -40,13 +61,13 @@ function _uc_extra_fields_pane_weight_uc_store_address_fields_alter(&$form, $for
         '#attributes' => array('class' => 'uc-address-fields-table-ordering'),
       );
 
-      // Apply weight settings on fields
+      // Apply weight settings on fields.
       $form['fields'][$fieldname]['#weight'] = $weight;
+
+      // Add submit function in order to save the weight settings.
+      $form['#submit'][] = 'uc_extra_fields_pane_weight_uc_store_address_fields_submit';
     }
   }
-
-  // Add submit function in order to save the weight settings
-  $form['#submit'][] = 'uc_extra_fields_pane_weight_uc_store_address_fields_submit';
 }
 
 /**

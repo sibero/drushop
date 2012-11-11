@@ -24,7 +24,7 @@ Drupal.vbo.prepareSelectors = function() {
   var strings = { 'selectAll': Drupal.t('Select all items in this table'), 'selectNone': Drupal.t('Deselect all items in this table') }; 
   var lastChecked, rowShiftKey;
 
-  // Do not add a "Select all" checkbox if there are no rows with checkboxes in the table
+  // Do not add a "Select all" checkbox if there are no rows with checkboxes in the table.
   if ($('td input:checkbox', $table).size() == 0) {
     return;
   }
@@ -37,9 +37,10 @@ Drupal.vbo.prepareSelectors = function() {
   };
 
   // Adjust selection and update server.
-  var updateSelection = function(selectall, selection) {
+  var updateSelection = function(selectall, selection, recursive) {
     selection = selection || {};
     selection.selectall = Number(selectall);
+    recursive = recursive || false;
 
     // Adjust form value.
     $('input#edit-objects-selectall', $form).val(Number(selectall > 0));
@@ -56,6 +57,12 @@ Drupal.vbo.prepareSelectors = function() {
         return;
       }
       queueProcess = true;
+
+      // Disable the submit button(s).
+      if (!recursive) {
+        $('#views-bulk-operations-select input:submit', $form).attr('disabled', 'disabled').filter(':last').after('<span class="views-throbbing">&nbsp</span>');
+      }
+
       $.post(
         Drupal.settings.vbo[form_id].ajax_select, 
         { 
@@ -71,7 +78,12 @@ Drupal.vbo.prepareSelectors = function() {
           if (queue.length > 0) {
             // Resume queue if it's not empty.
             var elm = queue.shift();
-            updateSelection(elm.selectall, elm.selection);
+            updateSelection(elm.selectall, elm.selection, true);
+          }
+          else {
+            // Enable the submit button(s).
+            $('#views-bulk-operations-select input:submit', $form).removeAttr('disabled');
+            $('#views-bulk-operations-select span.views-throbbing', $form).remove();
           }
         },
         'json'
@@ -133,16 +145,9 @@ Drupal.vbo.prepareSelectors = function() {
 
   // Save the operation value.
   $('#views-bulk-operations-dropdown select', $form).change(function() {
-    if (Drupal.settings.vbo[form_id].options.preserve_selection) {
-      $.post(
-        Drupal.settings.vbo[form_id].ajax_select, 
-        {
-          view_name: Drupal.settings.vbo[form_id].view_name, 
-          view_id: Drupal.settings.vbo[form_id].view_id, 
-          selection: JSON.stringify({'operation': this.options[this.selectedIndex].value})
-        }
-      );
-    }
+    var selection = {}
+    selection['operation'] = this.options[this.selectedIndex].value;
+    updateSelection($('input#edit-objects-selectall', $form).val(), selection);
   });
 
   // Save the selected items.

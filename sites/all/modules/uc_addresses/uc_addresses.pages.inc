@@ -58,9 +58,24 @@ function uc_addresses_address_book($address_user) {
  * Prepare variables for address book
  *
  * @param array $vars
+ *   An array with the following:
+ *   - addresses (array of UcAddressesAddress instances)
+ *   - address_book' (instance of UcAddressesAddressBook)
+ *   - options (array):
+ *     - add_link (boolean): whether or not display an add address link.
+ *
  * @return void
  */
 function template_preprocess_uc_addresses_address_book(&$vars) {
+  // Initialize variables
+  $vars['options'] += array(
+    'add_link' => FALSE,
+  );
+  $vars['add_address_link'] = NULL;
+  $vars['other_addresses'] = array();
+  $vars['default_billing_address'] = NULL;
+  $vars['default_shipping_address'] = NULL;
+
   // Find out which addresses are default addresses and which are not.
   $address_book = $vars['address_book'];
   foreach ($vars['addresses'] as $aid => $themed_address) {
@@ -101,6 +116,7 @@ function template_preprocess_uc_addresses_address_book(&$vars) {
  *   The address to display.
  * @param array $options
  *   Options for display, see template_preprocess_uc_addresses_list_address().
+ *
  * @return string
  *   The themed address.
  */
@@ -125,11 +141,26 @@ function uc_addresses_list_one_address($address_user, UcAddressesAddress $addres
  * Prepare variables for one address
  *
  * @param array $vars
+ *   An array with the following:
+ *   - address (instance of UcAddressesAddress)
+ *   - options (array):
+ *     - edit_link (boolean): whether or not display an edit address link.
+ *     - delete_link (boolean): whether or not display an delete address link.
+ *     - destination (string): path to return to after editing the address.
+ *
  * @return void
  *
  * @ingroup themeable
  */
 function template_preprocess_uc_addresses_list_address(&$vars) {
+  // Initialize variables
+  $vars['options'] += array(
+    'edit_link' => FALSE,
+    'delete_link' => FALSE,
+    'destination' => '',
+  );
+  $vars['admin_links'] = NULL;
+
   // User ID
   $vars['aid'] = $vars['address']->getId();
   $vars['uid'] = $vars['address']->getUserId();
@@ -188,7 +219,7 @@ function template_preprocess_uc_addresses_list_address(&$vars) {
  *   The form state.
  * @param object $address_user
  *   The user who "owns" this address.
- * @param $address
+ * @param UcAddressesAddress $address
  *   The address to edit (NULL for new addresses)
  *
  * @return array
@@ -196,7 +227,7 @@ function template_preprocess_uc_addresses_list_address(&$vars) {
  *
  * @ingroup forms
  */
-function uc_addresses_get_address_form(&$form_state, $address_user, $address) {
+function uc_addresses_get_address_form(&$form_state, $address_user, $address = NULL) {
   if (!($address instanceof UcAddressesAddress)) {
     $address = UcAddressesAddressBook::get($address_user)->addAddress();
   }
@@ -252,6 +283,8 @@ function uc_addresses_get_address_form(&$form_state, $address_user, $address) {
 /**
  * Validate handler for the address form.
  *
+ * Checks if the address is similar to other addresses.
+ *
  * @param array $form
  * @param array $form_state
  *
@@ -263,12 +296,28 @@ function uc_addresses_get_address_form(&$form_state, $address_user, $address) {
 function uc_addresses_get_address_form_validate(&$form, &$form_state) {
   switch ($form_state['clicked_button']['#value']) {
     case variable_get('uc_addresses_delete_button', t('Delete address')):
-      // Don't do further validation
+      // Don't do further validation.
       unset($form['uc_addresses']['address']['#element_validate']);
       unset($_SESSION['messages']['error']);
       $form_state['submitted'] = TRUE;
       form_set_error(NULL, '', TRUE);
-      break;
+      return;
+  }
+  // Check if the address looks like other addresses.
+  try {
+    $address = $form['uc_addresses']['address']['#uc_addresses_address'];
+    $address_book = UcAddressesAddressBook::get($address->getUserId());
+    if ($address_book->compareAddress($address)) {
+      if ($address->isNew()) {
+        form_set_error('uc_addresses][address', t('This address already appears in your address book. A new address was not added.'));
+      }
+      else {
+        form_set_error('uc_addresses][address', t('The revised address is already in your address book. Your change was not made.'));
+      }
+    }
+  }
+  catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
   }
 }
 
@@ -306,7 +355,8 @@ function uc_addresses_get_address_form_submit(&$form, &$form_state) {
 /**
  * Theme the add or edit address form.
  *
- * @param $form The form array to theme.
+ * @param array $form
+ *   The form array to theme.
  *
  * @return string
  *   The themed form.
@@ -327,7 +377,7 @@ function theme_uc_addresses_get_address_form($form) {
  *
  * @ingroup themeable
  */
-function template_preprocess_uc_addresses_pane(&$vars) {
+function template_preprocess_uc_addresses_form(&$vars) {
   drupal_add_css(drupal_get_path('module', 'uc_addresses') . '/uc_addresses.css');
   $vars['req'] = '<span class="form-required">*</span>';
 }

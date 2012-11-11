@@ -8,7 +8,7 @@
  * - $req: A span for required fields:
  *   <span class="form-required">*</span>
  *
- * @see template_preprocess_uc_addresses_pane()
+ * @see template_preprocess_uc_addresses_form()
  *
  * @ingroup themeable
  */
@@ -16,22 +16,33 @@
 <div class="address-pane-table">
   <table>
     <?php foreach (element_children($form) as $fieldname): ?>
-      <?php if (!isset($form[$fieldname]['#access']) || $form[$fieldname]['#access'] !== FALSE): ?>
-        <tr class="field-<?php print $fieldname; ?>">
-          <?php if ($form[$fieldname]['#title']): ?>
-            <td class="field-label">
-              <?php if ($form[$fieldname]['#required']): ?>
-                <?php print $req; ?>
-              <?php endif; ?>
-              <?php print $form[$fieldname]['#title']; ?>:
-            </td>
-          <?php unset($form[$fieldname]['#title']); ?>
-          <?php else: ?>
-            <td class="field-label"></td>
-          <?php endif; ?>
-          <td class="field-field"><?php print drupal_render($form[$fieldname]); ?></td>
-        </tr>
-      <?php endif; ?>
+      <?php
+        // Skip fields with:
+        // - #access == FALSE
+        // - #type == value
+        // - #type == hidden for fields without a label.
+        if (
+          (isset($form[$fieldname]['#access']) && $form[$fieldname]['#access'] == FALSE)
+          || ($form[$fieldname]['#type'] == 'value')
+          || ($form[$fieldname]['#type'] == 'hidden' && empty($form[$fieldname]['#title']))
+        ) {
+          continue;
+        }
+      ?>
+      <tr class="field-<?php print $fieldname; ?>">
+        <?php if (!empty($form[$fieldname]['#title'])): ?>
+          <td class="field-label">
+            <?php if ($form[$fieldname]['#required']): ?>
+              <?php print $req; ?>
+            <?php endif; ?>
+            <?php print $form[$fieldname]['#title']; ?>:
+          </td>
+        <?php unset($form[$fieldname]['#title']); ?>
+        <?php else: ?>
+          <td class="field-label"></td>
+        <?php endif; ?>
+        <td class="field-field"><?php print drupal_render($form[$fieldname]); ?></td>
+      </tr>
     <?php endforeach; ?>
   </table>
 </div>

@@ -127,7 +127,7 @@ function uc_addresses_checkout_pane_address($type, $op, &$order, $values = array
             'onclick' => "uc_addresses_copy_address_checkout(this.checked, '$other_type', '$uc_type');",
           ),
           '#weight' => -5,
-          '#default_value' => ($address->copy_address) ? TRUE : FALSE,
+          '#default_value' => (!empty($address->copy_address)) ? TRUE : FALSE,
         );
       }
 
@@ -217,7 +217,6 @@ function uc_addresses_order_pane_bill_to($op, $order, $values = array()) {
  * @return mixed
  */
 function uc_addresses_order_pane_ship_to($op, $order, $values = array()) {
-// uc_zone_get_by_id($order->delivery_zone);
   return uc_addresses_order_pane_address('shipping', $op, $order, $values);
 }
 
@@ -283,7 +282,7 @@ function uc_addresses_order_pane_address($type, $op, $order, $values = array()) 
 
       $form = array(
         '#type' => 'fieldset',
-        '#title' => t("Modify 'Bill to' information"),
+        '#title' => $description,
         '#collapsible' => TRUE,
         '#collapsed' => FALSE,
       );

@@ -22,12 +22,45 @@
  * @see _uc_extra_fields_pane_address_fields_uc_store_address_fields_submit()
  */
 function _uc_extra_fields_pane_address_fields_uc_store_address_fields_alter(&$form, $form_state) {
+  if (isset($form['uc_address_fields'])) {
+    // We're dealing with an Ubercart version dated July 18, 2012 or later.
+    // Some fields are structured differently.
+    $uc_version_20120718 = TRUE;
+  }
+  else {
+    $uc_version_20120718 = FALSE;
+  }
+
   try {
     $fields = UCXF_FieldList::getFieldsFromPane(array('extra_delivery', 'extra_billing'));
 
     // Similar to uc_store_address_fields_form() from uc_store.module
     foreach ($fields as $fieldname => $field) {
-      if (1) {
+      if ($uc_version_20120718) {
+        // The "enabled" setting is inside "$form['uc_address_fields']'.
+        $form['fields'][$fieldname]['#summary callback'] = 'summarize_form';
+        $form['uc_address_fields'][$fieldname] = array(
+          '#type' => 'checkbox',
+          '#summary callback' => 'summarize_checkbox',
+          '#summary arguments' => array(
+            t('@field is enabled.', array('@field' => $field->label)),
+            t('@field is disabled.', array('@field' => $field->label)),
+          ),
+          '#default_value' => ($field->enabled) ? TRUE : FALSE,
+        );
+        // The "required" setting is inside "$form['uc_address_fields_required']'.
+        $form['uc_address_fields_required'][$fieldname] = array(
+          '#type' => 'checkbox',
+          '#default_value' => ($field->required) ? TRUE : FALSE,
+        );
+
+        // Title field.
+        $form['fields'][$fieldname]['uc_field_' . $fieldname] = array(
+          '#value' => $field->output('label'),
+        );
+      }
+      else {
+        // This is valid when using Ubercart 6.x-2.3 through Ubercart 6.x-2.9.
         $form['fields'][$fieldname]['#summary callback'] = 'summarize_form';
         $form['fields'][$fieldname]['enabled'] = array(
           '#type' => 'checkbox',
@@ -42,19 +75,21 @@ function _uc_extra_fields_pane_address_fields_uc_store_address_fields_alter(&$fo
           '#type' => 'checkbox',
           '#default_value' => ($field->required) ? TRUE : FALSE,
         );
+        $form['fields'][$fieldname]['title'] = array(
+          '#value' => $field->output('label'),
+        );
+        // Add id of field.
+        $form['fields'][$fieldname]['field_id'] = array(
+          '#type' => 'value',
+          '#value' => $field->field_id,
+        );
       }
+      // Add field machine name.
       $form['fields'][$fieldname]['default'] = array(
         '#value' => $field->db_name,
       );
-      $form['fields'][$fieldname]['title'] = array(
-        '#value' => $field->output('label'),
-      );
-      // Add id of field
-      $form['fields'][$fieldname]['field_id'] = array(
-        '#type' => 'value',
-        '#value' => $field->field_id,
-      );
-      // Add action links
+
+      // Add action links.
       $links = array();
       if (uc_extra_fields_pane_access($field, 'edit')) {
         $links['edit'] = l(t('edit'), 'admin/store/settings/addressfields/' . $field->field_id . '/edit');
@@ -69,14 +104,36 @@ function _uc_extra_fields_pane_address_fields_uc_store_address_fields_alter(&$fo
       }
     }
 
-    // Add link to add address field
+    // Add link to add an address field.
+    // This field will be shown above the table as is usual in
+    // the 7.x-1.x version of Extra Fields Pane.
     $form['add_field'] = array(
       '#type' => 'markup',
-      '#value' => l(t('Add an address field'), 'admin/store/settings/addressfields/add') . '<br /><br />',
-      '#weight' => 2,
+      '#value' => l(
+        '+ ' . t('Add an address field'),
+        'admin/store/settings/addressfields/add',
+        array(
+          'attributes' => array(
+            'class' => 'ucxf-add-field-link ucxf-add-field-link-1',
+          ),
+        )
+      ) . '<br /><br />',
     );
-    $form['save']['#weight'] = 3;
-    $form['reset']['#weight'] = 4;
+    // Add a second link to add an address field.
+    // This field will be shown below the table as was usual in
+    // 6.x-2.0-beta2 and older versions of Extra Fields Pane.
+    $form['add_field2'] = array(
+      '#type' => 'markup',
+      '#value' => l(
+        '+ ' . t('Add an address field'),
+        'admin/store/settings/addressfields/add',
+        array(
+          'attributes' => array(
+            'class' => 'ucxf-add-field-link ucxf-add-field-link-2',
+          ),
+        )
+      ) . '<br /><br />',
+    );
 
     // Add submit function so 'enabled' and 'required' can be saved
     $form['#submit'][] = 'uc_extra_fields_pane_address_fields_uc_store_address_fields_submit';
@@ -97,9 +154,23 @@ function _uc_extra_fields_pane_address_fields_uc_store_address_fields_alter(&$fo
 function uc_extra_fields_pane_address_fields_uc_store_address_fields_submit($form, $form_state) {
   try {
     $address_fields = UCXF_FieldList::getFieldsFromPane(array('extra_delivery', 'extra_billing'));
-    $fields = $form_state['values']['fields'];
+    if (isset($form_state['values']['fields'])) {
+      $fields = $form_state['values']['fields'];
+    }
     foreach ($address_fields as $fieldname => $field) {
-      db_query("UPDATE {uc_extra_fields} SET enabled=%d, required=%d, weight=%d WHERE field_id=%d", $fields[$fieldname]['enabled'], $fields[$fieldname]['required'], $fields[$fieldname]['weight'], $fields[$fieldname]['field_id']);
+      if (isset($form['uc_address_fields'])) {
+        // We're dealing with an Ubercart version dated July 18, 2012 or later.
+        // Some fields are structured differently.
+        $field->enabled = empty($form_state['values']['uc_address_fields'][$fieldname]) ? FALSE : TRUE;
+        $field->required = empty($form_state['values']['uc_address_fields_required'][$fieldname]) ? FALSE : TRUE;
+        $field->weight = $form_state['values']['uc_address_fields_weight'][$fieldname];
+      }
+      else {
+        $field->enabled = empty($fields[$fieldname]['enabled']) ? FALSE : TRUE;
+        $field->required = empty($fields[$fieldname]['required']) ? FALSE : TRUE;
+        $field->weight = $fields[$fieldname]['weight'];
+      }
+      $field->save();
     }
   }
   catch (UCXF_Exception $e) {

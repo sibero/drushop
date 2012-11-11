@@ -1028,24 +1028,6 @@ function uc_extra_fields_pane_ucxf_display_options($field) {
 // - load fields from particular pane type
 // -------------------------------------------------------------------
 
-// Deprecated
-/**
- * Create Field
- *
- * Based on pane_type either an instance will of either
- * UCXF_AddressField or UCXF_CustomField will be created.
- * If no array is given, an instance of uxcf_field is given.
- *
- * @param array $field_data
- * @return UCXF_Field
- */
-function uc_extra_fields_pane_create_field($field_data = array()) {
-  trigger_error('uc_extra_fields_pane_create_field() is deprecated. Use UCXF_FieldList::createField($pane_type) instead.');
-  $field = UCXF_FieldList::createField($field_data['pane_type']);
-  $field->from_array($field_data);
-  return $field;
-}
-
 /**
  * Implementation of hook_load().
  * @param int $fid
@@ -1057,49 +1039,6 @@ function uc_extra_fields_pane_field_load($fid) {
   }
   catch (UCXF_Exception $e) {
     drupal_set_message($e->getMessage(), 'error');
-  }
-}
-
-// Deprecated function, you can also call $field->delete() now.
-/**
- * field_delete()
- * Deletes field
- * @param int $fid
- * @return boolean
- */
-function uc_extra_fields_pane_field_delete($fid) {
-  trigger_error('uc_extra_fields_pane_field_delete() is deprecated. Use $field->delete() or UCXF_FieldList::deleteFieldById() instead.');
-  return UCXF_FieldList::deleteFieldById($fid);
-}
-
-// Deprecated
-/**
- * Load all extra fields from the database.
- *
- * Optionally, give it a $pane_type to specify which pane we want fields from.
- * @param string $pane_type
- * @return array
- */
-function uc_extra_fields_pane_load_fields_from_db($pane_type=NULL) {
-  trigger_error('uc_extra_fields_pane_load_fields_from_db() is deprecated. Use UCXF_FieldList::getFieldsFromPane() instead.');
-
-  try {
-    // If no pane type provided, all fields must be loaded
-    if (!$pane_type) {
-      $pane_type = 'all';
-    }
-    switch ($pane_type) {
-      case 'all':
-        return UCXF_FieldList::getAllCustomFields();
-      case 'extra_address':
-        return UCXF_FieldList::getAllAddressFields();
-      default:
-        return UCXF_FieldList::getFieldsFromPane($pane_type);
-    }
-  }
-  catch (UCXF_Exception $e) {
-    $e->printMessage();
-    $e->logError();
   }
 }
 

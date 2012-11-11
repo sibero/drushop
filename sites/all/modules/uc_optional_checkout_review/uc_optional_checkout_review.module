@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file
@@ -27,11 +26,14 @@ function uc_optional_checkout_review_form_submit($form, &$form_state) {
 
     $order = uc_order_load($_SESSION['cart_order']);
     if ($order->payment_method == 'paypal_wps') {
-      $wps_form = uc_paypal_wps_form($form_state, $order);
+      $wps_form = drupal_retrieve_form('uc_paypal_wps_form', $form_state, $order);
+      drupal_prepare_form('uc_paypal_wps_form', $wps_form, $form_state, $order);
       $wps_url = $wps_form['#action'] . '?';
+
       foreach (element_children($wps_form) as $key) {
         $wps_url .= urlencode($key) . '=' . urlencode($wps_form[$key]['#value']) . '&';
-      }      
+      }
+
       $wps_url = trim($wps_url, '&');
       drupal_goto($wps_url);
     }
@@ -39,7 +41,7 @@ function uc_optional_checkout_review_form_submit($form, &$form_state) {
       // Now submit the form.  Obviously the $form_state isn't actually
       // correct... hopefully nothing will care.
       uc_cart_checkout_review_form_submit($form, $form_state);
-  
+
       // And check for an error.
       if ($form_state['redirect'] == 'cart/checkout/review') {
         // There's an error, so pretend the user clicked back.

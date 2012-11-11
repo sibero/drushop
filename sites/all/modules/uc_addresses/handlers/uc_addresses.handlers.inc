@@ -30,6 +30,7 @@ class UcAddressesAddressNameFieldHandler extends UcAddressesFieldHandler {
         '#default_value' => $default,
         '#required' => $this->isFieldRequired(),
         '#maxlength' => 20,
+        '#size' => 32,
       ),
     );
   }
@@ -104,10 +105,11 @@ class UcAddressesDefaultAddressFieldHandler extends UcAddressesFieldHandler {
         $fieldName => array(
           '#type' => 'checkbox',
           '#title' => $this->getFieldTitle(),
-          '#suffix' => $this->getProperty('suffix'),
+          '#uc_addresses_default_address_suffix' => $this->getProperty('suffix'),
           '#default_value' => $default,
           '#disabled' => $fieldValue,
           '#required' => $this->isFieldRequired(),
+          '#theme' => 'uc_addresses_default_address_checkbox',
         ),
       );
     }
@@ -117,6 +119,15 @@ class UcAddressesDefaultAddressFieldHandler extends UcAddressesFieldHandler {
         $fieldName => array(
           '#type' => 'value',
           '#value' => 1,
+        ),
+        $fieldName . '_item' => array(
+          '#type' => 'checkbox',
+          '#title' => $this->getFieldTitle(),
+          '#uc_addresses_default_address_suffix' => $this->getProperty('suffix'),
+          '#default_value' => 1,
+          '#disabled' => TRUE,
+          '#required' => $this->isFieldRequired(),
+          '#theme' => 'uc_addresses_default_address_checkbox',
         ),
       );
     }

@@ -708,6 +708,8 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   $form_id = $form_state['values']['form_id'];
   $plugin = $form['#plugin'];
   $view = $plugin->view;
+  $view_id = _views_bulk_operations_view_id($view);
+  $view_name = $view->name;
 
   $form_state['storage']['step'] = $step = $form_state['values']['step'];
   switch ($step) {
@@ -715,6 +717,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       $form_state['storage']['selection'] = _views_bulk_operations_get_selection($plugin, $form_state, $form_id);
       $form_state['storage']['selectall'] = $form_state['values']['objects']['selectall'];
       $form_state['storage']['operation'] = $operation = $plugin->get_operation_info($form_state['values']['operation']);
+      $_SESSION['vbo_values'][$view_name][$view_id]['operation'] = $operation['key'];
       if (!$operation['configurable'] && !empty($operation['options']['skip_confirmation'])) {
         break; // Go directly to execution
       }
@@ -724,6 +727,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       $form_state['storage']['selection'] = _views_bulk_operations_get_selection($plugin, $form_state, $form_id);
       $form_state['storage']['selectall'] = $form_state['values']['objects']['selectall'];
       $form_state['storage']['operation'] = $operation = $plugin->get_operation_info($form_state['values']['operation']);
+      $_SESSION['vbo_values'][$view_name][$view_id]['operation'] = $operation['key'];
       if ($operation['configurable']) {
         $form_state['storage']['operation_arguments'] = _views_bulk_operations_action_submit($operation, $form, $form_state);
       }

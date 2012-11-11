@@ -1,4 +1,5 @@
 /**
+ * @file
  * Javascript functions for Ubercart Addresses
  */
 
@@ -43,7 +44,6 @@ function uc_addresses_copy_address_order(source, target) {
  *
  * @param string source
  *   The pane to get the address data from
- *   The pane to copy address data to
  * @param string target
  *   The pane to copy address data to
  * @param string context

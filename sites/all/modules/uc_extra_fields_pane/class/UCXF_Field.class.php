@@ -293,18 +293,6 @@ class UCXF_Field {
   // DATABASE REQUESTS
   // -----------------------------------------------------------------------------
 
-  // Deprecated
-  /**
-   * load()
-   * Loads field from database
-   * @param int $p_iField_id
-   * @access public
-   * @return UCXF_Field
-   */
-  public function load($p_iField_id) {
-    return uc_extra_fields_pane_field_load($p_iField_id);
-  }
-
   /**
    * save()
    * Saves field in database

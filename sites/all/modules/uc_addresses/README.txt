@@ -21,6 +21,17 @@ database table, one that the user can manipulate as part of the user
 profile.
 
 
+Table of contents
+---------------------
+- Module overview
+- Ubercart Addresses country formats
+- Dependencies
+- Installation
+- Permissions
+- Extending the module
+---------------------
+
+
 Module overview:
 ---------------------
 When users create an account, you can request that they be asked to
@@ -103,17 +114,17 @@ Permissions
 - view own addresses:
     Roles with this permission can view all own addresses in their address
     book, *including* the default addresses.
-- view everyone's default addresses
+- view all default addresses
     Roles with this permission can view all default addresses of all
     users, *including* their own default addresses.
-- view everyone's addresses
+- view all addresses
     Roles with this permission can view all addresses of all users,
     including addresses of their own.
 - add/edit own addresses
     Roles with this permission can add addresses to their own address
     book and edit own addresses. They are also able to view their own
     addresses.
-- add/edit everyone's addresses
+- add/edit all addresses
     Roles with this permission can add addresses to address books of
     any user and edit addresses of all users. They are also be able
     to view all addresses.
@@ -122,7 +133,32 @@ Permissions
     marked as the default shipping or the default billing address.
     (Ubercart Addresses doesn't allow anyone to delete default addresses,
     including the superuser. This is by design.)
-- delete everyone's addresses
+- delete all addresses
     Roles with this permission can delete all addresses of all users,
     except addresses that are marked as default shipping or default
     billing.
+
+
+Extending the module
+-----------
+Ubercart Addresses provides two API's and a set of hooks to extend the
+module:
+- The address book API
+  With this API you can control addresses used by Ubercart Addresses.
+- The field handler API
+  With this API you can add extra address fields.
+- Hooks
+  Hooks allow you to respond to events in the Ubercart Addresses module:
+  - Your module can respond when an address is loaded, saved or deleted.
+  - Your module can get extra control about address access if the
+    existing permissions don't suite your needs.
+  - Your module can deliver a list of selectable addresses at checkout
+    that don't have to exists in the user's address book.
+  - Your module can alter an address field listing before it's displayed.
+
+There is an example module included in the uc_addresses_example sub-
+directory which demonstrates how to interact with the field handler API.
+Documentation about the hooks can be found in uc_addresses.api.php.
+
+More documentation can be found online:
+http://drupal.org/node/1340672

@@ -244,26 +244,50 @@ function uc_extra_fields_pane_field_delete_confirm_form_submit($form, &$form_sta
  * @return string
  */
 function theme_uc_extra_fields_pane_uc_store_address_fields($form) {
+  if (isset($form['uc_address_fields'])) {
+    // We're dealing with an Ubercart version dated July 18, 2012 or later.
+    // Some fields are structured differently.
+    $uc_version_20120718 = TRUE;
+  }
+  else {
+    $uc_version_20120718 = FALSE;
+  }
+
+  $title = t('Title');
+  if (function_exists('i18n_variable_form_submit') && $uc_version_20120718) {
+    $title .= ' - '. t('This is a multilingual variable.');
+  }
   $header = array(
     t('Enabled'),
     t('Field'),
-    t('Title'),
+    $title,
     t('Required'),
     array('data' => t('List position'), 'sort' => 'asc'),
     t('Action'),
   );
 
   foreach (element_children($form['fields']) as $field) {
-    $row = array(
-      array('data' => drupal_render($form['fields'][$field]['enabled']), 'align' => 'center'),
-      drupal_render($form['fields'][$field]['default']),
-      drupal_render($form['fields'][$field]['title']),
-      drupal_render($form['fields'][$field]['required']),
-      drupal_render($form['fields'][$field]['weight']),
-    );
+    if ($uc_version_20120718) {
+      $row = array(
+        array('data' => drupal_render($form['uc_address_fields'][$field]), 'align' => 'center'),
+        drupal_render($form['fields'][$field]['default']),
+        drupal_render($form['fields'][$field]['uc_field_' . $field]),
+        drupal_render($form['uc_address_fields_required'][$field]),
+        drupal_render($form['uc_address_fields_weight'][$field]),
+      );
+    }
+    else {
+      $row = array(
+        array('data' => drupal_render($form['fields'][$field]['enabled']), 'align' => 'center'),
+        drupal_render($form['fields'][$field]['default']),
+        drupal_render($form['fields'][$field]['title']),
+        drupal_render($form['fields'][$field]['required']),
+        drupal_render($form['fields'][$field]['weight']),
+      );
+    }
 
     // Add Edit/Delete link to fields that are editable.
-    if (isset($form['fields'][$field]['field_id'])) {
+    if (isset($form['fields'][$field]['action'])) {
       $row[] = drupal_render($form['fields'][$field]['action']);
     }
     else {
@@ -282,7 +306,10 @@ function theme_uc_extra_fields_pane_uc_store_address_fields($form) {
 
   drupal_add_tabledrag('uc-address-fields-table', 'order', 'sibling', 'uc-address-fields-table-ordering');
 
-  $output = theme('table', $header, $rows, array('id' => 'uc-address-fields-table')) . drupal_render($form);
+  $output = drupal_render($form['add_field']);
+  $output .= theme('table', $header, $rows, array('id' => 'uc-address-fields-table'));
+  $output .= drupal_render($form['add_field2']);
+  $output .= drupal_render($form);
 
   return $output;
 }

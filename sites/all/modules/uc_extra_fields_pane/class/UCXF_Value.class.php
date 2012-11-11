@@ -148,6 +148,16 @@ class UCXF_Value {
    * @return mixed
    */
   public function __get($member) {
+    switch ($member) {
+      case 'db_name':
+        if (empty($this->db_name)) {
+          if ($oField = $this->getField()) {
+            $this->db_name = $oField->db_name;
+            return $oField->db_name;
+          }
+        }
+        break;
+    }
     if (isset($this->$member)) {
       return $this->$member;
     }
