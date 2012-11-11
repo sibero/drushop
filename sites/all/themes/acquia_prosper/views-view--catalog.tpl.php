@@ -24,8 +24,8 @@
 <div class="sortby"><?php print t("Sort by:"); ?> <form name="menu2">
 <select name="sel" onChange="linklist(document.menu2.sel)">
 <option value="#">выбрать</option>
-<option title="<?php print t("Цене (от минимальной до максимальной)"); ?>" value="<?php print $path; ?>?orderby=sell_price_asc"><?php print t("Цене (убывание)"); ?></option>
-<option title="<?php print t("Цене (от максимальной до минимальной)"); ?>" value="<?php print $path; ?>?orderby=sell_price_desc"><?php print t("Цене (возрастание)"); ?></option>
+<option title="<?php print t("Цене (от минимальной до максимальной)"); ?>" value="<?php print $path; ?>?orderby=sell_price_desc"><?php print t("Цене (убывание)"); ?></option>
+<option title="<?php print t("Цене (от максимальной до минимальной)"); ?>" value="<?php print $path; ?>?orderby=sell_price_asc"><?php print t("Цене (возрастание)"); ?></option>
 
 <option title="<?php print t("Названию"); ?>" value="<?php print $path; ?>?orderby=node_title_asc"><?php print t("Названию (от а до я)"); ?></option>
 <option title="<?php print t("Названию"); ?>" value="<?php print $path; ?>?orderby=node_title_desc"><?php print t("Названию (от я до а)"); ?></option>

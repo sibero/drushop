@@ -2124,7 +2124,7 @@ print uc_currency_format($temp_discount_total);
       'label_type' => 'none',
       'format' => 'product_hover_preview_product_list',
       'multiple' => array(
-        'group' => 1,
+        'group' => 0,
         'multiple_number' => '1',
         'multiple_from' => '',
         'multiple_reversed' => 0,
@@ -2609,7 +2609,7 @@ print "<div class=\'old_price\'>".t("Old price").":".uc_currency_format($row->li
       'label_type' => 'none',
       'format' => 'product_hover_preview_product_list',
       'multiple' => array(
-        'group' => 1,
+        'group' => 0,
         'multiple_number' => '1',
         'multiple_from' => '',
         'multiple_reversed' => 0,
@@ -2620,7 +2620,7 @@ print "<div class=\'old_price\'>".t("Old price").":".uc_currency_format($row->li
       'field' => 'field_image_cache_fid',
       'relationship' => 'none',
       'override' => array(
-        'button' => 'Переопределить',
+        'button' => 'Использовать установки по умолчанию',
       ),
     ),
     'value' => array(

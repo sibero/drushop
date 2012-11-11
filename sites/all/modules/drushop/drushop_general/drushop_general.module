@@ -5,7 +5,7 @@
 
 function drushop_version()
 {
-  return "2.2"; 
+  return "2.3"; 
 }
 
 function drushop_general_init() {

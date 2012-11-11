@@ -82,11 +82,11 @@ function drushop_catalog_views_default_views() {
       'hide_empty' => 0,
       'empty_zero' => 0,
       'hide_alter_empty' => 1,
-      'link_to_node' => 0,
+      'link_to_node' => 1,
       'label_type' => 'none',
       'format' => 'product_hover_preview_product_list',
       'multiple' => array(
-        'group' => 1,
+        'group' => 0,
         'multiple_number' => '1',
         'multiple_from' => '',
         'multiple_reversed' => 0,
@@ -755,7 +755,7 @@ print "<div class=\'old_price\'>".t("Old price").":".uc_currency_format($row->li
     'type' => 'none',
   ));
   $handler->override_option('cache', array(
-    'type' => 'rules',
+    'type' => 'none',
   ));
   $handler->override_option('title', 'Каталог');
   $handler->override_option('css_class', 'grid-tovar');
@@ -839,7 +839,7 @@ print "<div class=\'old_price\'>".t("Old price").":".uc_currency_format($row->li
       'label_type' => 'none',
       'format' => 'product_hover_preview_product_list',
       'multiple' => array(
-        'group' => 1,
+        'group' => 0,
         'multiple_number' => '1',
         'multiple_from' => '',
         'multiple_reversed' => 0,
@@ -1580,6 +1580,7 @@ print uc_currency_format($temp_discount_total);
       'reduce_duplicates' => 0,
     ),
   ));
+  $handler->override_option('use_ajax', TRUE);
   $handler->override_option('items_per_page', 12);
   $handler->override_option('path', 'catalog/%');
   $handler->override_option('menu', array(
