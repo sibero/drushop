@@ -6,11 +6,13 @@
  * because it uses a subquery to find nodes with
  */
 class views_handler_filter_term_node_tid_depth extends views_handler_filter_term_node_tid {
-  function operator_options() {
+/*
+   function operator_options() {
     return array(
       'or' => t('Is one of'),
     );
   }
+  */
   
   function option_definition() {
     $options = parent::option_definition();
