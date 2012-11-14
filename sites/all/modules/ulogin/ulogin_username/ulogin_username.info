@@ -1,8 +1,9 @@
-name = uLogin
-description = "uLogin integration to authenticate users through social networks."
+name = uLogin username
+description = "Create new users using 'first_name last_name' username pattern."
 core = 6.x
 package = User interface
-dependencies[] = realname
+dependencies[] = ulogin
+; hidden = TRUE
 
 ; Information added by drupal.org packaging script on 2012-06-11
 version = "6.x-1.3"
