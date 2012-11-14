@@ -1,3 +1,4 @@
+
 /**
  * Attaches the batch behavior to progress bars.
  */

@@ -1,3 +1,4 @@
+
 Drupal.behaviors.multiselectSelector = function() {
   // Automatically selects the right radio button in a multiselect control.
   $('.multiselect select:not(.multiselectSelector-processed)')

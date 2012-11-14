@@ -1,575 +1,543 @@
+
+/*
+** HTML elements
+*/
 body.drag {
-	cursor: move;
+  cursor: move;
 }
-
 th.active img {
-	display: inline;
+  display: inline;
 }
-
 tr.even, tr.odd {
-	background-color: #EEEEEE;
-	border-bottom: 1px solid #CCCCCC;
-	padding: 0.1em 0.6em;
+  background-color: #eee;
+  border-bottom: 1px solid #ccc;
+  padding: 0.1em 0.6em;
 }
-
 tr.drag {
-	background-color: #FFFFF0;
+  background-color: #fffff0;
 }
-
 tr.drag-previous {
-	background-color: #FFFFDD;
+  background-color: #ffd;
 }
-
 td.active {
-	background-color: #DDDDDD;
+  background-color: #ddd;
 }
-
 td.checkbox, th.checkbox {
-	text-align: center;
+  text-align: center;
 }
-
 tbody {
-	border-top: 1px solid #CCCCCC;
+  border-top: 1px solid #ccc;
 }
-
 tbody th {
-	border-bottom: 1px solid #CCCCCC;
+  border-bottom: 1px solid #ccc;
 }
-
 thead th {
-	text-align: left;
-	padding-right: 1em;
-	border-bottom: 3px solid #CCCCCC;
+  text-align: left; /* LTR */
+  padding-right: 1em; /* LTR */
+  border-bottom: 3px solid #ccc;
 }
 
+/*
+** Other common styles
+*/
 .breadcrumb {
-	padding-bottom: 0.5em;
+  padding-bottom: .5em
 }
-
 div.indentation {
-	width: 20px;
-	height: 1.7em;
-	margin: -0.4em 0.2em -0.4em -0.4em;
-	padding: 0.42em 0 0.42em 0.6em;
-	float: left;
+  width: 20px;
+  height: 1.7em;
+  margin: -0.4em 0.2em -0.4em -0.4em; /* LTR */
+  padding: 0.42em 0 0.42em 0.6em; /* LTR */
+  float: left; /* LTR */
 }
-
 div.tree-child {
-	background: url("../../misc/tree.png") no-repeat scroll 11px center transparent;
+  background: url(../../misc/tree.png) no-repeat 11px center; /* LTR */
 }
-
 div.tree-child-last {
-	background: url("../../misc/tree-bottom.png") no-repeat scroll 11px center transparent;
+  background: url(../../misc/tree-bottom.png) no-repeat 11px center; /* LTR */
 }
-
 div.tree-child-horizontal {
-	background: url("../../misc/tree.png") no-repeat scroll -11px center transparent;
+  background: url(../../misc/tree.png) no-repeat -11px center;
 }
-
 .error {
-	color: #EE5555;
+  color: #e55;
 }
-
 div.error {
-	border: 1px solid #DD7777;
+  border: 1px solid #d77;
 }
-
 div.error, tr.error {
-	background: none repeat scroll 0 0 #FFCCCC;
-	color: #220000;
-	padding: 2px;
+  background: #fcc;
+  color: #200;
+  padding: 2px;
 }
-
 .warning {
-	color: #E09010;
+  color: #e09010;
 }
-
 div.warning {
-	border: 1px solid #F0C020;
+  border: 1px solid #f0c020;
 }
-
 div.warning, tr.warning {
-	background: none repeat scroll 0 0 #FFFFDD;
-	color: #222200;
-	padding: 2px;
+  background: #ffd;
+  color: #220;
+  padding: 2px;
 }
-
 .ok {
-	color: #008000;
+  color: #008000;
 }
-
 div.ok {
-	border: 1px solid #00AA00;
+  border: 1px solid #00aa00;
 }
-
 div.ok, tr.ok {
-	background: none repeat scroll 0 0 #DDFFDD;
-	color: #002200;
-	padding: 2px;
+  background: #dfd;
+  color: #020;
+  padding: 2px;
 }
-
 .item-list .icon {
-	color: #555555;
-	float: right;
-	padding-left: 0.25em;
-	clear: right;
+  color: #555;
+  float: right; /* LTR */
+  padding-left: 0.25em; /* LTR */
+  clear: right; /* LTR */
 }
-
 .item-list .title {
-	font-weight: bold;
+  font-weight: bold;
 }
-
 .item-list ul {
-	margin: 0 0 0.75em;
-	padding: 0;
+  margin: 0 0 0.75em 0;
+  padding: 0;
 }
-
 .item-list ul li {
-	margin: 0 0 0.25em 1.5em;
-	padding: 0;
-	list-style: disc outside none;
+  margin: 0 0 0.25em 1.5em; /* LTR */
+  padding: 0;
+  list-style: disc;
 }
-
 ol.task-list li.active {
-	font-weight: bold;
+  font-weight: bold;
 }
-
 .form-item {
-	margin-top: 1em;
-	margin-bottom: 1em;
+  margin-top: 1em;
+  margin-bottom: 1em;
 }
-
 tr.odd .form-item, tr.even .form-item {
-	margin-top: 0;
-	margin-bottom: 0;
-	white-space: nowrap;
+  margin-top: 0;
+  margin-bottom: 0;
+  white-space: nowrap;
 }
-
 tr.merge-down, tr.merge-down td, tr.merge-down th {
-	border-bottom-width: 0 !important;
+  border-bottom-width: 0 !important;
 }
-
 tr.merge-up, tr.merge-up td, tr.merge-up th {
-	border-top-width: 0 !important;
+  border-top-width: 0 !important;
 }
-
 .form-item input.error, .form-item textarea.error, .form-item select.error {
-	border: 2px solid red;
+  border: 2px solid red;
 }
-
 .form-item .description {
-	font-size: 0.85em;
+  font-size: 0.85em;
 }
-
 .form-item label {
-	display: block;
-	font-weight: bold;
+  display: block;
+  font-weight: bold;
 }
-
 .form-item label.option {
-	display: inline;
-	font-weight: normal;
+  display: inline;
+  font-weight: normal;
 }
-
 .form-checkboxes, .form-radios {
-	margin: 1em 0;
+  margin: 1em 0;
 }
-
 .form-checkboxes .form-item, .form-radios .form-item {
-	margin-top: 0.4em;
-	margin-bottom: 0.4em;
+  margin-top: 0.4em;
+  margin-bottom: 0.4em;
 }
-
 .marker, .form-required {
-	color: #FF0000;
+  color: #f00;
 }
-
 .more-link {
-	text-align: right;
-	margin-right: 6px;
+  text-align: right; /* LTR */
 }
-
 .more-help-link {
-	font-size: 0.85em;
-	text-align: right;
+  font-size: 0.85em;
+  text-align: right; /* LTR */
 }
-
 .nowrap {
-	white-space: nowrap;
+  white-space: nowrap;
 }
-
 .item-list .pager {
-	clear: both;
-	text-align: center;
+  clear: both;
+  text-align: center;
 }
-
 .item-list .pager li {
-	background-image: none;
-	display: inline;
-	list-style-type: none;
-	padding: 0.5em;
+  background-image:none;
+  display:inline;
+  list-style-type:none;
+  padding: 0.5em;
 }
-
 .pager-current {
-	font-weight: bold;
+  font-weight:bold;
 }
-
 .tips {
-	margin-top: 0;
-	margin-bottom: 0;
-	padding-top: 0;
-	padding-bottom: 0;
-	font-size: 0.9em;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 0.9em;
 }
-
 dl.multiselect dd.b, dl.multiselect dd.b .form-item, dl.multiselect dd.b select {
-	font-family: inherit;
-	font-size: inherit;
-	width: 14em;
+  font-family: inherit;
+  font-size: inherit;
+  width: 14em;
 }
-
 dl.multiselect dd.a, dl.multiselect dd.a .form-item {
-	width: 10em;
+  width: 10em;
 }
-
 dl.multiselect dt, dl.multiselect dd {
-	float: left;
-	line-height: 1.75em;
-	padding: 0;
-	margin: 0 1em 0 0;
+  float: left; /* LTR */
+  line-height: 1.75em;
+  padding: 0;
+  margin: 0 1em 0 0; /* LTR */
 }
-
 dl.multiselect .form-item {
-	height: 1.75em;
-	margin: 0;
+  height: 1.75em;
+  margin: 0;
 }
 
+/*
+** Inline items (need to override above)
+*/
 .container-inline div, .container-inline label {
-	display: inline;
+  display: inline;
 }
 
+/*
+** Tab navigation
+*/
 ul.primary {
-	border-collapse: collapse;
-	padding: 0 0 0 1em;
-	white-space: nowrap;
-	list-style: none outside none;
-	margin: 5px;
-	height: auto;
-	line-height: normal;
-	border-bottom: 1px solid #BBBBBB;
+  border-collapse: collapse;
+  padding: 0 0 0 1em; /* LTR */
+  white-space: nowrap;
+  list-style: none;
+  margin: 5px;
+  height: auto;
+  line-height: normal;
+  border-bottom: 1px solid #bbb;
 }
-
 ul.primary li {
-	display: inline;
+  display: inline;
 }
-
 ul.primary li a {
-	background-color: #DDDDDD;
-	border-color: #BBBBBB;
-	border-width: 1px;
-	border-style: solid solid none;
-	height: auto;
-	margin-right: 0.5em;
-	padding: 0 1em;
-	text-decoration: none;
+  background-color: #ddd;
+  border-color: #bbb;
+  border-width: 1px;
+  border-style: solid solid none solid;
+  height: auto;
+  margin-right: 0.5em; /* LTR */
+  padding: 0 1em;
+  text-decoration: none;
 }
-
 ul.primary li.active a {
-	background-color: #FFFFFF;
-	border-width: 1px;
-	border-style: solid;
-	border-color: #BBBBBB #BBBBBB #FFFFFF;
+  background-color: #fff;
+  border: 1px solid #bbb;
+  border-bottom: #fff 1px solid;
 }
-
 ul.primary li a:hover {
-	background-color: #EEEEEE;
-	border-color: #CCCCCC #CCCCCC #EEEEEE;
+  background-color: #eee;
+  border-color: #ccc;
+  border-bottom-color: #eee;
 }
-
 ul.secondary {
-	border-bottom: 1px solid #BBBBBB;
-	padding: 0.5em 1em;
-	margin: 5px;
+  border-bottom: 1px solid #bbb;
+  padding: 0.5em 1em;
+  margin: 5px;
 }
-
 ul.secondary li {
-	display: inline;
-	padding: 0 1em;
-	border-right: 1px solid #CCCCCC;
+  display: inline;
+  padding: 0 1em;
+  border-right: 1px solid #ccc; /* LTR */
 }
-
 ul.secondary a {
-	padding: 0;
-	text-decoration: none;
+  padding: 0;
+  text-decoration: none;
 }
-
 ul.secondary a.active {
-	border-bottom: 4px solid #999999;
+  border-bottom: 4px solid #999;
 }
 
+/*
+** Autocomplete styles
+*/
+/* Suggestion list */
 #autocomplete {
-	position: absolute;
-	border: 1px solid;
-	overflow: hidden;
-	z-index: 100;
+  position: absolute;
+  border: 1px solid;
+  overflow: hidden;
+  z-index: 100;
 }
-
 #autocomplete ul {
-	margin: 0;
-	padding: 0;
-	list-style: none outside none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
-
 #autocomplete li {
-	background: none repeat scroll 0 0 #FFFFFF;
-	color: #000000;
-	white-space: pre;
-	cursor: default;
+  background: #fff;
+  color: #000;
+  white-space: pre;
+  cursor: default;
 }
-
 #autocomplete li.selected {
-	background: none repeat scroll 0 0 #0072B9;
-	color: #FFFFFF;
+  background: #0072b9;
+  color: #fff;
 }
-
+/* Animated throbber */
 html.js input.form-autocomplete {
-	background-image: url("../../misc/throbber.gif");
-	background-repeat: no-repeat;
-	background-position: 100% 2px;
+  background-image: url(../../misc/throbber.gif);
+  background-repeat: no-repeat;
+  background-position: 100% 2px; /* LTR */
 }
-
 html.js input.throbbing {
-	background-position: 100% -18px;
+  background-position: 100% -18px; /* LTR */
 }
 
+/*
+** Collapsing fieldsets
+*/
 html.js fieldset.collapsed {
-	border-bottom-width: 0;
-	border-left-width: 0;
-	border-right-width: 0;
-	margin-bottom: 0;
-	height: 1em;
+  border-bottom-width: 0;
+  border-left-width: 0;
+  border-right-width: 0;
+  margin-bottom: 0;
+  height: 1em;
 }
-
 html.js fieldset.collapsed * {
-	display: none;
+  display: none;
 }
-
 html.js fieldset.collapsed legend {
-	display: block;
+  display: block;
 }
-
 html.js fieldset.collapsible legend a {
-	padding-left: 15px;
-	background: url("../../misc/menu-expanded.png") no-repeat scroll 5px 75% transparent;
+  padding-left: 15px; /* LTR */
+  background: url(../../misc/menu-expanded.png) 5px 75% no-repeat; /* LTR */
 }
-
 html.js fieldset.collapsed legend a {
-	background-image: url("../../misc/menu-collapsed.png");
-	background-position: 5px 50%;
+  background-image: url(../../misc/menu-collapsed.png); /* LTR */
+  background-position: 5px 50%; /* LTR */
 }
-
-* html.js fieldset.collapsed legend, * html.js fieldset.collapsed legend *, * html.js fieldset.collapsed table * {
-	display: inline;
+/* Note: IE-only fix due to '* html' (breaks Konqueror otherwise). */
+* html.js fieldset.collapsed legend,
+* html.js fieldset.collapsed legend *,
+* html.js fieldset.collapsed table * {
+  display: inline;
 }
-
+/* For Safari 2 to prevent collapsible fieldsets containing tables from dissapearing due to tableheader.js. */
 html.js fieldset.collapsible {
-	position: relative;
+  position: relative;
 }
-
 html.js fieldset.collapsible legend a {
-	display: block;
+  display: block;
 }
-
+/* Avoid jumping around due to margins collapsing into collapsible fieldset border */
 html.js fieldset.collapsible .fieldset-wrapper {
-	overflow: auto;
+  overflow: auto;
 }
 
+/*
+** Resizable text areas
+*/
 .resizable-textarea {
-	width: 95%;
+  width: 95%;
 }
-
 .resizable-textarea .grippie {
-	height: 9px;
-	overflow: hidden;
-	background: url("../../misc/grippie.png") no-repeat scroll center 2px #EEEEEE;
-	border-width: 0 1px 1px;
-	border-style: solid;
-	border-color: #DDDDDD;
-	cursor: s-resize;
+  height: 9px;
+  overflow: hidden;
+  background: #eee url(../../misc/grippie.png) no-repeat center 2px;
+  border: 1px solid #ddd;
+  border-top-width: 0;
+  cursor: s-resize;
 }
-
 html.js .resizable-textarea textarea {
-	margin-bottom: 0;
-	width: 100%;
-	display: block;
+  margin-bottom: 0;
+  width: 100%;
+  display: block;
 }
 
+/*
+** Table drag and drop.
+*/
 .draggable a.tabledrag-handle {
-	cursor: move;
-	float: left;
-	height: 1.7em;
-	margin: -0.4em 0 -0.4em -0.5em;
-	padding: 0.42em 1.5em 0.42em 0.5em;
-	text-decoration: none;
+  cursor: move;
+  float: left; /* LTR */
+  height: 1.7em;
+  margin: -0.4em 0 -0.4em -0.5em; /* LTR */
+  padding: 0.42em 1.5em 0.42em 0.5em; /* LTR */
+  text-decoration: none;
 }
-
 a.tabledrag-handle:hover {
-	text-decoration: none;
+  text-decoration: none;
 }
-
 a.tabledrag-handle .handle {
-	margin-top: 4px;
-	height: 13px;
-	width: 13px;
-	background: url("../../misc/draggable.png") no-repeat scroll 0 0 transparent;
+  margin-top: 4px;
+  height: 13px;
+  width: 13px;
+  background: url(../../misc/draggable.png) no-repeat 0 0;
 }
-
 a.tabledrag-handle-hover .handle {
-	background-position: 0 -20px;
+  background-position: 0 -20px;
 }
 
-.joined .grippie {
-	height: 5px;
-	background-position: center 1px;
-	margin-bottom: -2px;
+/*
+** Teaser splitter
+*/
+.joined + .grippie {
+  height: 5px;
+  background-position: center 1px;
+  margin-bottom: -2px;
 }
-
+/* Keeps inner content contained in Opera 9. */
 .teaser-checkbox {
-	padding-top: 1px;
+  padding-top: 1px;
 }
-
 div.teaser-button-wrapper {
-	float: right;
-	padding-right: 5%;
-	margin: 0;
+  float: right; /* LTR */
+  padding-right: 5%; /* LTR */
+  margin: 0;
 }
-
 .teaser-checkbox div.form-item {
-	float: right;
-	margin: 0 5% 0 0;
-	padding: 0;
+  float: right; /* LTR */
+  margin: 0 5% 0 0; /* LTR */
+  padding: 0;
 }
-
 textarea.teaser {
-	display: none;
+  display: none;
 }
-
 html.js .no-js {
-	display: none;
+  display: none;
 }
 
+/*
+** Progressbar styles
+*/
 .progress {
-	font-weight: bold;
+  font-weight: bold;
 }
-
 .progress .bar {
-	background: url("../../misc/progress.gif") repeat scroll 0 0 #FFFFFF;
-	border: 1px solid #00375A;
-	height: 1.5em;
-	margin: 0 0.2em;
+  background: #fff url(../../misc/progress.gif);
+  border: 1px solid #00375a;
+  height: 1.5em;
+  margin: 0 0.2em;
 }
-
 .progress .filled {
-	background: none repeat scroll 0 0 #0072B9;
-	height: 1em;
-	border-bottom: 0.5em solid #004A73;
-	width: 0;
+  background: #0072b9;
+  height: 1em;
+  border-bottom: 0.5em solid #004a73;
+  width: 0%;
 }
-
 .progress .percentage {
-	float: right;
+  float: right; /* LTR */
 }
-
 .progress-disabled {
-	float: left;
+  float: left; /* LTR */
 }
-
 .ahah-progress {
-	float: left;
+  float: left; /* LTR */
 }
-
 .ahah-progress .throbber {
-	width: 15px;
-	height: 15px;
-	margin: 2px;
-	background: url("../../misc/throbber.gif") no-repeat scroll 0 -18px transparent;
-	float: left;
+  width: 15px;
+  height: 15px;
+  margin: 2px;
+  background: transparent url(../../misc/throbber.gif) no-repeat 0px -18px;
+  float: left; /* LTR */
 }
-
 tr .ahah-progress .throbber {
-	margin: 0 2px;
+  margin: 0 2px;
 }
-
 .ahah-progress-bar {
-	width: 16em;
+  width: 16em;
 }
 
+/*
+** Formatting for welcome page
+*/
 #first-time strong {
-	display: block;
-	padding: 1.5em 0 0.5em;
+  display: block;
+  padding: 1.5em 0 .5em;
 }
 
+/*
+** To be used with tableselect.js
+*/
 tr.selected td {
-	background: none repeat scroll 0 0 #FFFFCC;
+  background: #ffc;
 }
 
+/*
+** Floating header for tableheader.js
+*/
 table.sticky-header {
-	margin-top: 0;
-	background: none repeat scroll 0 0 #FFFFFF;
+  margin-top: 0;
+  background: #fff;
 }
 
+/*
+** Installation clean URLs
+*/
 #clean-url.install {
-	display: none;
+  display: none;
 }
 
+/*
+** For anything you want to hide on page load when JS is enabled, so
+** that you can use the JS to control visibility and avoid flicker.
+*/
 html.js .js-hide {
-	display: none;
+  display: none;
 }
 
+/*
+** Styles for the system modules page (admin/build/modules)
+*/
 #system-modules div.incompatible {
-	font-weight: bold;
+  font-weight: bold;
 }
 
+/*
+** Styles for the system themes page (admin/build/themes)
+*/
 #system-themes-form div.incompatible {
-	font-weight: bold;
+  font-weight: bold;
 }
 
+/*
+** Password strength indicator
+*/
 span.password-strength {
-	visibility: hidden;
+  visibility: hidden;
 }
-
 input.password-field {
-	margin-right: 10px;
+  margin-right: 10px; /* LTR */
 }
-
 div.password-description {
-	padding: 0 2px;
-	margin: 4px 0 0;
-	font-size: 0.85em;
-	max-width: 500px;
+  padding: 0 2px;
+  margin: 4px 0 0 0;
+  font-size: 0.85em;
+  max-width: 500px;
 }
-
 div.password-description ul {
-	margin-bottom: 0;
+  margin-bottom: 0;
 }
-
 .password-parent {
-	margin: 0;
+  margin: 0 0 0 0;
 }
-
+/*
+** Password confirmation checker
+*/
 input.password-confirm {
-	margin-right: 10px;
+  margin-right: 10px; /* LTR */
 }
-
 .confirm-parent {
-	margin: 5px 0 0;
+  margin: 5px 0 0 0;
 }
-
 span.password-confirm {
-	visibility: hidden;
+  visibility: hidden;
 }
-
 span.password-confirm span {
-	font-weight: normal;
+  font-weight: normal;
 }
-

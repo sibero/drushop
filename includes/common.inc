@@ -137,30 +137,23 @@ function drupal_clear_path_cache() {
   drupal_lookup_path('wipe');
 }
 
-/**
- * Set an HTTP response header for the current page.
- *
- * Note: When sending a Content-Type header, always include a 'charset' type,
- * too. This is necessary to avoid security bugs (e.g. UTF-7 XSS).
+/*
+ * The function drupal_set_header() has been moved to includes/bootstrap.inc in Pressflow.
  */
-function drupal_set_header($header = NULL) {
-  // We use an array to guarantee there are no leading or trailing delimiters.
-  // Otherwise, header('') could get called when serving the page later, which
-  // ends HTTP headers prematurely on some PHP versions.
-  static $stored_headers = array();
-
-  if (strlen($header)) {
-    header($header);
-    $stored_headers[] = $header;
-  }
-  return implode("\n", $stored_headers);
-}
 
 /**
  * Get the HTTP response headers for the current page.
+ *
+ * This function is not called by Pressflow and remains here
+ * only for Drupal 5/6 API compatibility.
  */
 function drupal_get_headers() {
-  return drupal_set_header();
+  $headers = drupal_set_header();
+  $header_text = array();
+  foreach ($headers as $name => $value) {
+    $header_text[] .= $name . ': ' . $value;
+  }
+  return implode("\n", $header_text);
 }
 
 /**
@@ -344,9 +337,9 @@ function drupal_goto($path = '', $query = NULL, $fragment = NULL, $http_response
     module_invoke_all('exit', $url);
   }
 
-  // Even though session_write_close() is registered as a shutdown function, we
-  // need all session data written to the database before redirecting.
-  session_write_close();
+  // Even though session_write_close() is registered as a shutdown function,
+  // we need all session data written to the database before redirecting.
+  drupal_session_commit();
 
   header('Location: '. $url, TRUE, $http_response_code);
 
@@ -364,7 +357,7 @@ function drupal_site_offline() {
   drupal_set_header($_SERVER['SERVER_PROTOCOL'] .' 503 Service unavailable');
   drupal_set_title(t('Site off-line'));
   print theme('maintenance_page', filter_xss_admin(variable_get('site_offline_message',
-    t('@site is currently under maintenance. We should be back shortly. Thank you for your patience.', array('@site' => variable_get('site_name', 'Drupal'))))));
+    t('@site is currently under maintenance. We should be back shortly. Thank you for your patience.', array('@site' => variable_get('site_name', 'Pressflow'))))));
 }
 
 /**
@@ -543,7 +536,7 @@ function drupal_http_request($url, $headers = array(), $method = 'GET', $data = 
   // same time won't interfere with each other as they would if the database
   // prefix were stored statically in a file or database variable.
   if (is_string($db_prefix) && preg_match("/^simpletest\d+$/", $db_prefix, $matches)) {
-    $defaults['User-Agent'] = 'User-Agent: ' . $matches[0];
+    $defaults['User-Agent'] = 'User-Agent: ' . drupal_generate_test_ua($matches[0]);
   }
 
   foreach ($headers as $header => $value) {
@@ -1461,24 +1454,6 @@ function format_date($timestamp, $type = 'medium', $format = '', $timezone = NUL
  *   A string containing a URL to the given path.
  */
 function url($path = NULL, $options = array()) {
-global $base_url, $language;
-  static $script;
-  static $cache;
-  static $language_url_rewrite_function;
-  static $custom_url_rewrite_outbound;
-  if (!isset($script)) {
-    // On some web servers, such as IIS, we can't omit "index.php". So, we
-    // generate "index.php?q=foo" instead of "?q=foo" on anything that is not
-    // Apache.
-    $script = in_array($_SERVER['SERVER_SOFTWARE'], array('Nginx', 'Apache')) == FALSE ? 'index.php' : '';
-  }
-  if (!isset($language_url_rewrite_function)) {
-    $language_url_rewrite_function = function_exists('language_url_rewrite');
-  }
-  if (!isset($custom_url_rewrite_outbound)) {
-    $custom_url_rewrite_outbound = function_exists('custom_url_rewrite_outbound');
-  }
-  $clean_url = variable_get('clean_url', '0');
   // Merge in defaults.
   $options += array(
     'fragment' => '',
@@ -1487,19 +1462,6 @@ global $base_url, $language;
     'alias' => FALSE,
     'prefix' => ''
   );
-  
-  $cid = md5(serialize(array($base_url, $language, $script, $clean_url, $language_url_rewrite_function, $custom_url_rewrite_outbound)));
-  if (empty($cache[$cid]->data)) {
-    $cache[$cid] = cache_get('url:' . $cid, 'cache');
-  }
-  $key = md5(serialize(array($path, $options)));
-  if (isset($cache[$cid]->data[$key])) {
-    return $cache[$cid]->data[$key];
-  }
-  if (!is_object($cache[$cid])) {
-    $cache[$cid] = new stdClass();
-  }
-  
   if (!isset($options['external'])) {
     // Return an external link if $path contains an allowed absolute URL.
     // Only call the slow filter_xss_bad_protocol if $path contains a ':' before
@@ -1532,10 +1494,17 @@ global $base_url, $language;
       $path .= (strpos($path, '?') !== FALSE ? '&' : '?') . $options['query'];
     }
     // Reassemble.
-    $output = $path . $options['fragment'];
-    late_cache_set_merge_locked('url:' . $cid, $key, $output, 'cache');
-    $cache[$cid]->data[$key] = $output;
-    return $output;
+    return $path . $options['fragment'];
+  }
+
+  global $base_url;
+  static $script;
+
+  if (!isset($script)) {
+    // On some web servers, such as IIS, we can't omit "index.php". So, we
+    // generate "index.php?q=foo" instead of "?q=foo" on anything that is not
+    // Apache.
+    $script = in_array($_SERVER['SERVER_SOFTWARE'], array('Nginx', 'Apache')) == FALSE ? 'index.php' : '';
   }
 
   if (!isset($options['base_url'])) {
@@ -1566,10 +1535,10 @@ global $base_url, $language;
   if (variable_get('clean_url', '0')) {
     // With Clean URLs.
     if ($options['query']) {
-      $output = $base . $path .'?'. $options['query'] . $options['fragment'];
+      return $base . $path .'?'. $options['query'] . $options['fragment'];
     }
     else {
-      $output = $base . $path . $options['fragment'];
+      return $base . $path . $options['fragment'];
     }
   }
   else {
@@ -1582,42 +1551,10 @@ global $base_url, $language;
       $variables[] = $options['query'];
     }
     if ($query = join('&', $variables)) {
-      $output = $base . $script .'?'. $query . $options['fragment'];
+      return $base . $script .'?'. $query . $options['fragment'];
     }
     else {
-      $output = $base . $options['fragment'];
-    }
-  }
-  late_cache_set_merge_locked('url:' . $cid, $key, $output, 'cache');
-  $cache[$cid]->data[$key] = $output;
-  return $output;
-}
-
-function late_cache_set_merge_locked($cid = NULL, $key = NULL, $data = NULL, $table = NULL) {
-  static $values;
-  static $registered;
-
-  if (!empty($cid)) {
-    $values[$table][$cid][$key] = $data;
-    if (empty($registered)) {
-      $registered = TRUE;
-      register_shutdown_function('late_cache_set_merge_locked');
-    }
-    return;
-  }
-
-  foreach ($values as $table => $info) {
-    foreach ($info as $cid => $set) {
-      $lock_name = 'late_cache_set_merge_locked:' . $table . ':' . $cid;
-      if (!lock_acquire($lock_name)) {
-        return;
-      }
-      $cached_data = cache_get($cid, $table);
-      if (!empty($cached_data->data)) {
-        $set = array_merge($cached_data->data, $set);
-      }
-      cache_set($cid, $set, $table, CACHE_TEMPORARY);
-      lock_release($lock_name);
+      return $base . $options['fragment'];
     }
   }
 }
@@ -1709,13 +1646,16 @@ function l($text, $path, $options = array()) {
  * react to the closing of the page by calling hook_exit().
  */
 function drupal_page_footer() {
-  if (variable_get('cache', CACHE_DISABLED) != CACHE_DISABLED) {
+  // Write the session, and open one if needed.
+  drupal_session_commit();
+
+  // Do not cache if cache is disabled or external.
+  $cache = variable_get('cache', CACHE_DISABLED);
+  if ($cache != CACHE_DISABLED && $cache != CACHE_EXTERNAL) {
     page_set_cache();
   }
 
   module_invoke_all('exit');
-  // Update the hook implementation cache.
-  module_implements('', FALSE, FALSE, TRUE);
 }
 
 /**
@@ -1980,15 +1920,15 @@ function drupal_get_css($css = NULL) {
             // If a CSS file is not to be preprocessed and it's a module CSS file, it needs to *always* appear at the *top*,
             // regardless of whether preprocessing is on or off.
             if (!$preprocess && $type == 'module') {
-              $no_module_preprocess .= '<link type="text/css" rel="stylesheet" media="'. $media .'" href="'. base_path() . $file . $query_string .'" />'."\n";
+              $no_module_preprocess .= '<link type="text/css" rel="stylesheet" media="'. $media .'" href="'. file_create_url($file) . $query_string .'" />'."\n";
             }
             // If a CSS file is not to be preprocessed and it's a theme CSS file, it needs to *always* appear at the *bottom*,
             // regardless of whether preprocessing is on or off.
             else if (!$preprocess && $type == 'theme') {
-              $no_theme_preprocess .= '<link type="text/css" rel="stylesheet" media="'. $media .'" href="'. base_path() . $file . $query_string .'" />'."\n";
+              $no_theme_preprocess .= '<link type="text/css" rel="stylesheet" media="'. $media .'" href="'. file_create_url($file) . $query_string .'" />'."\n";
             }
             else {
-              $output .= '<link type="text/css" rel="stylesheet" media="'. $media .'" href="'. base_path() . $file . $query_string .'" />'."\n";
+              $output .= '<link type="text/css" rel="stylesheet" media="'. $media .'" href="'. file_create_url($file) . $query_string .'" />'."\n";
             }
           }
         }
@@ -2000,7 +1940,7 @@ function drupal_get_css($css = NULL) {
       // starting with "ad*".
       $filename = 'css_'. md5(serialize($types) . $query_string) .'.css';
       $preprocess_file = drupal_build_css_cache($types, $filename);
-      $output .= '<link type="text/css" rel="stylesheet" media="'. $media .'" href="'. base_path() . $preprocess_file .'" />'."\n";
+      $output .= '<link type="text/css" rel="stylesheet" media="'. $media .'" href="'. file_create_url($preprocess_file) .'" />'."\n";
     }
   }
 
@@ -2388,7 +2328,7 @@ function drupal_get_js($scope = 'header', $javascript = NULL) {
         // Additionally, go through any remaining scripts if JS preprocessing is on and output the non-cached ones.
         foreach ($data as $path => $info) {
           if (!$info['preprocess'] || !$is_writable || !$preprocess_js) {
-            $no_preprocess[$type] .= '<script type="text/javascript"'. ($info['defer'] ? ' defer="defer"' : '') .' src="'. base_path() . $path . ($info['cache'] ? $query_string : '?'. time()) ."\"></script>\n";
+            $no_preprocess[$type] .= '<script type="text/javascript"'. ($info['defer'] ? ' defer="defer"' : '') .' src="'. file_create_url($path) . ($info['cache'] ? $query_string : '?'. time()) ."\"></script>\n";
           }
           else {
             $files[$path] = $info;
@@ -2403,7 +2343,7 @@ function drupal_get_js($scope = 'header', $javascript = NULL) {
     // starting with "ad*".
     $filename = 'js_'. md5(serialize($files) . $query_string) .'.js';
     $preprocess_file = drupal_build_js_cache($files, $filename);
-    $preprocessed .= '<script type="text/javascript" src="'. base_path() . $preprocess_file .'"></script>'."\n";
+    $preprocessed .= '<script type="text/javascript" src="'. file_create_url($preprocess_file) .'"></script>'."\n";
   }
 
   // Keep the order of JS files consistent as some are preprocessed and others are not.
@@ -2588,150 +2528,10 @@ function drupal_clear_js_cache() {
  * We use HTML-safe strings, i.e. with <, > and & escaped.
  */
 function drupal_to_js($var) {
-  switch (gettype($var)) {
-    case 'boolean':
-      return $var ? 'true' : 'false'; // Lowercase necessary!
-    case 'integer':
-    case 'double':
-      return $var;
-    case 'resource':
-    case 'string':
- 
-// Always use Unicode escape sequences (\u0022) over JSON escape
-// sequences (\") to prevent browsers interpreting these as
-// special characters.
- 
-// Pattern : 
-// array( 
-//  [UTF8 (hex)] => [C/C++/Java Source code] 
-// );
-// [updated] 10.06.2012 
- 
-      $replace_pairs = array(
-        // ", \ and U+0000 - U+001F must be escaped according to RFC 4627.
-        "\x5c" => '\u005c',
-        "\x22" => '\u0022',
-        "\x00" => '\u0000',
-        "\x01" => '\u0001',
-        "\x02" => '\u0002',
-        "\x03" => '\u0003',
-        "\x04" => '\u0004',
-        "\x05" => '\u0005',
-        "\x06" => '\u0006',
-        "\x07" => '\u0007',
-        "\x08" => '\u0008',
-        "\x09" => '\u0009', //TAB
-        "\x0a" => '\u000a', //LF : Line Feed
-        "\x0b" => '\u000b',
-        "\x0c" => '\u000c',
-        "\x0d" => '\u000d',
-        "\x0e" => '\u000e',
-        "\x0f" => '\u000f',
-        "\x10" => '\u0010',
-        "\x11" => '\u0011',
-        "\x12" => '\u0012',
-        "\x13" => '\u0013',
-        "\x14" => '\u0014',
-        "\x15" => '\u0015',
-        "\x16" => '\u0016',
-        "\x17" => '\u0017',
-        "\x18" => '\u0018',
-        "\x19" => '\u0019',
-        "\x1a" => '\u001a',
-        "\x1b" => '\u001b',
-        "\x1c" => '\u001c',
-        "\x1d" => '\u001d',
-        "\x1e" => '\u001e',
-        "\x1f" => '\u001f',
- 
-        // Prevent browsers from interpreting these as as special.
- 
-        "\x27" => '\u0027',
-        "\x3c" => '\u003c',
-        "\x3e" => '\u003e',
- 
-        "\x26" => '\u0026',
-        "\x24" => '\u0024',
-        "\x40" => '\u0040',
- 
-        "\x21" => '\u0021',
-        "\x3a" => '\u003a',
-        "\x3b" => '\u003b',
-        "\x3f" => '\u003f',
- 
-        "\x5e" => '\u005e',
- 
-        "\x28" => '\u0028',
-        "\x29" => '\u0029',
- 
-        "\x7c" => '\u007c',
-        "\x60" => '\u0060',
-        "\x7e" => '\u007e',
- 
-        // Prevent browsers from interpreting the solidus as special and
-        // non-compliant JSON parsers from interpreting // as a comment.
- 
-        "\x2f" => '\u002f', // slash
- 
-        // While these are allowed unescaped according to ECMA-262, section
-        // 15.12.2, they cause problems in some JSON parser.
-        "\xe2\x80\xa8" => '\u2028', // U+2028, Line Separator.
-        "\xe2\x80\xa9" => '\u2029', // U+2029, Paragraph Separator.
-      );
- 
-      //return '"'. strtr($var, $replace_pairs) .'"';
- 
-      return '"' . unicode_replacer ( $var, $replace_pairs ) . '"';
- 
-    case 'array':
-      // Arrays in JSON can't be associative. If the array is empty or if it
-      // has sequential whole number keys starting with 0, it's not associative
-      // so we can go ahead and convert it as an array.
-      if (empty ($var) || array_keys($var) === range(0, sizeof($var) - 1)) {
-        $output = array();
-        foreach ($var as $v) {
-          $output[] = drupal_to_js($v);
-        }
-        return '[ '. implode(', ', $output) .' ]';
-      }
-      // Otherwise, fall through to convert the array as an object.
-    case 'object':
-      $output = array();
-      foreach ($var as $k => $v) {
-        $output[] = drupal_to_js(strval($k)) .': '. drupal_to_js($v);
-      }
-      return '{ '. implode(', ', $output) .' }';
-    default:
-      return 'null';
-  }
+  // json_encode() does not escape <, > and &, so we do it with str_replace()
+  return str_replace(array("<", ">", "&"), array('\u003c', '\u003e', '\u0026'), json_encode($var));
 }
- 
- 
-/*
- Alternate for strtr( ) looks like more speedy
-*/ 
- 
-function unicode_replacer ( $text, $replace ) {
-    $keys = array_keys($replace);
-    $length = array_combine($keys, array_map('strlen', $keys));
-    arsort($length);
- 
-    $array[] = $text;
-    $count = 1;
-    reset($length);
-    while ($key = key($length)) {
-        if (strpos($text, $key) !== false) {
-            for ($i = 0; $i < $count; $i += 2) {
-                if (($pos = strpos($array[$i], $key)) === false) continue;
-                array_splice($array, $i, 1, array(substr($array[$i], 0, $pos), $replace[$key], substr($array[$i], $pos + strlen($key))));
-                $count += 2;
-            }
-        }
-        next($length);
-    }
-    return implode( $array );
-}
- 
+
 /**
  * Return data in JSON format.
  *
@@ -2742,10 +2542,9 @@ function unicode_replacer ( $text, $replace ) {
  *   (optional) If set, the variable will be converted to JSON and output.
  */
 function drupal_json($var = NULL) {
-  // We are returning JavaScript, so tell the browser.
- 
-    drupal_set_header('Content-Type: application/json; charset=utf-8');
- 
+  // We are returning JSON, so tell the browser.
+  drupal_set_header('Content-Type: application/json');
+
   if (isset($var)) {
     echo drupal_to_js($var);
   }
@@ -2872,13 +2671,23 @@ function _drupal_bootstrap_full() {
   require_once './includes/mail.inc';
   require_once './includes/actions.inc';
   // Set the Drupal custom error handler.
-  set_error_handler('drupal_error_handler');
+  set_error_handler('_drupal_error_handler');
+  set_exception_handler('_drupal_exception_handler');
   // Emit the correct charset HTTP header.
   drupal_set_header('Content-Type: text/html; charset=utf-8');
   // Detect string handling method
   unicode_check();
   // Undo magic quotes
   fix_gpc_magic();
+
+  if (isset($_SERVER['HTTP_USER_AGENT']) && strpos($_SERVER['HTTP_USER_AGENT'], 'simpletest') !== FALSE) {
+    // Valid SimpleTest user-agent, log fatal errors to test specific file
+    // directory. The user-agent is validated in DRUPAL_BOOTSTRAP_DATABASE
+    // phase so as long as it is a SimpleTest user-agent it is valid.
+    ini_set('log_errors', 1);
+    ini_set('error_log', file_directory_path() . '/error.log');
+  }
+
   // Load all enabled modules
   module_load_all();
   // Let all modules take action before menu system handles the request
@@ -2902,19 +2711,38 @@ function _drupal_bootstrap_full() {
  * @see drupal_page_header
  */
 function page_set_cache() {
-  global $user, $base_root;
+  global $base_root;
 
-  if (!$user->uid && $_SERVER['REQUEST_METHOD'] == 'GET' && page_get_cache(TRUE)) {
+  if (drupal_page_is_cacheable()) {
     // This will fail in some cases, see page_get_cache() for the explanation.
     if ($data = ob_get_contents()) {
+      ob_end_clean();
+      $cache_lifetime = variable_get('page_cache_lifetime', 0);
+
       if (variable_get('page_compression', TRUE) && extension_loaded('zlib')) {
         $data = gzencode($data, 9, FORCE_GZIP);
       }
-      ob_end_flush();
-      cache_set($base_root . request_uri(), $data, 'cache_page', CACHE_TEMPORARY, drupal_get_headers());
+
+      $cache = (object) array(
+        'cid' => $base_root . request_uri(),
+        'data' => $data,
+        'expire' => $cache_lifetime > 0 ? $cache_lifetime : CACHE_TEMPORARY,
+        'created' => $_SERVER['REQUEST_TIME'],
+        'headers' => array(),
+      );
+    
+      // Restore preferred header names based on the lower-case names returned
+      // by drupal_get_header().
+      $header_names = _drupal_set_preferred_header_name();
+      foreach (drupal_get_header() as $name_lower => $value) {
+        $cache->headers[$header_names[$name_lower]] = $value;
+      }
+      cache_set($cache->cid, $cache->data, 'cache_page', $cache->expire, serialize($cache->headers));
+      drupal_page_cache_header($cache);
     }
   }
 }
+
 
 /**
  * Executes a cron run when called
@@ -3248,18 +3076,10 @@ function element_child($key) {
 }
 
 /**
- * Get keys of a structured array tree element that are not properties
- * (i.e., do not begin with '#').
+ * Get keys of a structured array tree element that are not properties (i.e., do not begin with '#').
  */
 function element_children($element) {
-  $results = array();
-  foreach ((array) $element as $key => $value) {
-    // Inlined call to element_child() for performance reasons.
-    if (!isset($key[0]) || $key[0] != '#') {
-      $results[] = $key;
-    }
-  }
-  return $results;
+  return array_filter(array_keys((array) $element), 'element_child');
 }
 
 /**
@@ -4014,4 +3834,263 @@ function _drupal_flush_css_js() {
     $new_character = $characters[mt_rand(0, strlen($characters) - 1)];
   }
   variable_set('css_js_query_string', $new_character . substr($string_history, 0, 19));
+}
+
+/**
+ * Error reporting level: display no errors.
+ */
+define('ERROR_REPORTING_HIDE', 0);
+
+/**
+ * Error reporting level: display errors and warnings.
+ */
+define('ERROR_REPORTING_DISPLAY_SOME', 1);
+
+/**
+ * Error reporting level: display all messages.
+ */
+define('ERROR_REPORTING_DISPLAY_ALL', 2);
+
+/**
+ * Custom PHP error handler.
+ *
+ * @param $error_level
+ *   The level of the error raised.
+ * @param $message
+ *   The error message.
+ * @param $filename
+ *   The filename that the error was raised in.
+ * @param $line
+ *   The line number the error was raised at.
+ * @param $context
+ *   An array that points to the active symbol table at the point the error occurred.
+ */
+function _drupal_error_handler($error_level, $message, $filename, $line, $context) {
+  if ($error_level & error_reporting()) {
+    // All these constants are documented at http://php.net/manual/en/errorfunc.constants.php
+    $types = array(
+      E_ERROR => 'Error',
+      E_WARNING => 'Warning',
+      E_PARSE => 'Parse error',
+      E_NOTICE => 'Notice',
+      E_CORE_ERROR => 'Core error',
+      E_CORE_WARNING => 'Core warning',
+      E_COMPILE_ERROR => 'Compile error',
+      E_COMPILE_WARNING => 'Compile warning',
+      E_USER_ERROR => 'User error',
+      E_USER_WARNING => 'User warning',
+      E_USER_NOTICE => 'User notice',
+      E_STRICT => 'Strict warning',
+      E_RECOVERABLE_ERROR => 'Recoverable fatal error'
+    );
+    $caller = _drupal_get_last_caller(debug_backtrace());
+
+    // We treat recoverable errors as fatal.
+    _drupal_log_error(array(
+      '%type' => isset($types[$error_level]) ? $types[$error_level] : 'Unknown error',
+      '%message' => $message,
+      '%function' => $caller['function'],
+      '%file' => $caller['file'],
+      '%line' => $caller['line'],
+    ), $error_level == E_RECOVERABLE_ERROR);
+  }
+}
+
+/**
+ * Custom PHP exception handler.
+ *
+ * Uncaught exceptions are those not enclosed in a try/catch block. They are
+ * always fatal: the execution of the script will stop as soon as the exception
+ * handler exits.
+ *
+ * @param $exception
+ *   The exception object that was thrown.
+ */
+function _drupal_exception_handler($exception) {
+  // Log the message to the watchdog and return an error page to the user.
+  _drupal_log_error(_drupal_decode_exception($exception), TRUE);
+}
+
+/**
+ * Decode an exception, especially to retrive the correct caller.
+ *
+ * @param $exception
+ *   The exception object that was thrown.
+ * @return An error in the format expected by _drupal_log_error().
+ */
+function _drupal_decode_exception($exception) {
+  $message = $exception->getMessage();
+
+  $backtrace = $exception->getTrace();
+  // Add the line throwing the exception to the backtrace.
+  array_unshift($backtrace, array('line' => $exception->getLine(), 'file' => $exception->getFile()));
+
+  // For PDOException errors, we try to return the initial caller,
+  // skipping internal functions of the database layer.
+  if ($exception instanceof PDOException) {
+    // The first element in the stack is the call, the second element gives us the caller.
+    // We skip calls that occurred in one of the classes of the database layer
+    // or in one of its global functions.
+    $db_functions = array('db_query', 'pager_query', 'db_query_range', 'db_query_temporary', 'update_sql');
+    while (!empty($backtrace[1]) && ($caller = $backtrace[1]) &&
+        ((isset($caller['class']) && (strpos($caller['class'], 'Query') !== FALSE || strpos($caller['class'], 'Database') !== FALSE || strpos($caller['class'], 'PDO') !== FALSE)) ||
+        in_array($caller['function'], $db_functions))) {
+      // We remove that call.
+      array_shift($backtrace);
+    }
+    if (isset($exception->query_string, $exception->args)) {
+      $message .= ": " . $exception->query_string . "; " . print_r($exception->args, TRUE);
+    }
+  }
+  $caller = _drupal_get_last_caller($backtrace);
+
+  return array(
+    '%type' => get_class($exception),
+    '%message' => $message,
+    '%function' => $caller['function'],
+    '%file' => $caller['file'],
+    '%line' => $caller['line'],
+  );
+}
+
+/**
+ * Log a PHP error or exception, display an error page in fatal cases.
+ *
+ * @param $error
+ *   An array with the following keys: %type, %message, %function, %file, %line.
+ * @param $fatal
+ *   TRUE if the error is fatal.
+ */
+function _drupal_log_error($error, $fatal = FALSE) {
+  // Initialize a maintenance theme if the boostrap was not complete.
+  // Do it early because drupal_set_message() triggers a drupal_theme_initialize().
+  if ($fatal && (drupal_get_bootstrap_phase() != DRUPAL_BOOTSTRAP_FULL)) {
+    unset($GLOBALS['theme']);
+    if (!defined('MAINTENANCE_MODE')) {
+      define('MAINTENANCE_MODE', 'error');
+    }
+    drupal_maintenance_theme();
+  }
+
+  // When running inside the testing framework, we relay the errors
+  // to the tested site by the way of HTTP headers.
+  if (isset($_SERVER['HTTP_USER_AGENT']) && preg_match("/^simpletest\d+;/", $_SERVER['HTTP_USER_AGENT']) && !headers_sent() && (!defined('SIMPLETEST_COLLECT_ERRORS') || SIMPLETEST_COLLECT_ERRORS)) {
+    // $number does not use drupal_static as it should not be reset
+    // as it uniquely identifies each PHP error.
+    static $number = 0;
+    $assertion = array(
+      $error['%message'],
+      $error['%type'],
+      array(
+        'function' => $error['%function'],
+        'file' => $error['%file'],
+        'line' => $error['%line'],
+      ),
+    );
+    header('X-Drupal-Assertion-' . $number . ': ' . rawurlencode(serialize($assertion)));
+    $number++;
+  }
+
+  try {
+    watchdog('php', '%type: %message in %function (line %line of %file).', $error, WATCHDOG_ERROR);
+  }
+  catch (Exception $e) {
+    // Ignore any additional watchdog exception, as that probably means
+    // that the database was not initialized correctly.
+  }
+
+  if ($fatal) {
+    drupal_set_header('500 Service unavailable (with message)');
+  }
+
+  if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest') {
+    if ($fatal) {
+      // When called from JavaScript, simply output the error message.
+      print t('%type: %message in %function (line %line of %file).', $error);
+      exit;
+    }
+  }
+  else {
+    // Display the message if the current error reporting level allows this type
+    // of message to be displayed, and unconditionnaly in update.php.
+    $error_level = variable_get('error_level', ERROR_REPORTING_DISPLAY_ALL);
+    $display_error = $error_level == ERROR_REPORTING_DISPLAY_ALL || ($error_level == ERROR_REPORTING_DISPLAY_SOME && $error['%type'] != 'Notice');
+    if ($display_error || (defined('MAINTENANCE_MODE') && MAINTENANCE_MODE == 'update')) {
+      $class = 'error';
+
+      // If error type is 'User notice' then treat it as debug information
+      // instead of an error message, see dd().
+      if ($error['%type'] == 'User notice') {
+        $error['%type'] = 'Debug';
+        $class = 'status';
+      }
+
+      drupal_set_message(t('%type: %message in %function (line %line of %file).', $error), $class);
+    }
+
+    if ($fatal) {
+      drupal_set_title(t('Error'));
+      // We fallback to a maintenance page at this point, because the page generation
+      // itself can generate errors.
+      print theme('maintenance_page', t('The website encountered an unexpected error. Please try again later.'));
+      exit;
+    }
+  }
+}
+
+/**
+ * Gets the last caller from a backtrace.
+ *
+ * @param $backtrace
+ *   A standard PHP backtrace.
+ * @return
+ *   An associative array with keys 'file', 'line' and 'function'.
+ */
+function _drupal_get_last_caller($backtrace) {
+  // Errors that occur inside PHP internal functions do not generate
+  // information about file and line. Ignore black listed functions.
+  $blacklist = array('debug');
+  while (($backtrace && !isset($backtrace[0]['line'])) ||
+         (isset($backtrace[1]['function']) && in_array($backtrace[1]['function'], $blacklist))) {
+    array_shift($backtrace);
+  }
+
+  // The first trace is the call itself.
+  // It gives us the line and the file of the last call.
+  $call = $backtrace[0];
+
+  // The second call give us the function where the call originated.
+  if (isset($backtrace[1])) {
+    if (isset($backtrace[1]['class'])) {
+      $call['function'] = $backtrace[1]['class'] . $backtrace[1]['type'] . $backtrace[1]['function'] . '()';
+    }
+    else {
+      $call['function'] = $backtrace[1]['function'] . '()';
+    }
+  }
+  else {
+    $call['function'] = 'main()';
+  }
+  return $call;
+}
+
+/**
+ * Debug function used for outputting debug information.
+ *
+ * The debug information is passed on to trigger_error() after being converted
+ * to a string using _drupal_debug_message().
+ *
+ * @param $data
+ *   Data to be output.
+ * @param $label
+ *   Label to prefix the data.
+ * @param $print_r
+ *   Flag to switch between print_r() and var_export() for data conversion to
+ *   string. Set $print_r to TRUE when dealing with a recursive data structure
+ *   as var_export() will generate an error.
+ */
+function debug($data, $label = NULL, $print_r = FALSE) {
+  // Print $data contents to string.
+  $string = $print_r ? print_r($data, TRUE) : var_export($data, TRUE);
+  trigger_error(trim($label ? "$label: $string" : $string));
 }

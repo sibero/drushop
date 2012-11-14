@@ -512,7 +512,7 @@ function drushop_general_preprocess_page(&$vars) {
 	$vars['imgPath'] = base_path().path_to_theme().'/images/';
 	
 	/*
-	// переменные иноформации о магазине
+	// переменные информации о магазине
     $vars['store_name'] = variable_get('uc_store_name', FALSE);
     $vars['store_owner'] = variable_get('uc_store_owner', FALSE);
     $$vars['store_email'] = variable_get('uc_store_email', FALSE);
