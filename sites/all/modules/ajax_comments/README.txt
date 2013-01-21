@@ -55,7 +55,7 @@ HELP AND ASSISTANCE
 Help is available in the issue queue. If you are asking for help, please
 provide the following information with your request:
 
-- Version of Drupal you are using, or Pressflow version if you are using that
+- Version of Drupal you are using, or Drushop version if you are using that
 - The comment settings for your node type
 - The ajax comments settings
 - The browsers you are testing with and version (Firefox 3.6.10, IE8, etc.)

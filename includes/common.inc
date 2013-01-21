@@ -138,13 +138,13 @@ function drupal_clear_path_cache() {
 }
 
 /*
- * The function drupal_set_header() has been moved to includes/bootstrap.inc in Pressflow.
+ * The function drupal_set_header() has been moved to includes/bootstrap.inc in Drushop.
  */
 
 /**
  * Get the HTTP response headers for the current page.
  *
- * This function is not called by Pressflow and remains here
+ * This function is not called by Drushop and remains here
  * only for Drupal 5/6 API compatibility.
  */
 function drupal_get_headers() {
@@ -359,7 +359,7 @@ function drupal_site_offline() {
   drupal_set_header($_SERVER['SERVER_PROTOCOL'] .' 503 Service unavailable');
   drupal_set_title(t('Site off-line'));
   print theme('maintenance_page', filter_xss_admin(variable_get('site_offline_message',
-    t('@site is currently under maintenance. We should be back shortly. Thank you for your patience.', array('@site' => variable_get('site_name', 'Pressflow'))))));
+    t('@site is currently under maintenance. We should be back shortly. Thank you for your patience.', array('@site' => variable_get('site_name', 'Drushop'))))));
 }
 
 /**

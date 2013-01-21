@@ -55,7 +55,7 @@ function ctools_object_cache_get($obj, $name, $skip_cache = FALSE) {
  */
 function ctools_object_cache_set($obj, $name, $cache) {
   // Store the CTools session id in the user session to force a
-  // session for anonymous users in Drupal 7 and Drupal 6 Pressflow.
+  // session for anonymous users in Drupal 7 and Drupal 6 Drushop.
   // see http://drupal.org/node/562374, http://drupal.org/node/861778
   if (empty($GLOBALS['user']->uid) && empty($_SESSION['ctools_session_id'])) {
     $_SESSION['ctools_hold_session'] = TRUE;
