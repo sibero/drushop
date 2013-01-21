@@ -161,10 +161,19 @@ function _db_query($query, $debug = 0, $slave = FALSE) {
     print '<p>query: '. $query .'<br />error:'. mysql_error($active_db) .'</p>';
   }
 
-  if (!mysql_errno($active_last_db)) {
+  $errno = mysql_errno($active_last_db);
+  if (!$errno) {
     return $result;
   }
   else {
+  switch ($errno) {
+      case 1153: //Got a packet bigger than "max_allowed_packet" bytes
+        // If the MySQL Server rejected the query because it's too big,
+        // writing the query to database watchdog will fail as well
+        // Truncate the query ...
+        $query = substr($query, 0, 100);
+        break;
+    }
     // Indicate to drupal_error_handler that this is a database error.
     ${DB_ERROR} = TRUE;
     trigger_error(check_plain(mysql_error($active_last_db) ."\nquery: ". $query), E_USER_WARNING);
