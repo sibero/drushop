@@ -598,7 +598,7 @@ require_once './includes/bootstrap.inc';
 $op = isset($_REQUEST['op']) ? $_REQUEST['op'] : '';
 if (empty($op)) {
   // Minimum load of components.
-  drupal_bootstrap(DRUPAL_BOOTSTRAP_DATABASE);
+  drupal_bootstrap(DRUPAL_BOOTSTRAP_CONFIGURATION);
 
   require_once './includes/install.inc';
   require_once './includes/file.inc';
