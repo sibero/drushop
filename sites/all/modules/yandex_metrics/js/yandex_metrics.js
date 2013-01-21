@@ -25,7 +25,9 @@ if (Drupal.jsEnabled) {
        return;
     }
     var basePath = Drupal.settings.basePath;
-    var ajaxCallbackPath = basePath + "admin/yandex_metrics_ajax/" + counter_id + "/" + filter + "/" + type;
+    // Add ?q= to the url if clean urls are turned off.
+    var queryParam = (parseInt(Drupal.settings.yandex_metrics.cleanUrls, 10) == 0) ? "?q=" : "";
+    var ajaxCallbackPath = basePath + queryParam + "admin/yandex_metrics_ajax/" + counter_id + "/" + filter + "/" + type;
     var indicatorPath = basePath + Drupal.settings.yandex_metrics.modulePath + "/images/progress-indicator.gif";
     $.ajax({
       url: ajaxCallbackPath,

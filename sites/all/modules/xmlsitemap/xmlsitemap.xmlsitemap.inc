@@ -32,7 +32,7 @@ class XMLSitemapWriter extends XMLWriter {
   function __construct(stdClass &$sitemap, $page) {
     $this->sitemap = $sitemap;
     $this->sitemap_page = $page;
-    $this->uri = $_SERVER['DOCUMENT_ROOT'].'/'.xmlsitemap_sitemap_get_file($sitemap, $page);
+    $this->uri = xmlsitemap_sitemap_get_file($sitemap, $page);
     $this->openUri($this->uri);
   }
 

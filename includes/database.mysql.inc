@@ -55,9 +55,9 @@ function db_connect($url) {
     _db_error_page('Unable to use the MySQL database because the MySQL extension for PHP is not installed. Check your <code>php.ini</code> to see how you can enable it.');
   }
 
-  // Decode url-encoded information in the db connection string
+  // Decode urlencoded information in the db connection string
   $url['user'] = urldecode($url['user']);
-  // Test if database url has a password.
+  // Test if database URL has a password.
   $url['pass'] = isset($url['pass']) ? urldecode($url['pass']) : '';
   $url['host'] = urldecode($url['host']);
   $url['path'] = urldecode($url['path']);
@@ -161,20 +161,10 @@ function _db_query($query, $debug = 0, $slave = FALSE) {
     print '<p>query: '. $query .'<br />error:'. mysql_error($active_db) .'</p>';
   }
 
- 
-  $errno = mysql_errno($active_last_db);
-  if (!$errno) {
+  if (!mysql_errno($active_last_db)) {
     return $result;
   }
   else {
-  switch ($errno) {
-      case 1153: //Got a packet bigger than "max_allowed_packet" bytes
-        // If the MySQL Server rejected the query because it's too big,
-        // writing the query to database watchdog will fail as well
-        // Truncate the query ...
-        $query = substr($query, 0, 100);
-        break;
-    }
     // Indicate to drupal_error_handler that this is a database error.
     ${DB_ERROR} = TRUE;
     trigger_error(check_plain(mysql_error($active_last_db) ."\nquery: ". $query), E_USER_WARNING);

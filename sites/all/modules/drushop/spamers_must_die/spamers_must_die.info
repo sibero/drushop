@@ -1,5 +1,5 @@
 name = Антиспам модуль
 description = Simple antispam module
-version = 6.x-1.1
+version = 6.x-1.2
 package = "Spam control"
 core = 6.x

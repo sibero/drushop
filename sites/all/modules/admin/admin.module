@@ -3,6 +3,7 @@
 /**
  * Implementation of hook_init().
  */
+ 
 function admin_init() {
   if (arg(0) === 'admin') {
     menu_set_active_menu_name('admin');
@@ -490,6 +491,8 @@ function admin_suppress($set = TRUE) {
   }
   return $suppress;
 }
+
+
 
 /**
  * My Account block.

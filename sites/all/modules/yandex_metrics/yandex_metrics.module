@@ -307,7 +307,13 @@ function yandex_metrics_report($filter = 'week') {
   
   $use_ajax = variable_get('yandex_metrics_use_ajax', FALSE);
   if ($use_ajax) {
-    drupal_add_js(array('yandex_metrics' => array('modulePath' => drupal_get_path('module', 'yandex_metrics'))), 'setting');
+    $js_settings = array(
+      'modulePath' => drupal_get_path('module', 'yandex_metrics'),
+      'cleanUrls' => variable_get('clean_url', 0)
+    );
+
+    drupal_add_js(array('yandex_metrics' => $js_settings), 'setting');
+
     drupal_add_js(drupal_get_path('module', 'yandex_metrics') . '/js/yandex_metrics.js');
     $output .= '<input type="hidden" id="yandex_metrics_counter_id" value="'. $counter_id .'" />';
     $output .= '<input type="hidden" id="yandex_metrics_filter" value="'. $filter .'" />';
@@ -429,7 +435,7 @@ function _yandex_metrics_sources_chart($counter_id, $filter) {
     $chart['#data'][] = !empty($value->visits) ? $value->visits : 0;
     $chart['#labels'][] = $i; 
     $chart['#legends'][] = $i . '. ' . $value->name . ' (' . round($value->visits * 100 / $sum) . '%' . ')';
-    $chart['#data_colors'][] = chart_unique_color('sources_' . $i);
+    $chart['#data_colors'][] = chart_unique_color('sources_' . $i, 'yandex_metrics');
     $i++;
   }
 
@@ -733,7 +739,7 @@ function yandex_metrics_authorization_submit($form, &$form_state) {
 function yandex_metrics_oauth_callback() {
 
   if (empty($_GET['code'])) {
-    watchdog('yandex_metrics', 'The "code" parameter is empty.', WATCHDOG_WARNING);
+    watchdog('yandex_metrics', 'The "code" parameter is empty.', array(), WATCHDOG_WARNING);
     drupal_set_message(t('An error has occurred. Please try again.'), 'error');
     drupal_goto('admin/settings/yandex_metrics/authorization');
   }

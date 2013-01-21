@@ -9,9 +9,9 @@ function ulogin_install() {
 /**
  * Implements hook_uninstall().
  */
-function ulogin_uninstall() {
-  drupal_uninstall_schema('ulogin');
-  
+ function ulogin_uninstall() {
+ error_reporting(0);
+  drupal_uninstall_schema('ulogin'); 
   variable_del('ulogin_display');
   variable_del('ulogin_fields');
   variable_del('ulogin_optional');

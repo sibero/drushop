@@ -2,6 +2,7 @@
 // $Id$
 // $_COOKIE['value'];
 // $_SESSION['value'];
+// firep() выводим отладочную информацию в окно firebug
 
 function drushop_version()
 {
@@ -150,8 +151,8 @@ function drushop_general_menu_alter(&$items) {
 	$items = array_merge($items, drushop_general_clone_items('admin/settings/module_filter', 'admin/settings/other/module_filter', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/settings/clean-urls', 'admin/settings/other/clean-urls', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/settings/lazy_image_loader', 'admin/settings/other/lazy_image_loader', $items));
-	$items = array_merge($items, drushop_general_clone_items('admin/settings/blockcache_alter', 'admin/settings/other/blockcache_alter', $items));
-	
+	$items = array_merge($items, drushop_general_clone_items('admin/settings/me', 'admin/settings/other/me', $items));
+
 	$items = array_merge($items, drushop_general_clone_items('admin/content/nodewords', 'admin/seo/nodewords', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/settings/page-title', 'admin/seo/page-title', $items));
 	$items = array_merge($items, drushop_general_clone_items('admin/build/path', 'admin/seo/path', $items));
@@ -285,6 +286,7 @@ function drushop_general_menu_alter(&$items) {
 	$items['admin/settings/chart']['type'] = MENU_CALLBACK;
 	$items['admin/settings/config_perms']['type'] = MENU_CALLBACK;
 	$items['admin/settings/logging/dblog']['type'] = MENU_CALLBACK;
+	$items['admin/settings/me']['type'] = MENU_CALLBACK;
 	
 	
 	$items['admin/user/user']['type'] = MENU_CALLBACK;
@@ -487,6 +489,7 @@ function drushop_general_preprocess_block_admin_display_form(&$vars) {
 }
 
 function drushop_general_preprocess_page(&$vars) {
+	
 	// выводит url текущей страницы, то что после сайт.ru/
     $path = drupal_get_path_alias($_GET['q']);
 	$vars['path_now'] = $path;
@@ -529,8 +532,9 @@ function drushop_general_preprocess_page(&$vars) {
 	$vars['version_store'] = "Drushop версия ".$ver;
 	$vars['version_store_curent'] = "<div class = 'version_store_curent'>- Последняя версия "."<a href='http://drushop.ru/download'><img style='border: 0px solid;' alt='' src='http://drushop.ru/ver_drushop_curent.png'></a> <br> </div>";
 	
-	
-	
+	if (function_exists('firep')) {
+	firep($vars['version_store']);
+	}
 }
 	drupal_set_html_head('<meta name="generator" content="drushop" />');
 

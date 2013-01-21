@@ -5,33 +5,65 @@ function drushop_general_install() {
   db_query("UPDATE {system} SET weight = 15 WHERE name = 'drushop'");
 }
 
- /*
+ 
 function drushop_general_update_6001() {
 	include_once('./includes/install.inc');
-  if (!module_exists('uc_optional_checkout_review')) {
-  drupal_install_modules(array('uc_optional_checkout_review'));
+	module_disable(array('ulogin'));
+    drupal_uninstall_module('ulogin');
+	$array = array('uc_optional_checkout_review', 'hover_preview', 'clean_module_list', 'uc_extra_fields_pane', 'moduleinfo', 'config_perms', 'realname', 'ulogin', 'ulogin_username');
+foreach ($array as $value) {
+if (!module_exists($value)) {
+  drupal_install_modules(array($value));
   }
-  if (!module_exists('maintenance_theme')) {
-  drupal_install_modules(array('maintenance_theme'));
-  }
-  if (!module_exists('moduleinfo')) {
-  drupal_install_modules(array('moduleinfo'));
-  }
+}
+
+  // hover_preview clean_module_list uc_extra_fields_pane moduleinfo config_perms realname
+  // 
   db_query("DELETE FROM {menu_links} WHERE menu_name = 'admin'");
   menu_rebuild();
-  cache_clear_all();
   
   // добавить алиас на каталог
-  db_query("INSERT INTO {url_alias} (pid, src, dst, language) VALUES (108, 'catalog/all', 'catalog', '')");
+  db_query("INSERT INTO {url_alias} (pid, src, dst, language) VALUES (1080, 'catalog/all', 'catalog', '')");
   db_query("INSERT INTO {menu_custom} (`menu_name`, `title`, `description`) VALUES ('menu-developer', 'Инструменты разработчика', 'Функции отладки и темизации')");
-  db_query("INSERT INTO {variable} (`name`, `value`) VALUES ('moduleinfo_shown', 'i:0;')");
+  variable_set("ulogin_display","window");
+  variable_set("ulogin_duplicate_emails","1");
+  variable_set("moduleinfo_shown","0");
+  variable_set("maintenance_theme","rootcandy");
+  $array = array(
+      'admin_tools-clearcache' => '-1',
+      'admin-create' => '-1',
+      'admin-menu' => '1',
+	  'admin-devel' => '-1',
+	  'menu-menu-developer' => '-1',
+	  );
+	  
+variable_set('admin_toolbar', array(
+      'layout' => 'vertical',
+      'position' => 'sw',
+      'behavior' => 'ah',
+      'blocks' => $array,
+    ));
+ // даем права ulogin
+$result = db_query("SELECT perm FROM {permission} WHERE rid=1");
+$row = db_fetch_array($result);
+// print $row['perm'];
+if (!preg_match('/use ulogin/i', $row['perm'])) {
+$upd = $row['perm'].", use ulogin";
+db_query("UPDATE {permission} SET perm='%s' WHERE rid=1", $upd);
+}
+$result = db_query("SELECT perm FROM {permission} WHERE rid=2");
+$row = db_fetch_array($result);
+// print $row['perm'];
+if (!preg_match('/use ulogin/i', $row['perm'])) {
+$upd = $row['perm'].", use ulogin";
+db_query("UPDATE {permission} SET perm='%s' WHERE rid=2", $upd);
+}
   
-  // db_query("INSERT INTO {variable} (`name`, `value`) VALUES ('maintenance_theme', 's:9:"rootcandy"'));
   
- //  drushop_general_features_revert(array('feature_about', 'feature_awards', 'feature_events', 'feature_news', 'feature_people', 'feature_projects', 'feature_frontend'));
   
+ drushop_general_features_revert(array('drushop_admin', 'drushop_catalog', 'drushop_flags', 'drushop_price_list', 'drushop_views'));
+ node_access_rebuild();
+ cache_clear_all(); 
   // features_revert(array('my_module' => array('panels_mini')));
 }
-*/
-
 

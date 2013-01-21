@@ -3,20 +3,21 @@
 /**
  * Реализация hook_comment()
  */
+ // iyteritueritiert345uiyu23 - уникальное значение формы
 function spamers_must_die_comment(&$a1, $op)
 {
     global $user;
 	
-	if ($op == 'validate' && $user->uid !=1 && !$a1['rwerwer123123'])
+	if ($op == 'validate' && $user->uid !=1 && !$a1['iyteritueritiert345uiyu23'])
     {
         // выводим сообщение боту
-        form_set_error('rwerwer123123', t('Вы не поставили галочку на пункте "я не спамер", ваше сообщение не будет добавлено'));
+        form_set_error('iyteritueritiert345uiyu23', t('Вы не поставили галочку на пункте "я не спамер", ваше сообщение не будет добавлено'));
     }
 	
 	if ($op == 'validate' && $user->uid !=1 && $a1['imnotbot_hide'])
     {
         // выводим сообщение боту
-        form_set_error('rwerwer123123', t('Вы поставили галочку на пункте "я спамер", ваше сообщение не будет добавлено'));
+        form_set_error('iyteritueritiert345uiyu23', t('Вы поставили галочку на пункте "я спамер", ваше сообщение не будет добавлено'));
     }
 	
 }
@@ -32,7 +33,7 @@ function spamers_must_die_form_alter(&$form, &$form_state, $form_id)
     // форма будет показываться только анонимным пользователям
     if ($form_id == 'comment_form' && $user->uid != 1)
     {
-        $form['rwerwer123123'] = array(
+        $form['iyteritueritiert345uiyu23'] = array(
             '#type' => 'checkbox',
             '#title' => 'Я не спамер',
             '#weight' => 0.01, // поле будет выводится перед кнопками Сохранить / Предпросмотр. Возможно вам придётся поэкспериментировать со значением
