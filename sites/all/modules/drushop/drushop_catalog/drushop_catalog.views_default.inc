@@ -1580,7 +1580,6 @@ print uc_currency_format($temp_discount_total);
       'reduce_duplicates' => 0,
     ),
   ));
-  $handler->override_option('use_ajax', TRUE);
   $handler->override_option('items_per_page', 12);
   $handler->override_option('path', 'catalog/%');
   $handler->override_option('menu', array(

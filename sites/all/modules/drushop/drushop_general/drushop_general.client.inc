@@ -1,5 +1,4 @@
 <?php
-
 GLOBAL $base_url;
 
 if (function_exists('curl_init')) {

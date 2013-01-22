@@ -16,7 +16,10 @@ INSTALLATION
 - Go to admin/build/modules and enable it.
 - Go to admin/settings/cacheexclude and configure paths you want excluded from caching.
 
-AUTHOR AND CREDIT
+AUTHOR AND CREDITS
 
 Larry "Crell" Garfield - Maintainer
+Palantir.net
+
+Matt "mbutcher" Butcher - Co-maintainer
 Palantir.net
